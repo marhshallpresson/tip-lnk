@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Wallet, Shield, Zap, Smartphone, Eye, ArrowRight, CheckCircle } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+
 
 /* Detect Solflare in-app browser */
 function useIsSolflare() {
@@ -36,7 +38,8 @@ export default function WalletConnect({ onConnected }) {
   const isSolflareWallet = wallet?.adapter?.name?.toLowerCase().includes('solflare');
 
   return (
-    <div className="glass-card glow-brand p-8 sm:p-10 max-w-lg mx-auto text-center animate-slide-up">
+    <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up">
+
       {/* Icon */}
       <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-600/30 to-brand-800/20 flex items-center justify-center mx-auto mb-6">
         <Wallet size={36} className="text-brand-400" />

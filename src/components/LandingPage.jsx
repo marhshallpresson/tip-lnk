@@ -24,7 +24,7 @@ function Particles() {
 }
 
 /* ─── Navbar ─── */
-function Navbar({ onGetStarted }) {
+function Navbar({ onGetStarted, onboardingComplete, connected, onViewDashboard }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -39,20 +39,35 @@ function Navbar({ onGetStarted }) {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c4ff00] to-green-600 flex items-center justify-center shadow-[0_0_15px_rgba(196,255,0,0.4)]">
             <Zap size={20} className="text-black" />
           </div>
-          <span className="text-2xl font-black tracking-tight text-white">TipLnk</span>
+          <span className="text-2xl font-black tracking-tight text-white cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>TipLnk</span>
         </div>
         <div className="hidden md:flex items-center gap-8 font-medium">
           <a href="#creators" className="text-sm text-surface-400 hover:text-[#c4ff00] transition-colors">For Creators</a>
           <a href="#features" className="text-sm text-surface-400 hover:text-[#c4ff00] transition-colors">Features</a>
           <a href="#compare" className="text-sm text-surface-400 hover:text-[#c4ff00] transition-colors">Compare</a>
         </div>
-        <button onClick={onGetStarted} className="btn-primary text-sm !px-6 flex items-center gap-2">
-          Start Earning <ArrowRight size={16} />
-        </button>
+        
+        <div className="flex items-center gap-4">
+          {onboardingComplete && connected ? (
+            <>
+              <button onClick={onViewDashboard} className="btn-outline !px-6 py-2 min-h-[40px] text-xs">
+                Profile
+              </button>
+              <button onClick={onViewDashboard} className="btn-primary !px-6 py-2 min-h-[40px] text-xs bg-[#c4ff00] text-black">
+                Dashboard
+              </button>
+            </>
+          ) : (
+            <button onClick={onGetStarted} className="btn-primary text-sm !px-6 flex items-center gap-2">
+              Start Earning <ArrowRight size={16} />
+            </button>
+          )}
+        </div>
       </div>
     </nav>
   );
 }
+
 
 /* ─── Ko-fi Style Feature Block (Split Layout) ─── */
 function FeatureBlock({ title, description, icon: Icon, reversed }) {
@@ -121,11 +136,17 @@ function ComparisonTable() {
 /* ═══════════════════════════════════════════
    LANDING PAGE (Ko-fi Layout + SNS Aesthetics)
    ═══════════════════════════════════════════ */
-export default function LandingPage({ onGetStarted }) {
+export default function LandingPage({ onGetStarted, onboardingComplete, connected, onViewDashboard }) {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0d1117] text-white">
       <Particles />
-      <Navbar onGetStarted={onGetStarted} />
+      <Navbar 
+        onGetStarted={onGetStarted} 
+        onboardingComplete={onboardingComplete}
+        connected={connected}
+        onViewDashboard={onViewDashboard}
+      />
+
 
       {/* ── Hero Section (Ko-fi style Friendly & Bold) ─── */}
       <section className="relative pt-40 md:pt-52 pb-24 px-4 flex flex-col items-center text-center">
