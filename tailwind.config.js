@@ -32,8 +32,9 @@ export default {
           900: '#102a43',
           950: '#0a1628',
         },
-        'main-bg': '#060e1a',
+        'main-bg': '#0d1117',
         accent: {
+          neon: '#c4ff00',
           green: '#34d399',
           red: '#f87171',
           orange: '#fb923c',

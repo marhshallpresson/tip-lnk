@@ -1,21 +1,22 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [
-    react({ jsxRuntime: 'automatic' }),
+    react(),
     nodePolyfills({
-      include: ['buffer', 'crypto', 'stream', 'util', 'process'],
-      globals: { Buffer: true, global: true, process: true },
+      include: ['buffer', 'crypto', 'stream', 'util'],
     }),
   ],
-  server: {
-    watch: {
-      usePolling: true,
-      interval: 1000,
-    },
-    cors: true,
-    allowedHosts: true,
+  test: {
+    environment: 'jsdom',
+    globals: true,
   },
-})
+  resolve: {
+    alias: {
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+    },
+  },
+});

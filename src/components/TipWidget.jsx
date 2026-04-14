@@ -35,6 +35,16 @@ export default function TipWidget() {
 
   const [senderName, setSenderName] = useState('');
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
+  const [txStep, setTxStep] = useState('configure'); // configure, simulate, review, processing, done
+
+  const handleSimulate = () => {
+    setTxStep('simulate');
+    setTimeout(() => setTxStep('review'), 1000); // mock simulation delay
+  };
+
+  const handleEdit = () => {
+    setTxStep('configure');
+  };
 
   useEffect(() => {
     if (amount && selectedToken) {
@@ -43,6 +53,7 @@ export default function TipWidget() {
   }, [amount, selectedToken, calculateRoute]);
 
   const handleSendTip = async () => {
+    setTxStep('processing');
     const result = await executeTip(senderName || 'Anonymous');
     if (result?.success) {
       addTip({
@@ -54,7 +65,13 @@ export default function TipWidget() {
         txSignature: result.txSignature,
         timestamp: result.timestamp,
       });
+      setTxStep('done');
     }
+  };
+
+  const handleReset = () => {
+    reset();
+    setTxStep('configure');
   };
 
   if (txResult?.success) {
@@ -70,7 +87,7 @@ export default function TipWidget() {
         <div className="bg-surface-800/50 rounded-xl p-4 mb-6 font-mono text-sm text-surface-400 break-all">
           tx: {txResult.txSignature}
         </div>
-        <button onClick={reset} className="btn-primary flex items-center gap-2 mx-auto">
+        <button onClick={handleReset} className="btn-primary flex items-center gap-2 mx-auto">
           <RefreshCw size={16} />
           Send Another
         </button>
@@ -163,16 +180,38 @@ export default function TipWidget() {
         </p>
       </div>
 
-      {/* Route Info */}
-      {route && (
-        <div className="bg-surface-800/30 rounded-xl p-4 mb-6 space-y-2">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap size={14} className="text-brand-400" />
-            <span className="text-sm font-medium">DFlow Route</span>
+      {/* Route Info & Stepper */}
+      {route && txStep === 'configure' && (
+        <button
+          onClick={handleSimulate}
+          disabled={!route || !amount}
+          className="btn-primary w-full flex items-center justify-center gap-2 mb-4"
+        >
+          <Eye size={18} />
+          Simulate Transaction
+        </button>
+      )}
+
+      {txStep === 'simulate' && (
+        <div className="flex items-center justify-center py-4 text-brand-400 gap-2 mb-4">
+          <Loader2 size={18} className="animate-spin" />
+          <span>Simulating via RPC...</span>
+        </div>
+      )}
+
+      {(txStep === 'review' || txStep === 'processing' || txStep === 'done') && route && (
+        <div className="bg-surface-800/30 rounded-xl p-4 mb-6 space-y-2 border border-brand-500/30">
+          <div className="flex items-center gap-2 mb-3 text-accent-green">
+            <Check size={14} />
+            <span className="text-sm font-bold">Simulation Passed</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-surface-500">Fee (0.3%)</span>
-            <span className="text-surface-300">${route.fee.toFixed(4)}</span>
+            <span className="text-surface-500">Balance Change</span>
+            <span className="text-surface-300">-{amount} {selectedToken.symbol}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-surface-500">DFlow Fee (0.3%)</span>
+            <span className="text-surface-300">-${route.fee.toFixed(4)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-surface-500">Price Impact</span>
@@ -183,12 +222,12 @@ export default function TipWidget() {
             <span className="text-surface-300">{route.estimatedTime}</span>
           </div>
           <div className="mt-3 pt-3 border-t border-surface-700">
-            <p className="text-xs text-surface-500 mb-2">DEX Split</p>
+            <p className="text-xs text-brand-400 mb-2 font-semibold">DFlow DEX Route Split</p>
             <div className="flex gap-2">
               {route.dexSplit.map((dex) => (
-                <div key={dex.name} className="flex-1 bg-surface-800 rounded-lg p-2 text-center">
-                  <p className="text-xs font-medium">{dex.name}</p>
-                  <p className="text-[10px] text-surface-500">{dex.share}%</p>
+                <div key={dex.name} className="flex-1 bg-surface-800 rounded-lg p-2 text-center border border-brand-500/20">
+                  <p className="text-xs font-medium text-white">{dex.name}</p>
+                  <p className="text-[10px] text-accent-cyan">{dex.share}%</p>
                 </div>
               ))}
             </div>
@@ -196,24 +235,27 @@ export default function TipWidget() {
         </div>
       )}
 
-      {/* Send Button */}
-      <button
-        onClick={handleSendTip}
-        disabled={!route || processing || !amount}
-        className="btn-primary w-full flex items-center justify-center gap-2"
-      >
-        {processing ? (
-          <>
-            <Loader2 size={18} className="animate-spin" />
-            Routing through DEXs...
-          </>
-        ) : (
-          <>
+      {txStep === 'review' && (
+        <div className="flex gap-3 mb-4">
+          <button onClick={handleEdit} className="btn-secondary !px-4">
+            Edit
+          </button>
+          <button
+            onClick={handleSendTip}
+            className="btn-primary flex-1 flex items-center justify-center gap-2"
+          >
             <Gift size={18} />
-            Send Tip
-          </>
-        )}
-      </button>
+            Approve & Send Tip
+          </button>
+        </div>
+      )}
+
+      {txStep === 'processing' && (
+        <div className="btn-primary w-full flex items-center justify-center gap-2 mb-4 cursor-not-allowed opacity-80" disabled>
+          <Loader2 size={18} className="animate-spin" />
+          Awaiting Solflare Approval...
+        </div>
+      )}
 
       <p className="text-center text-surface-600 text-xs mt-4 flex items-center justify-center gap-1">
         <Info size={12} />

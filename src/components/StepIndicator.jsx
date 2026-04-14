@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 
-const STEPS = ['Connect Wallet', 'Select NFT Avatar', 'Register .sol Domain', 'Complete'];
+const STEPS = ['Connect Wallet', 'Pick NFT Avatar', 'Claim Domain', 'Link Socials', 'Ready!'];
 
 export default function StepIndicator({ current }) {
   return (
@@ -14,7 +14,7 @@ export default function StepIndicator({ current }) {
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                   done
-                    ? 'bg-accent-green text-surface-950'
+                    ? 'bg-brand-500 text-white'
                     : active
                     ? 'bg-brand-600 text-white ring-4 ring-brand-600/25'
                     : 'bg-surface-800 text-surface-500'
@@ -24,7 +24,7 @@ export default function StepIndicator({ current }) {
               </div>
               <span
                 className={`text-xs font-medium whitespace-nowrap ${
-                  done ? 'text-accent-green' : active ? 'text-brand-400' : 'text-surface-600'
+                  done ? 'text-brand-400' : active ? 'text-brand-400' : 'text-surface-600'
                 }`}
               >
                 {label}
@@ -32,7 +32,7 @@ export default function StepIndicator({ current }) {
             </div>
             {i < STEPS.length - 1 && (
               <div
-                className={`w-12 h-0.5 mb-5 ${done ? 'bg-accent-green' : 'bg-surface-800'}`}
+                className={`w-12 h-0.5 mb-5 transition-colors duration-300 ${done ? 'bg-brand-500' : 'bg-surface-800'}`}
               />
             )}
           </div>

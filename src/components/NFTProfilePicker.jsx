@@ -57,7 +57,9 @@ export default function NFTProfilePicker({ onComplete }) {
                 className={`relative rounded-xl overflow-hidden border-2 transition-all duration-200 group ${
                   selected?.id === nft.id
                     ? 'border-brand-500 ring-4 ring-brand-500/20'
-                    : 'border-surface-700 hover:border-surface-500'
+                    : nft.isDoodle
+                      ? 'border-accent-orange/60 hover:border-accent-orange shadow-[0_0_15px_rgba(255,160,0,0.15)] hover:shadow-[0_0_20px_rgba(255,160,0,0.3)]'
+                      : 'border-surface-700 hover:border-surface-500'
                 }`}
               >
                 <div className="aspect-square bg-surface-800 flex items-center justify-center">

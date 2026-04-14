@@ -12,6 +12,7 @@ import {
   Percent,
   Clock,
   Wifi,
+  Sparkles,
 } from 'lucide-react';
 
 export default function KaminoPanel() {
@@ -43,9 +44,27 @@ export default function KaminoPanel() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      {/* Brand Header */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-[#0038FF]/20 to-transparent p-4 rounded-xl border border-[#0038FF]/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[#0038FF]/20 flex items-center justify-center text-[#0038FF]">
+            <Vault size={20} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-surface-300">
+              Kamino Finance Integration
+            </h2>
+            <p className="text-sm text-surface-400">Auto-compound your tips with automated yield strategies.</p>
+          </div>
+        </div>
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="badge-brand bg-[#0038FF]/10 text-[#0038FF] border border-[#0038FF]/30"><Sparkles size={12} className="inline mr-1" /> JitoSOL Strategies</span>
+        </div>
+      </div>
+
       {/* Header Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="glass-card p-5">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign size={16} className="text-brand-400" />
@@ -85,17 +104,21 @@ export default function KaminoPanel() {
       {/* Vault Selector & Deposit */}
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-semibold">Kamino Vaults</h3>
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">Kamino Vaults</h3>
+            <p className="text-surface-400 text-sm mt-1">Provide liquidity to earn trading fees & incentives</p>
+          </div>
           <button
             onClick={() => setShowDeposit(!showDeposit)}
-            className="btn-primary text-sm py-2 px-4"
+            className="btn-primary text-sm py-2 px-4 shadow-[0_0_15px_-3px_rgba(0,56,255,0.4)] bg-gradient-to-r from-[#0038FF] to-brand-500 hover:scale-105 transition-transform"
           >
             {showDeposit ? 'Cancel' : '+ New Deposit'}
           </button>
         </div>
 
         {showDeposit && (
-          <div className="bg-surface-800/50 rounded-xl p-5 mb-5 space-y-4">
+          <div className="bg-[#0038FF]/5 rounded-xl p-5 mb-5 space-y-4 border border-[#0038FF]/20 relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#0038FF] rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
             <div>
               <label className="text-sm text-surface-400 mb-2 block">Select Vault</label>
               <div className="grid grid-cols-3 gap-3">
@@ -111,10 +134,10 @@ export default function KaminoPanel() {
                   >
                     <p className="font-semibold text-sm">{vault.name}</p>
                     <div className="flex items-center gap-1 mt-1">
-                      <Percent size={12} className="text-accent-green" />
-                      <span className="text-accent-green text-sm font-medium">{vault.apy}% APY</span>
+                      <Percent size={12} className="text-[#0038FF]" />
+                      <span className="text-[#0038FF] text-sm font-bold">{vault.apy}% APY</span>
                     </div>
-                    <p className="text-[10px] text-surface-500 mt-1">
+                    <p className="text-[10px] text-surface-400 mt-1">
                       TVL: ${(vault.tvl / 1_000_000).toFixed(1)}M
                     </p>
                   </button>
@@ -136,7 +159,7 @@ export default function KaminoPanel() {
             <button
               onClick={handleDeposit}
               disabled={depositing || !depositAmount || parseFloat(depositAmount) <= 0}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className="btn-primary w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#0038FF] to-[#0055FF] shadow-lg shadow-[#0038FF]/20"
             >
               {depositing ? (
                 <>
@@ -165,12 +188,15 @@ export default function KaminoPanel() {
               <div key={pos.id} className="bg-surface-800/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-brand-600/20 flex items-center justify-center">
-                      <TrendingUp size={16} className="text-brand-400" />
+                    <div className="w-10 h-10 rounded-lg bg-[#0038FF]/20 flex items-center justify-center">
+                      <TrendingUp size={16} className="text-[#0038FF]" />
                     </div>
                     <div>
-                      <p className="font-semibold">{pos.vault}</p>
-                      <p className="text-accent-green text-sm">{pos.apy}% APY</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold">{pos.vault}</p>
+                        <span className="bg-surface-800 text-[10px] px-1.5 py-0.5 rounded text-surface-400 border border-surface-700">Auto-Compound</span>
+                      </div>
+                      <p className="text-[#0038FF] text-sm font-bold">{pos.apy}% APY</p>
                     </div>
                   </div>
                   <button

@@ -6,6 +6,7 @@ import StepIndicator from './components/StepIndicator';
 import WalletConnect from './components/WalletConnect';
 import NFTProfilePicker from './components/NFTProfilePicker';
 import DomainRegistration from './components/DomainRegistration';
+import SocialLinking from './components/SocialLinking';
 import OnboardingComplete from './components/OnboardingComplete';
 import Dashboard from './components/Dashboard';
 import LandingPage from './components/LandingPage';
@@ -60,7 +61,8 @@ function AppContent() {
         {onboardingStep === 0 && <WalletConnect onConnected={() => nextStep()} />}
         {onboardingStep === 1 && <NFTProfilePicker onComplete={() => nextStep()} />}
         {onboardingStep === 2 && <DomainRegistration onComplete={() => nextStep()} />}
-        {onboardingStep === 3 && <OnboardingComplete onFinish={finishOnboarding} />}
+        {onboardingStep === 3 && <SocialLinking onComplete={() => nextStep()} />}
+        {onboardingStep === 4 && <OnboardingComplete onFinish={finishOnboarding} />}
       </div>
     </div>
   );
