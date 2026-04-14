@@ -1,10 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const VAULTS = [
-  { id: 'usdc-sol', name: 'USDC-SOL', apy: 12.4, tvl: 45_200_000, token: 'USDC' },
-  { id: 'usdc-usdt', name: 'USDC-USDT', apy: 8.7, tvl: 82_100_000, token: 'USDC' },
-  { id: 'usdc-bonk', name: 'USDC-BONK', apy: 24.1, tvl: 12_400_000, token: 'USDC' },
+// ─── SendAI Kamino klend-sdk Simulation ───
+const MAIN_MARKET = '7uSSTPu2SJYyR84i1zSvcr62TDR9X9eLoR9D9reW6RjO';
+
+const RESERVES = [
+  { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', symbol: 'USDC', supplyApy: 12.4, totalDeposits: 450_200_000, logo: '💵' },
+  { mint: 'So11111111111111111111111111111111111111112', symbol: 'SOL', supplyApy: 8.7, totalDeposits: 820_100_000, logo: '◎' },
+  { mint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', symbol: 'JUP', supplyApy: 15.2, totalDeposits: 120_400_000, logo: '🪐' },
 ];
+
+const VAULTS = RESERVES.map(r => ({
+  id: r.symbol.toLowerCase(),
+  name: `${r.symbol} Reserve`,
+  apy: r.supplyApy,
+  tvl: r.totalDeposits,
+  token: r.symbol,
+  logo: r.logo
+}));
 
 export function useKamino(walletConnected) {
   const [positions, setPositions] = useState([]);
@@ -59,11 +71,13 @@ export function useKamino(walletConnected) {
   const deposit = useCallback(
     async (amount) => {
       setDepositing(true);
-      // Simulate tx construction delay
+      
+      // Simulate KaminoAction.buildDepositTxns(market, amount, mint)
       await new Promise((r) => setTimeout(r, 2000));
 
       const newPosition = {
         id: `pos-${Date.now()}`,
+        market: MAIN_MARKET,
         vault: selectedVault.name,
         vaultId: selectedVault.id,
         deposited: amount,
@@ -72,7 +86,7 @@ export function useKamino(walletConnected) {
         apy: selectedVault.apy,
         depositedAt: Date.now(),
         lastUpdate: Date.now(),
-        token: 'USDC',
+        token: selectedVault.token,
       };
 
       setPositions((prev) => [...prev, newPosition]);

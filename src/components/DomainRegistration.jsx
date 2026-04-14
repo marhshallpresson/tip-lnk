@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Globe, Check, Loader2, AlertCircle, Search, Zap } from 'lucide-react';
 
-// Simulate .sol domain lookup
+// ─── SendAI Solana Agent Kit Integration (MiscPlugin) ───
+// Simulate .sol domain lookup via resolveDomain handler
 const TAKEN_DOMAINS = ['alice', 'bob', 'crypto', 'solana', 'nft', 'defi'];
 
 export default function DomainRegistration({ onComplete }) {
@@ -18,23 +19,30 @@ export default function DomainRegistration({ onComplete }) {
     setChecking(true);
     setAvailable(null);
 
-    // Simulate SNS lookup
-    await new Promise((r) => setTimeout(r, 1500));
+    // Simulate agent.methods.resolveDomain({ domain: 'name.sol' })
+    await new Promise((r) => setTimeout(r, 1200));
     const isTaken = TAKEN_DOMAINS.includes(domain.trim().toLowerCase());
+    
+    // In SendAI Agent Kit, resolveDomain returns null/error if domain doesn't exist (available)
     setAvailable(!isTaken);
     setChecking(false);
   };
 
   const registerDomain = async () => {
     setRegistering(true);
-    // Simulate transaction
-    await new Promise((r) => setTimeout(r, 2500));
+    
+    // Simulate agent.methods.registerDomain({ domain: 'name.sol' })
+    // This action handler typically uses the MiscPlugin or custom naming service provider
+    await new Promise((r) => setTimeout(r, 3000));
+    
     const fullDomain = `${domain.trim().toLowerCase()}.tiplnk.sol`;
     updateProfile({ solDomain: fullDomain, displayName: domain.trim() });
+    
     setRegistered(true);
     setRegistering(false);
     setTimeout(() => onComplete(), 1000);
   };
+
 
   return (
     <div className="glass-card glow-brand p-8 sm:p-10 max-w-lg mx-auto animate-slide-up">

@@ -19,7 +19,9 @@ const defaultState = {
   totalTipsUSDC: 0,
   kaminoDeposited: 0,
   kaminoEarnings: 0,
+  isDemo: false,
 };
+
 
 function loadState() {
   try {

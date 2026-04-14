@@ -12,7 +12,7 @@ import Dashboard from './components/Dashboard';
 import { Sparkles } from 'lucide-react';
 
 function AppContent() {
-  const { onboardingStep, onboardingComplete, update } = useApp();
+  const { onboardingStep, onboardingComplete, update, isDemo } = useApp();
   const { connected } = useWallet();
 
   const nextStep = useCallback(() => {
@@ -23,9 +23,11 @@ function AppContent() {
     update({ onboardingComplete: true });
   }, [update]);
 
-  if (onboardingComplete && connected) {
+  // If connected OR in demo mode, skip to dashboard if onboarding is complete/progressed
+  if ((connected || isDemo) && (onboardingComplete || onboardingStep > 0)) {
     return <Dashboard />;
   }
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">

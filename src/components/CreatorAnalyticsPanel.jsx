@@ -35,9 +35,9 @@ export default function CreatorAnalyticsPanel() {
           <p className="text-xs text-accent-green mt-2 flex items-center gap-1"><ArrowUpRight size={12}/> +12% vs last month</p>
         </div>
         <div className="glass-card p-5 border-t-2 border-t-accent-purple">
-          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><Activity size={14}/> Total Tips</p>
-          <p className="text-2xl font-bold text-white">{tipsReceived.length}</p>
-          <p className="text-xs text-accent-green mt-2 flex items-center gap-1"><ArrowUpRight size={12}/> +5% vs last month</p>
+          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><TrendingUp size={14}/> Projected Yield</p>
+          <p className="text-2xl font-bold text-white">${(totalTipsUSDC * 0.124).toFixed(2)}</p>
+          <p className="text-xs text-brand-400 mt-2 flex items-center gap-1"><Activity size={12}/> 12.4% Kamino APY</p>
         </div>
         <div className="glass-card p-5 border-t-2 border-t-brand-500">
           <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><Users size={14}/> Unique Supporters</p>
@@ -45,9 +45,9 @@ export default function CreatorAnalyticsPanel() {
           <p className="text-xs text-surface-500 mt-2">3 new this week</p>
         </div>
         <div className="glass-card p-5 border-t-2 border-t-accent-orange">
-          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><PieChart size={14}/> Avg. Tip Size</p>
-          <p className="text-2xl font-bold text-white">${tipsReceived.length > 0 ? (totalTipsUSDC / tipsReceived.length).toFixed(2) : '0.00'}</p>
-          <p className="text-xs text-surface-500 mt-2">Consistent</p>
+          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><PieChart size={14}/> Tip Efficiency</p>
+          <p className="text-2xl font-bold text-white">99.7%</p>
+          <p className="text-xs text-surface-500 mt-2">DFlow Optimized</p>
         </div>
       </div>
 

@@ -14,9 +14,16 @@ function useIsSolflare() {
 }
 
 export default function WalletConnect({ onConnected }) {
+  const { update } = useApp();
   const { connected, publicKey, wallet } = useWallet();
   const isSolflare = useIsSolflare();
   const [advancing, setAdvancing] = useState(false);
+
+  const handleDemo = () => {
+    update({ isDemo: true });
+    onConnected('DEMO_WALLET_ADDRESS');
+  };
+
 
   useEffect(() => {
     if (connected && publicKey && !advancing) {
@@ -92,7 +99,7 @@ export default function WalletConnect({ onConnected }) {
       )}
 
       {/* Features */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 mb-6">
         <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
           <Shield size={16} className="text-brand-400" />
           <span className="text-surface-400 text-xs">Non-custodial</span>
@@ -106,6 +113,14 @@ export default function WalletConnect({ onConnected }) {
           <span className="text-surface-400 text-xs">QuickNode RPC</span>
         </div>
       </div>
+
+      <button 
+        onClick={handleDemo}
+        className="text-surface-500 hover:text-[#c4ff00] text-sm transition-colors flex items-center gap-1 mx-auto"
+      >
+        <ArrowRight size={14} /> Skip for Preview (Demo Mode)
+      </button>
     </div>
+
   );
 }

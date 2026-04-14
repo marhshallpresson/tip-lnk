@@ -31,24 +31,51 @@ export function useTipping(creatorAddress) {
         return;
       }
 
+      // ─── DFlow Trade API Simulation (SendAI Native) ───
       const rawUSDC = tokenAmount * token.price;
-      const fee = rawUSDC * 0.003; // 0.3% DFlow routing fee
-      const netUSDC = rawUSDC - fee;
-      const priceImpact = tokenAmount > 1000 ? 0.15 : 0.05;
+      const platformFeeBps = 30; // 0.3% DFlow routing fee
+      const fee = rawUSDC * (platformFeeBps / 10000);
+      const outAmount = rawUSDC - fee;
+      const slippageBps = 50; // 0.5%
+      const minOutAmount = outAmount * (1 - slippageBps / 10000);
+      const priceImpactPct = tokenAmount > 1000 ? 0.15 : 0.05;
 
-      setTipAmountUSDC(netUSDC);
+      setTipAmountUSDC(outAmount);
       setRoute({
-        inputToken: token.symbol,
-        inputAmount: tokenAmount,
-        outputToken: 'USDC',
-        outputAmount: netUSDC,
-        fee,
-        priceImpact,
-        dexSplit: DEX_ROUTES.map((d) => ({
-          ...d,
-          amount: (netUSDC * d.share) / 100,
-        })),
-        estimatedTime: '~12 seconds',
+        inputMint: token.mint,
+        outputMint: SUPPORTED_TOKENS.find(t => t.symbol === 'USDC').mint,
+        inAmount: tokenAmount,
+        outAmount: outAmount,
+        minOutAmount: minOutAmount,
+        priceImpactPct: priceImpactPct,
+        executionMode: outAmount > 100 ? 'async' : 'sync', // DFlow pattern: complex trades use async (Jito)
+        prioritizationFeeLamports: 'auto',
+        computeUnitLimit: 200000,
+        routePlan: [
+          {
+            swapInfo: {
+              label: 'Jupiter',
+              inputMint: token.mint,
+              outputMint: '...',
+              outAmount: outAmount * 0.45,
+              feeAmount: fee * 0.45,
+              feeMint: '...',
+            },
+            percent: 45,
+          },
+          {
+            swapInfo: {
+              label: 'Orca',
+              inputMint: '...',
+              outputMint: '...',
+              outAmount: outAmount * 0.55,
+              feeAmount: fee * 0.55,
+              feeMint: '...',
+            },
+            percent: 55,
+          }
+        ],
+        estimatedTime: outAmount > 100 ? '~25 seconds (Jito Bundle)' : '~6 seconds (Atomic)',
       });
     },
     []
@@ -60,19 +87,25 @@ export function useTipping(creatorAddress) {
       setProcessing(true);
       setTxResult(null);
 
-      // Simulate DFlow intent-based routing + DEX aggregation
-      await new Promise((r) => setTimeout(r, 3000));
+      // ─── Simulate SendAI DFlow Execution Flow ───
+      // If executionMode is 'async', we would poll /order-status
+      const simulateDelay = route.executionMode === 'async' ? 5000 : 2500;
+      await new Promise((r) => setTimeout(r, simulateDelay));
 
       const result = {
         success: true,
-        txSignature: `${Math.random().toString(36).slice(2, 10)}...${Math.random().toString(36).slice(2, 10)}`,
-        inputToken: route.inputToken,
-        inputAmount: route.inputAmount,
-        outputAmount: route.outputAmount,
-        fee: route.fee,
+        signature: `${Math.random().toString(36).slice(2, 10)}...${Math.random().toString(36).slice(2, 10)}`,
+        executionMode: route.executionMode,
+        outAmount: route.outAmount,
+        minOutAmount: route.minOutAmount,
+        priceImpact: route.priceImpactPct,
         timestamp: Date.now(),
         sender: senderName || 'Anonymous',
-        recipient: creatorAddress,
+        recipientAddress: creatorAddress,
+        fills: route.routePlan.map(p => ({
+          venue: p.swapInfo.label,
+          amount: p.swapInfo.outAmount
+        }))
       };
 
       setTxResult(result);
@@ -81,6 +114,7 @@ export function useTipping(creatorAddress) {
     },
     [route, creatorAddress]
   );
+
 
   const reset = useCallback(() => {
     setAmount('');

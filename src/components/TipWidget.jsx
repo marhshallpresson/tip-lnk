@@ -11,6 +11,9 @@ import {
   Zap,
   Info,
   RefreshCw,
+  Eye,
+  Activity,
+  Layers,
 } from 'lucide-react';
 
 export default function TipWidget() {
@@ -58,12 +61,13 @@ export default function TipWidget() {
     if (result?.success) {
       addTip({
         sender: senderName || 'Anonymous',
-        inputToken: result.inputToken,
-        inputAmount: result.inputAmount,
-        amountUSDC: result.outputAmount,
-        fee: result.fee,
-        txSignature: result.txSignature,
+        inputToken: selectedToken.symbol, // selectedToken is available in scope
+        inputAmount: amount,
+        amountUSDC: result.outAmount,
+        fee: (parseFloat(amount) * selectedToken.price) - result.outAmount,
+        txSignature: result.signature,
         timestamp: result.timestamp,
+        executionMode: result.executionMode
       });
       setTxStep('done');
     }
@@ -82,10 +86,14 @@ export default function TipWidget() {
         </div>
         <h3 className="text-2xl font-bold mb-2">Tip Sent</h3>
         <p className="text-surface-400 mb-6">
-          {txResult.inputAmount} {txResult.inputToken} → ${txResult.outputAmount.toFixed(2)} USDC
+          {amount} {selectedToken.symbol} → ${txResult.outAmount.toFixed(2)} USDC
         </p>
-        <div className="bg-surface-800/50 rounded-xl p-4 mb-6 font-mono text-sm text-surface-400 break-all">
-          tx: {txResult.txSignature}
+        <div className="bg-surface-800/50 rounded-xl p-4 mb-3 font-mono text-sm text-surface-400 break-all border border-accent-green/20">
+          sig: {txResult.signature}
+        </div>
+        <div className="flex items-center justify-center gap-2 text-xs text-surface-500 mb-6">
+          <Activity size={12} className="text-accent-green" />
+          Execution: {txResult.executionMode === 'async' ? 'Jito Bundle Verified' : 'Atomic Swap Confirmed'}
         </div>
         <button onClick={handleReset} className="btn-primary flex items-center gap-2 mx-auto">
           <RefreshCw size={16} />
@@ -210,24 +218,33 @@ export default function TipWidget() {
             <span className="text-surface-300">-{amount} {selectedToken.symbol}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-surface-500">DFlow Fee (0.3%)</span>
-            <span className="text-surface-300">-${route.fee.toFixed(4)}</span>
+            <span className="text-surface-500">DFlow Service Fee</span>
+            <span className="text-surface-300">-$0.15 (fixed rate)</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-surface-500">Price Impact</span>
-            <span className="text-surface-300">{route.priceImpact}%</span>
+            <span className="text-surface-300">{(route.priceImpactPct * 100).toFixed(2)}%</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-surface-500">Execution Mode</span>
+            <span className={`font-bold ${route.executionMode === 'async' ? 'text-accent-orange' : 'text-accent-cyan'}`}>
+              {route.executionMode === 'async' ? 'Async (Jito Bundle)' : 'Sync (Atomic)'}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-surface-500">Est. Time</span>
             <span className="text-surface-300">{route.estimatedTime}</span>
           </div>
           <div className="mt-3 pt-3 border-t border-surface-700">
-            <p className="text-xs text-brand-400 mb-2 font-semibold">DFlow DEX Route Split</p>
+            <div className="flex items-center gap-1 text-xs text-[#c4ff00] mb-2 font-semibold">
+              <Layers size={12} />
+              <span>DFlow Intelligent Route Plan</span>
+            </div>
             <div className="flex gap-2">
-              {route.dexSplit.map((dex) => (
-                <div key={dex.name} className="flex-1 bg-surface-800 rounded-lg p-2 text-center border border-brand-500/20">
-                  <p className="text-xs font-medium text-white">{dex.name}</p>
-                  <p className="text-[10px] text-accent-cyan">{dex.share}%</p>
+              {route.routePlan.map((step, i) => (
+                <div key={i} className="flex-1 bg-surface-800 rounded-lg p-2 text-center border border-[#c4ff00]/10">
+                  <p className="text-xs font-medium text-white">{step.swapInfo.label}</p>
+                  <p className="text-[10px] text-surface-500">{step.percent}%</p>
                 </div>
               ))}
             </div>
