@@ -24,7 +24,7 @@ export default function AppNavbar({
         ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-[#c4ff00]/20' 
         : 'bg-transparent'
     }`}>
-      <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
+      <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
         <div className="flex items-center gap-2 cursor-pointer" onClick={onViewProfile}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c4ff00] to-green-600 flex items-center justify-center shadow-[0_0_15px_rgba(196,255,0,0.4)]">
             <Zap size={20} className="text-black" />
@@ -42,27 +42,22 @@ export default function AppNavbar({
                   onClick={onViewDashboard}
                   className="flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 font-bold transition-all"
                 >
-                  <LayoutDashboard size={14} /> Dashboard
+                   Dashboard
                 </button>
               )}
             </>
           ) : (
             <>
-              <button 
-                onClick={onViewProfile}
-                className="flex items-center gap-2 text-sm text-surface-400 hover:text-brand-400 font-bold transition-all"
-              >
-                <User size={14} /> Public Identity
-              </button>
+              
             </>
           )}
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {connected ? (
             <WalletDropdown />
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button 
                 onClick={onGetStarted} 
                 className="btn-secondary text-sm !px-6 hidden sm:block"

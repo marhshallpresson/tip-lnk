@@ -34,8 +34,8 @@
 
   /* Buttons */
   .btn-primary {
-    @apply bg-brand-500 text-black font-extrabold px-8 py-4 rounded-2xl transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
-    min-height: 56px;
+    @apply bg-brand-500 text-black font-extrabold px-8 py-3 rounded-2xl transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    min-height: 50px;
     box-shadow: 0 8px 32px rgba(0, 210, 101, 0.2);
   }
 
@@ -46,24 +46,24 @@
   }
 
   .btn-secondary {
-    @apply bg-surface-900 hover:bg-surface-800 text-white font-bold px-8 py-4 rounded-2xl border border-surface-800 transition-all duration-300;
-    min-height: 56px;
+    @apply bg-surface-900 hover:bg-surface-800 text-white font-bold px-8 py-3 rounded-2xl border border-surface-800 transition-all duration-300;
+    min-height: 50px;
   }
 
   .btn-outline {
-    @apply border-2 border-brand-500 text-brand-500 hover:bg-brand-500/10 font-black px-8 py-4 rounded-2xl transition-all duration-300;
-    min-height: 56px;
+    @apply border-2 border-brand-500 text-brand-500 hover:bg-brand-500/10 font-black px-8 py-3 rounded-2xl transition-all duration-300;
+    min-height: 50px;
   }
 
   .btn-solflare {
-    @apply bg-brand-500 hover:bg-brand-400 text-black font-extrabold px-8 py-4 rounded-2xl transition-all duration-300 active:scale-[0.98];
+    @apply bg-brand-500 hover:bg-brand-400 text-black font-extrabold px-8 py-3 rounded-2xl transition-all duration-300 active:scale-[0.98];
     box-shadow: 0 8px 32px rgba(0, 210, 101, 0.2);
   }
 
   /* Input fields */
   .input-field {
-    @apply bg-surface-950 border border-surface-800 rounded-2xl px-6 py-4 text-white placeholder-surface-500 focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium;
-    min-height: 56px;
+    @apply bg-surface-950 border border-surface-800 rounded-2xl px-6 py-3 text-white placeholder-surface-500 focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium;
+    min-height: 50px;
   }
 
   .glow-brand {
@@ -92,7 +92,7 @@
   background-color: #00D265 !important;
   color: #001100 !important;
   border-radius: 16px !important;
-  height: 56px !important;
+  height: 50px !important;
   font-family: inherit !important;
   font-weight: 800 !important;
   text-transform: none !important;

@@ -3,34 +3,77 @@ import { useApp } from '../contexts/AppContext';
 import { Twitter, DiscIcon as Discord, CheckCircle2, ChevronRight } from 'lucide-react';
 
 export default function SocialLinking({ onComplete }) {
-  const { updateProfile } = useApp();
-  const [twitterLinked, setTwitterLinked] = useState(false);
-  const [discordLinked, setDiscordLinked] = useState(false);
-  const [loadingCode, setLoadingCode] = useState(null);
+  const { profile, updateProfile } = useApp();
+  const [verifying, setVerifying] = useState(null);
+  
+  const twitterLinked = profile.socials?.isTwitterVerified;
+  const discordLinked = profile.socials?.isDiscordVerified;
 
-  const simulateLink = (platform) => {
-    setLoadingCode(platform);
+  const startOAuth = (platform) => {
+    setVerifying(platform);
+    const redirectUri = `${window.location.origin}/auth/callback/${platform}`;
     
-    // In a production app, this would be the official X/Discord OAuth URL.
-    // For this simulation, we point to our internal callback handler.
-    const oauthUrl = `${window.location.origin}/auth/callback/${platform}?code=simulated_auth_code_123`;
-    
-    setTimeout(() => {
-      if (platform === 'twitter') setTwitterLinked(true);
-      if (platform === 'discord') setDiscordLinked(true);
-      setLoadingCode(null);
-    }, 2000);
+    let url = '';
+    if (platform === 'twitter') {
+      const clientId = import.meta.env.VITE_X_CLIENT_ID;
+      if (!clientId) {
+        alert('Verification Setup Error: X Client ID is not configured.');
+        setVerifying(null);
+        return;
+      }
+      url = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=users.read%20tweet.read&state=state&code_challenge=challenge&code_challenge_method=plain`;
+    } else if (platform === 'discord') {
+      const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
+      if (!clientId) {
+        alert('Verification Setup Error: Discord Client ID is not configured.');
+        setVerifying(null);
+        return;
+      }
+      url = `https://discord.com/api/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20email`;
+    }
 
-    return oauthUrl;
+    if (url) {
+      const width = 600;
+      const height = 750;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      
+      const popup = window.open(
+        url, 
+        'TipLnkVerify', 
+        `width=${width},height=${height},left=${left},top=${top},status=no,location=no,toolbar=no,menubar=no`
+      );
+
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        alert('Popup blocked! Please allow popups for this site to verify your account.');
+        setVerifying(null);
+        return;
+      }
+      
+      const messageListener = (event) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.platform === platform) {
+          window.removeEventListener('message', messageListener);
+          setVerifying(null);
+          // Note: AppContext state is updated by the AuthCallbackHandler in the popup
+        }
+      };
+      
+      window.addEventListener('message', messageListener);
+
+      // Heartbeat to detect manual popup close
+      const timer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(timer);
+          setVerifying(null);
+          window.removeEventListener('message', messageListener);
+        }
+      }, 1000);
+    }
   };
 
   const handleContinue = () => {
-    updateProfile({
-      socials: {
-        twitter: twitterLinked ? '@creator_sol' : null,
-        discord: discordLinked ? 'creator#1234' : null,
-      }
-    });
     onComplete();
   };
 
@@ -67,11 +110,13 @@ export default function SocialLinking({ onComplete }) {
             </div>
           ) : (
             <button 
-              onClick={() => {window.open(simulateLink('twitter'),'popupWindow', 'width=600,height=400'); }}
+            onClick={() =>
+          {window.open(startOAuth('twitter'),    
+          'popupWindow',
+          'width=600,height=400'); }}
               className="btn flex items-center gap-2 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white border-0"
-              disabled={loadingCode === 'twitter'}
             >
-              {loadingCode === 'twitter' ? 'Connecting...' : 'Connect X'}
+              Connect X
             </button>
           )}
         </div>
@@ -96,11 +141,10 @@ export default function SocialLinking({ onComplete }) {
             </div>
           ) : (
             <button 
-              onClick={() => {window.open(simulateLink('discord'),'popupWindow', 'width=600,height=400'); }}
+              onClick={() => startOAuth('discord')}
               className="btn flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white border-0"
-              disabled={loadingCode === 'discord'}
             >
-              {loadingCode === 'discord' ? 'Connecting...' : 'Connect Discord'}
+              Connect Discord
             </button>
           )}
         </div>

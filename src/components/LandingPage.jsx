@@ -33,15 +33,15 @@ function FeatureBlock({ title, description, icon: Icon, reversed }) {
         <div className="w-16 h-16 rounded-2xl bg-[#c4ff00]/10 flex items-center justify-center border border-[#c4ff00]/20 mb-6 shadow-[0_0_30px_rgba(196,255,0,0.15)]">
           <Icon size={32} className="text-[#c4ff00]" />
         </div>
-        <h3 className="text-3xl md:text-4xl font-bold text-white leading-tight">{title}</h3>
-        <p className="text-lg text-surface-400 leading-relaxed">{description}</p>
+        <h3 className="text-2xl md:text-4xl font-bold text-white leading-tight">{title}</h3>
+        <p className="text-base md:text-lg text-surface-400 leading-relaxed">{description}</p>
         <button className="btn-outline flex items-center gap-2">
           Learn more <ChevronRight size={16} />
         </button>
       </div>
       <div className="flex-1 w-full relative group">
         <div className="absolute inset-0 bg-gradient-to-r from-[#c4ff00]/20 to-transparent blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-        <div className="h-[300px] w-full rounded-3xl home-card flex items-center justify-center border border-[#c4ff00]/10 relative z-10 overflow-hidden">
+        <div className="h-[250px] md:h-[300px] w-full rounded-3xl home-card flex items-center justify-center border border-[#c4ff00]/10 relative z-10 overflow-hidden">
            {/* Abstract visual representation */}
            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#c4ff00 1px, transparent 1px), linear-gradient(90deg, #c4ff00 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
            <Icon size={120} className="text-[#c4ff00]/20" />
@@ -62,8 +62,8 @@ function ComparisonTable() {
   ];
 
   return (
-    <div className="overflow-x-auto w-full home-card p-6 border-[#c4ff00]/20">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto w-full home-card p-4 sm:p-6 border-[#c4ff00]/20">
+      <table className="w-full text-xs md:text-sm">
         <thead>
           <tr className="border-b border-surface-700/50">
             <th className="text-left py-4 px-4 text-[#c4ff00] font-semibold text-base">Feature</th>
@@ -97,18 +97,18 @@ export default function LandingPage({ onGetStarted, onboardingComplete, connecte
 
 
       {/* ── Hero Section (Ko-fi style Friendly & Bold) ─── */}
-      <section className="relative pt-40 md:pt-52 pb-24 px-4 flex flex-col items-center text-center">
+      <section className="relative pt-32 md:pt-40 pb-20 px-4 flex flex-col items-center text-center">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(196,255,0,0.15)_0%,transparent_50%)] z-0" />
         
         <div className="relative z-10 max-w-[900px] mx-auto w-full">
           
           
-          <h1 className="animate-slide-up text-5xl sm:text-6xl md:text-8xl font-black tracking-tight leading-[1.1] mb-8">
-            Fund your passio<span className="text-[#c4ff00]">n</span>. <br />
-            Make it on-chai<span className="text-[#c4ff00]">n</span>.
+          <h1 className="animate-slide-up text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.1] mb-8">
+            Fund your <span className="whitespace-nowrap">passio<span className="text-[#c4ff00]">n</span>.</span> <br className="hidden sm:block" />
+            Make it <span className="whitespace-nowrap">on-chai<span className="text-[#c4ff00]">n</span>.</span>
           </h1>
           
-          <p className="animate-slide-up text-surface-300 text-lg md:text-2xl max-w-2xl mx-auto mb-10 leading-relaxed font-light" style={{ animationDelay: '0.1s' }}>
+          <p className="animate-slide-up text-surface-300 text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light" style={{ animationDelay: '0.1s' }}>
             Accept tips, sell memberships, and grow your audience with zero platform fees. Instantly cash out to fiat anywhere.
           </p>
 
@@ -128,8 +128,8 @@ export default function LandingPage({ onGetStarted, onboardingComplete, connecte
       {/* ── Creators Grid (Ko-fi Community Discovery Style) ─── */}
       <section id="creators" className="relative z-10 py-16 border-y border-surface-800/60 bg-surface-900/20 px-4">
         <div className="max-w-[1200px] mx-auto overflow-hidden">
-          <p className="text-center text-[#c4ff00] font-bold tracking-widest uppercase text-sm mb-10">Join 10,000+ Creators on TipLnk</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <p className="text-center text-[#c4ff00] font-bold tracking-widest uppercase text-[10px] sm:text-sm mb-10">Join 10,000+ Creators on TipLnk</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {[
                { name: 'Voxel Artist', handle: '@voxel.tiplnk.sol', color: 'bg-emerald-500' },
                { name: 'DeFi Analyst', handle: '@defi.tiplnk.sol', color: 'bg-blue-500' },
@@ -151,8 +151,8 @@ export default function LandingPage({ onGetStarted, onboardingComplete, connecte
       {/* ── Feature Blocks ─── */}
       <section id="features" className="relative z-10 py-24 px-4">
         <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-20 max-w-2xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Everything you need, <br/><span className="text-[#c4ff00]">none of the fees.</span></h2>
+          <div className="text-center mb-16 max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-6">Everything you need, <br/><span className="text-[#c4ff00]">none of the fees.</span></h2>
           </div>
 
           <div className="space-y-12 md:space-y-24">
@@ -179,9 +179,9 @@ export default function LandingPage({ onGetStarted, onboardingComplete, connecte
       {/* ── Comparison Compare ─── */}
       <section id="compare" className="relative z-10 py-24 px-4 bg-surface-900/30 border-t border-surface-800/50">
         <div className="max-w-[1000px] mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-white mb-6">No Match.</h2>
-            <p className="text-surface-400 text-lg max-w-md mx-auto">The best alternative to traditional platforms is built on Solana.</p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-6">No Match.</h2>
+            <p className="text-surface-400 text-base max-w-md mx-auto">The best alternative to traditional platforms is built on Solana.</p>
           </div>
           <ComparisonTable />
         </div>
@@ -194,8 +194,8 @@ export default function LandingPage({ onGetStarted, onboardingComplete, connecte
           <div className="w-20 h-20 bg-[#c4ff00]/10 rounded-full flex items-center justify-center mb-8 border border-[#c4ff00]/30 shadow-[0_0_30px_rgba(196,255,0,0.3)]">
             <Zap size={40} className="text-[#c4ff00]" />
           </div>
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-8">Start your era.</h2>
-          <button onClick={onGetStarted} className="btn-primary text-lg !px-12 !py-5 shadow-[0_0_40px_rgba(196,255,0,0.4)]">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-8">Start your era.</h2>
+          <button onClick={onGetStarted} className="btn-primary text-base !px-10 !py-4 shadow-[0_0_40px_rgba(196,255,0,0.4)]">
             Claim Your Page
           </button>
         </div>

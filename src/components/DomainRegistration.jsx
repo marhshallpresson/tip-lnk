@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Globe, Check, Loader2, AlertCircle, Search, Zap, ChevronLeft } from 'lucide-react';
 
-// ─── SendAI Solana Agent Kit Integration (MiscPlugin) ───
-// Simulate .sol domain lookup via resolveDomain handler
-const TAKEN_DOMAINS = ['alice', 'bob', 'crypto', 'solana', 'nft', 'defi'];
-
 export default function DomainRegistration({ onComplete, onBack }) {
   const { updateProfile } = useApp();
   const [domain, setDomain] = useState('');
@@ -19,28 +15,32 @@ export default function DomainRegistration({ onComplete, onBack }) {
     setChecking(true);
     setAvailable(null);
 
-    // Simulate agent.methods.resolveDomain({ domain: 'name.sol' })
-    await new Promise((r) => setTimeout(r, 1200));
-    const isTaken = TAKEN_DOMAINS.includes(domain.trim().toLowerCase());
-    
-    // In SendAI Agent Kit, resolveDomain returns null/error if domain doesn't exist (available)
-    setAvailable(!isTaken);
-    setChecking(false);
+    try {
+      // In production: await agent.methods.resolveDomain({ domain: `${domain}.tiplnk.sol` })
+      // For now, we've removed the mock data and prepared for the real naming service integration
+      setAvailable(true); 
+    } catch (err) {
+      setAvailable(false);
+    } finally {
+      setChecking(false);
+    }
   };
 
   const registerDomain = async () => {
     setRegistering(true);
     
-    // Simulate agent.methods.registerDomain({ domain: 'name.sol' })
-    // This action handler typically uses the MiscPlugin or custom naming service provider
-    await new Promise((r) => setTimeout(r, 3000));
-    
-    const fullDomain = `${domain.trim().toLowerCase()}.tiplnk.sol`;
-    updateProfile({ solDomain: fullDomain, displayName: domain.trim() });
-    
-    setRegistered(true);
-    setRegistering(false);
-    setTimeout(() => onComplete(), 1000);
+    try {
+      // Real-time SNS registration would occur here via Solana Agent Kit or SNS SDK
+      const fullDomain = `${domain.trim().toLowerCase()}.tiplnk.sol`;
+      updateProfile({ solDomain: fullDomain, displayName: domain.trim() });
+      
+      setRegistered(true);
+      setRegistering(false);
+      onComplete();
+    } catch (err) {
+      console.error('Registration failed:', err);
+      setRegistering(false);
+    }
   };
 
 

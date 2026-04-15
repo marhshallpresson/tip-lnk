@@ -58,7 +58,7 @@ export default function WalletDropdown() {
           <div className="px-4 py-2">
             <p className="text-xs font-semibold text-surface-500 mb-2">Creator Portal</p>
             <div className="space-y-1">
-              <button onClick={() => navTo(`/u/${profile.solDomain || 'creator'}`)} className="w-full flex items-center justify-between text-sm text-surface-200 hover:text-white hover:bg-surface-800/80 p-2 rounded-lg transition-colors">
+              <button onClick={() => navTo(`/${profile.solDomain || 'creator'}`)} className="w-full flex items-center justify-between text-sm text-surface-200 hover:text-white hover:bg-surface-800/80 p-2 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
                   <User size={16} className="text-surface-400" />
                   <span>My Tip Page</span>

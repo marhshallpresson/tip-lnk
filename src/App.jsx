@@ -2,12 +2,8 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { SolanaWalletProvider } from './contexts/WalletContext';
 import { AppProvider, useApp } from './contexts/AppContext';
 import StepIndicator from './components/StepIndicator';
-import WalletConnect from './components/WalletConnect';
-import RoleSelection from './components/RoleSelection';
-import CategorySelection from './components/CategorySelection';
 import DomainRegistration from './components/DomainRegistration';
 import SocialLinking from './components/SocialLinking';
-import ProfileEditor from './components/ProfileEditor';
 import OnboardingComplete from './components/OnboardingComplete';
 import WalletModal from './components/WalletModal';
 import LandingPage from './components/LandingPage';
@@ -20,9 +16,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 're
 
 // Lazy load components for performance
 const OverviewTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.OverviewTab })));
-const PortfolioTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.PortfolioTab })));
 const TransactionHistoryTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.TransactionHistoryTab })));
-const SimulationTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.SimulationTab })));
 
 const TermsOfService = lazy(() => import('./components/legal/TermsOfService'));
 const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy'));
@@ -88,12 +82,9 @@ function AppContent() {
               <div className="min-h-[calc(100vh-80px)] mt-20 flex flex-col items-center justify-center p-6">
                 <StepIndicator current={onboardingStep} />
                 <div className="w-full max-w-3xl">
-                  {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
-                  {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} />}
+                  {onboardingStep === 0 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
+                  {onboardingStep === 1 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
+                  {onboardingStep === 2 && <OnboardingComplete onFinish={finishOnboarding} />}
                 </div>
               </div>
             </RequireAuth>
@@ -108,7 +99,7 @@ function AppContent() {
           } />
 
           <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
-          <Route path="/u/:username" element={<CreatorPage />} />
+          <Route path="/:username" element={<CreatorPage />} />
           
           <Route path="/terms" element={
             <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
@@ -136,27 +127,69 @@ function AppContent() {
 function AuthCallbackHandler() {
   const { platform } = useParams();
   const navigate = useNavigate();
+  const { updateProfile } = useApp();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
 
     if (code) {
-      console.log(`OAuth2: Received authorization from ${platform}`);
-      // In a real system, the backend would verify this code.
-      // We redirect back to onboarding to complete the Wallet Signature.
-      setTimeout(() => {
-        navigate(`/onboarding?step=1&oauth_success=${platform}`);
-      }, 1500);
+      const exchangeCode = async () => {
+        try {
+          const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.eitherway.ai';
+          const response = await fetch(`${API_BASE}/api/auth/${platform}/callback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, redirectUri: `${window.location.origin}/auth/callback/${platform}` })
+          });
+          
+          if (!response.ok) throw new Error('Identity provider rejected the authorization code.');
+          const data = await response.json();
+          
+          // Update profile with real verified social data
+          updateProfile({
+            socials: {
+              [platform]: data.username,
+              [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true
+            }
+          });
+
+          // If in a popup, message the opener and close
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OAUTH_SUCCESS', platform }, window.location.origin);
+            window.close();
+          } else {
+            navigate(`/onboarding?step=1&oauth_success=${platform}`);
+          }
+        } catch (err) {
+          console.error('OAuth Exchange Error:', err);
+          setError(err.message);
+          if (!window.opener) {
+            setTimeout(() => navigate('/onboarding'), 3000);
+          }
+        }
+      };
+      exchangeCode();
     }
-  }, [platform, navigate]);
+  }, [platform, navigate, updateProfile]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-950">
       <div className="text-center animate-fade-in">
-        <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-        <h2 className="text-2xl font-bold">Verifying Account</h2>
-        <p className="text-surface-400 mt-2 italic">Securing link with {platform} infrastructure...</p>
+        {error ? (
+          <div className="text-accent-red">
+            <h2 className="text-2xl font-bold">Verification Failed</h2>
+            <p className="mt-2">{error}</p>
+            <p className="text-surface-500 text-sm mt-4 italic">Redirecting back...</p>
+          </div>
+        ) : (
+          <>
+            <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 className="text-2xl font-bold">Verifying Account</h2>
+            <p className="text-surface-400 mt-2 italic">Securing link with {platform} infrastructure...</p>
+          </>
+        )}
       </div>
     </div>
   );

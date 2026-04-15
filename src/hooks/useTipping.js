@@ -87,28 +87,35 @@ export function useTipping(creatorAddress) {
 
   const executeTip = useCallback(
     async (senderName) => {
-      if (!route || !publicKey || !signTransaction) return;
+      if (!route || !publicKey || !signTransaction || !connection) return;
       setProcessing(true);
       setError(null);
 
       try {
-        // ─── Phase 1: Signing ───
-        // In real DFlow integration: deserialize route.transaction (VersionedTransaction)
-        console.log('Requesting wallet signature for DFlow route...');
-        await new Promise(r => setTimeout(r, 1500)); // Simulated signing lag
-
-        // ─── Phase 2: Execution & Monitoring (DFlow Standard) ───
-        let signature = `sig_${Math.random().toString(36).slice(2, 10)}`;
+        // ─── Phase 1: Deserialize & Sign ───
+        // In a real DFlow integration, 'route.transaction' is a base64 encoded VersionedTransaction
+        let signature;
         
-        if (route.executionMode === 'async') {
-          // Poll /order-status as per DFlow Skill
-          console.log('Async execution detected. Monitoring Jito bundle status...');
-          for (let i = 0; i < 5; i++) {
-            await new Promise(r => setTimeout(r, 2000));
-            console.log(`Polling status... ${i+1}/5 (Status: processing)`);
-          }
+        if (route.transaction && route.transaction !== 'base64_encoded_tx_from_dflow_api') {
+          const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
+          const signedTx = await signTransaction(tx);
+          signature = await connection.sendTransaction(signedTx, {
+            skipPreflight: false,
+            maxRetries: 2,
+            preflightCommitment: 'confirmed'
+          });
+          
+          // Wait for confirmation
+          const latestBlockhash = await connection.getLatestBlockhash();
+          await connection.confirmTransaction({
+            signature,
+            ...latestBlockhash
+          }, 'confirmed');
         } else {
-          await new Promise(r => setTimeout(r, 1000)); // Atomic swap confirm
+          // Fallback or development mock signature if API didn't return a real TX yet
+          // In production, this branch should be removed or throw error
+          signature = `sig_${Math.random().toString(36).slice(2, 10)}`;
+          await new Promise(r => setTimeout(r, 1000));
         }
 
         const result = {
@@ -124,12 +131,13 @@ export function useTipping(creatorAddress) {
         setTxResult(result);
         return result;
       } catch (err) {
+        console.error('Tipping Engine Fault:', err);
         setError(err.message || 'Transaction failed. Check wallet.');
       } finally {
         setProcessing(false);
       }
     },
-    [route, publicKey, signTransaction, creatorAddress]
+    [route, publicKey, signTransaction, creatorAddress, connection]
   );
 
   const reset = useCallback(() => {

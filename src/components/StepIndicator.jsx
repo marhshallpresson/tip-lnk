@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 
-const STEPS = ['Choose Role', 'Identify Niche', 'Claim URL', 'Verify Socials', 'Customize', 'Ready!'];
+const STEPS = ['Identity', 'Socials', 'Ready!'];
 
 export default function StepIndicator({ current }) {
   return (

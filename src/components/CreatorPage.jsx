@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { getProfile } from '../utils/database';
 import TipWidget from './TipWidget';
 import {
   Zap,
@@ -13,7 +14,8 @@ import {
   MessageCircle,
   Trophy,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 
 /**
@@ -22,7 +24,40 @@ import {
  */
 export default function CreatorPage() {
   const { username } = useParams();
-  const { profile, tipsReceived, totalTipsUSDC } = useApp();
+  const location = useLocation();
+  const [creatorProfile, setCreatorProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const query = new URLSearchParams(location.search);
+  const isEmbed = query.get('embed') === 'true';
+  const theme = query.get('theme') || 'dark';
+  const accent = query.get('accent') || '#00D265';
+
+  useEffect(() => {
+    const fetchCreator = async () => {
+      setLoading(true);
+      try {
+        // Fetch from real database via our utility
+        const data = await getProfile(username);
+        setCreatorProfile(data);
+      } catch (err) {
+        console.error('Failed to load creator profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCreator();
+  }, [username]);
+
+  const profile = creatorProfile || {
+    displayName: username,
+    solDomain: username.endsWith('.sol') ? username : null,
+    tipsReceived: [],
+    totalTipsUSDC: 0
+  };
+
+  const tipsReceived = profile.tipsReceived || [];
+  const totalTipsUSDC = profile.totalTipsUSDC || 0;
 
   const supporterCount = useMemo(() => {
     const unique = new Set(tipsReceived.map(t => t.sender));
@@ -31,16 +66,36 @@ export default function CreatorPage() {
 
   const progress = Math.min((totalTipsUSDC / 5000) * 100, 100);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-main-bg flex flex-col items-center justify-center">
+        <Loader2 size={40} className="animate-spin text-brand-500 mb-4" />
+        <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Loading Creator Profile...</p>
+      </div>
+    );
+  }
+
+  if (isEmbed) {
+    return (
+      <div className={`min-h-screen ${theme === 'light' ? 'bg-white text-black' : 'bg-main-bg text-white'} p-4 flex flex-col items-center justify-center font-sans`}>
+        <TipWidget fixedRecipient={{
+          username: profile.solDomain || profile.displayName || username,
+          address: profile.walletAddress
+        }} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-main-bg text-white font-sans">
       {/* Professional Banner */}
-      <div className="h-64 w-full relative bg-busha-green overflow-hidden">
+      <div className="h-48 w-full relative bg-busha-green overflow-hidden">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,rgba(0,210,101,0.3)_0%,transparent_100%)]" />
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-main-bg/80" />
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-6 relative mt-[-100px]">
-        <div className="flex flex-col lg:flex-row gap-12">
+      <div className="max-w-[1200px] mx-auto px-6 relative mt-[-80px]">
+        <div className="flex flex-col lg:flex-row gap-8">
 
           {/* Main Content */}
           <div className="flex-1 space-y-8 pb-20">
@@ -56,9 +111,9 @@ export default function CreatorPage() {
               </div>
               <div className="flex-1 pb-2">
                 <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-4xl font-black text-white">{profile.solDomain || profile.displayName || username}</h1>
+                  <h1 className="text-3xl font-black text-white">{profile.solDomain || profile.displayName || username}</h1>
                   {profile.solDomain && <span className="badge-brand">SNS</span>}
-                  <ShieldCheck size={24} className="text-brand-500" />
+                  <ShieldCheck size={20} className="text-brand-500" />
                 </div>
                 <p className="text-surface-500 font-bold">Artist & Solana Creator</p>
               </div>
@@ -71,9 +126,9 @@ export default function CreatorPage() {
               <MetricCard label="Network" value="Solana" />
             </div>
 
-            <div className="glass-card p-8">
-              <h2 className="text-2xl font-black mb-6">About</h2>
-              <p className="text-surface-400 leading-relaxed text-lg">
+            <div className="glass-card p-6">
+              <h2 className="text-xl font-black mb-4">About</h2>
+              <p className="text-surface-400 leading-relaxed text-base">
                 Verified creator on the TipLnk network. Supporting the future of decentralized finance and digital ownership on Solana.
               </p>
             </div>
@@ -112,14 +167,12 @@ export default function CreatorPage() {
           {/* Sticky Side Widget */}
           <div className="w-full lg:w-[420px] shrink-0">
             <div className="sticky top-24">
-              <TipWidget />
+              <TipWidget fixedRecipient={{
+                username: profile.solDomain || profile.displayName || username,
+                address: profile.walletAddress // Ensure we have this or equivalent
+              }} />
 
-              <div className="mt-6 bg-brand-500/5 border border-brand-500/10 rounded-[24px] p-6 text-center">
-                <Star size={24} className="text-brand-500 mx-auto mb-3" />
-                <h3 className="font-bold text-white mb-2">Exclusive Memberships</h3>
-                <p className="text-sm text-surface-500 mb-6 px-4 leading-relaxed">Join the inner circle and unlock unique on-chain rewards and direct access.</p>
-                <button className="w-full btn-secondary !text-xs opacity-50 cursor-not-allowed">Coming Soon</button>
-              </div>
+
             </div>
           </div>
         </div>
@@ -130,8 +183,8 @@ export default function CreatorPage() {
 
 function MetricCard({ label, value, color = "text-white" }) {
   return (
-    <div className="bg-surface-900 border border-surface-800 p-6 rounded-[24px] text-center">
-      <p className={`font-bold text-2xl mb-1 ${color}`}>{value}</p>
+    <div className="bg-surface-900 border border-surface-800 p-4 rounded-[24px] text-center">
+      <p className={`font-bold text-xl mb-1 ${color}`}>{value}</p>
       <p className="text-[10px] font-black text-surface-500 uppercase tracking-widest">{label}</p>
     </div>
   );

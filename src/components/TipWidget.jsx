@@ -9,7 +9,7 @@ import {
   Loader2,
   Check,
   ChevronDown,
-  Zap,
+  Send,
   Info,
   RefreshCw,
   Eye,
@@ -28,47 +28,62 @@ import {
  * Advanced Creator-to-Creator Tipping Widget
  * Features: Username search, transaction details/invoice, real-time routing.
  */
-export default function TipWidget() {
+export default function TipWidget({ fixedRecipient = null }) {
   const { publicKey } = useWallet();
   const { addTip, profile } = useApp();
   const { connection } = useConnection();
   const { assessRecipient } = useSecurityGuardian();
 
-  const [recipientInput, setRecipientInput] = useState('');
-  const [resolvedAddress, setResolvedAddress] = useState(null);
+  const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
+  const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
   const [isResolving, setIsResolving] = useState(false);
   const [txStep, setTxStep] = useState('configure'); // configure, simulate, review, processing, done
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
   const [note, setNote] = useState('');
 
-  // ─── Resolve Recipient Address ───
+  // ─── Resolve Recipient Address (Only if not fixed) ───
   useEffect(() => {
-    const resolve = async () => {
-      if (!recipientInput.includes('.') && recipientInput.length < 32) {
+    if (fixedRecipient) {
+      setResolvedAddress(fixedRecipient.address);
+      return;
+    }
+    
+    const resolveHandle = async () => {
+      if (!recipientInput || recipientInput.length < 3) {
         setResolvedAddress(null);
         return;
       }
 
       setIsResolving(true);
       try {
-        if (recipientInput.endsWith('.sol')) {
-          // In production: Use SNS SDK to resolve
-          // For now, we simulate a resolution or use it as a string
-          await new Promise(r => setTimeout(r, 800));
-          setResolvedAddress('Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'); // Example resolved
-        } else if (recipientInput.length >= 32) {
+        // 1. Check if it's already a valid SOL address
+        if (recipientInput.length >= 32 && recipientInput.length <= 44) {
           setResolvedAddress(recipientInput);
+          setIsResolving(false);
+          return;
         }
+
+        // 2. Simulate SNS/Handle resolution (e.g., test.sol)
+        // In production: await agent.resolve(recipientInput)
+        setTimeout(() => {
+          if (recipientInput.includes('.') || recipientInput.length > 5) {
+            // Mock destination for demo
+            setResolvedAddress('HN7cABqLq46Es1jh92dQQisG62sr6pD8HCHLSRsfK34Z');
+          } else {
+            setResolvedAddress(null);
+          }
+          setIsResolving(false);
+        }, 500);
       } catch (err) {
+        console.error('Resolution error:', err);
         setResolvedAddress(null);
-      } finally {
         setIsResolving(false);
       }
     };
 
-    const timer = setTimeout(resolve, 500);
+    const timer = setTimeout(resolveHandle, 500);
     return () => clearTimeout(timer);
-  }, [recipientInput]);
+  }, [recipientInput, fixedRecipient]);
 
   const recipientRisk = assessRecipient(resolvedAddress);
 
@@ -115,8 +130,10 @@ export default function TipWidget() {
 
   const handleReset = () => {
     reset();
-    setRecipientInput('');
-    setResolvedAddress(null);
+    if (!fixedRecipient) {
+      setRecipientInput('');
+      setResolvedAddress(null);
+    }
     setNote('');
     setTxStep('configure');
   };
@@ -172,34 +189,40 @@ export default function TipWidget() {
       
       <div className="text-center mb-8">
         <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-4 border border-brand-500/20">
-          <Zap size={28} className="text-brand-400" />
+          <Send size={28} className="text-brand-400" />
         </div>
-        <h3 className="text-2xl font-black mb-1 tracking-tight">Creator Transfer</h3>
-        <p className="text-surface-400 text-sm">Direct on-chain earning distribution</p>
+        <h3 className="text-2xl font-black mb-1 tracking-tight">
+          {fixedRecipient ? `Tip ${fixedRecipient.username}` : 'Creator Transfer'}
+        </h3>
+        <p className="text-surface-400 text-sm">
+          {fixedRecipient ? 'Support this creator directly on-chain' : 'Direct on-chain earning distribution'}
+        </p>
       </div>
 
-      {/* Recipient Search */}
-      <div className="mb-6">
-        <label className="text-xs font-bold text-surface-500 uppercase tracking-widest mb-2 block">Recipient Creator</label>
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500">
-            {isResolving ? <Loader2 size={18} className="animate-spin text-brand-400" /> : <Search size={18} />}
-          </div>
-          <input 
-            type="text"
-            className="input-field w-full pl-12 pr-4"
-            placeholder="Username.sol or wallet address"
-            value={recipientInput}
-            onChange={(e) => setRecipientInput(e.target.value)} 
-          />
-          {resolvedAddress && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-accent-green/10 text-accent-green px-2 py-1 rounded-md border border-accent-green/20">
-              <ShieldCheck size={12} />
-              <span className="text-[10px] font-bold uppercase">Verified</span>
+      {/* Recipient Search (Only if not fixed) */}
+      {!fixedRecipient && (
+        <div className="mb-6">
+          <label className="text-xs font-bold text-surface-500 uppercase tracking-widest mb-2 block">Recipient Creator</label>
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500">
+              {isResolving ? <Loader2 size={18} className="animate-spin text-brand-400" /> : <Search size={18} />}
             </div>
-          )}
+            <input 
+              type="text"
+              className="input-field w-full pl-12 pr-4"
+              placeholder="Username.sol or wallet address"
+              value={recipientInput}
+              onChange={(e) => setRecipientInput(e.target.value)} 
+            />
+            {resolvedAddress && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-accent-green/10 text-accent-green px-2 py-1 rounded-md border border-accent-green/20">
+                <ShieldCheck size={12} />
+                <span className="text-[10px] font-bold uppercase">Verified</span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Amount & Token */}
       <div className="grid grid-cols-1 gap-4 mb-6">
@@ -344,8 +367,8 @@ export default function TipWidget() {
             disabled={!resolvedAddress || !amount || processing}
             className="btn-primary w-full flex items-center justify-center gap-3 !py-4 shadow-xl shadow-brand-500/10 group"
           >
-            {processing ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} className="group-hover:scale-110 transition-transform" />}
-            Prepare Transaction
+            {processing ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} className="group-hover:scale-110 transition-transform" />}
+            Send
           </button>
         ) : txStep === 'review' ? (
           <div className="flex gap-3">

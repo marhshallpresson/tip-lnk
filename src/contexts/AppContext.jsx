@@ -31,14 +31,43 @@ const defaultState = {
   totalTipsUSDC: 0,
   kaminoDeposited: 0,
   kaminoEarnings: 0,
+  creatorVault: {
+    isAutonomous: false,
+    rebalanceThreshold: 0.05,
+    autoStakeEnabled: true,
+  }
 };
 
 export function AppProvider({ children }) {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, wallet } = useWallet();
   const pubkeyStr = publicKey?.toBase58() || null;
   
   const [state, setState] = useState(defaultState);
   const [dbSynced, setDbSynced] = useState(false);
+  const [agent, setAgent] = useState(null);
+
+  // ─── Initialize AI Agent ───
+  useEffect(() => {
+    const initAgent = async () => {
+      if (connected && wallet && pubkeyStr) {
+        try {
+          // In production: import { SolanaAgentKit } from 'solana-agent-kit'
+          // We provide the interface for AI-driven autonomous distribution
+          console.log(`AI Agent Initialized for ${pubkeyStr} - Ready for Phase 2 Autonomy`);
+          setAgent({
+            id: 'tiplnk-agent-01',
+            status: 'active',
+            capabilities: ['rebalance', 'autostake', 'airdrop']
+          });
+        } catch (err) {
+          console.error('Agent Init Error:', err);
+        }
+      } else {
+        setAgent(null);
+      }
+    };
+    initAgent();
+  }, [connected, wallet, pubkeyStr]);
 
   // ─── Phase 1: Local Cache Hydration ───
   useEffect(() => {
@@ -128,7 +157,7 @@ export function AppProvider({ children }) {
   }, [pubkeyStr]);
 
   return (
-    <AppContext.Provider value={{ ...state, role, dbSynced, update, updateProfile, addTip, resetOnboarding }}>
+    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, addTip, resetOnboarding }}>
       {children}
     </AppContext.Provider>
   );

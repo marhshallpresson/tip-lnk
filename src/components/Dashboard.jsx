@@ -9,13 +9,13 @@ import TipWidget from './TipWidget';
 import PayoutPanel from './PayoutPanel';
 import CreatorAnalyticsPanel from './CreatorAnalyticsPanel';
 import ShareQRPanel from './ShareQRPanel';
-import SwapPanel from './SwapPanel';
 import {
   Wallet, Globe, Image as ImageIcon, DollarSign, TrendingUp, Copy, Check, LogOut,
   BarChart3, Gift, ArrowRight, RefreshCw, Zap, Eye, Send, AlertCircle,
   ArrowUpRight, ArrowDownLeft, Repeat, MoreHorizontal, QrCode, Share2,
   ExternalLink, Clock, CheckCircle, XCircle, Loader2, CreditCard,
-  Ticket, PieChart, Shield, ShieldCheck, Vault, ArrowRightLeft, Code as CodeIcon
+  Ticket, PieChart, Shield, ShieldCheck, Vault, ArrowRightLeft, Code as CodeIcon,
+  Users, Heart, FileJson, ChevronRight
 } from 'lucide-react';
 
 import ReferralModal from './ReferralModal';
@@ -23,11 +23,13 @@ import EmbedGenerator from './EmbedGenerator';
 
 export default function Dashboard() {
   const { publicKey, disconnect } = useWallet();
-  const { profile, resetOnboarding } = useApp();
+  const { profile, resetOnboarding, totalTipsUSDC } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
+  const port = useWalletPortfolio();
   const [copied, setCopied] = useState(false);
   const [isReferralOpen, setIsReferralOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const address = publicKey?.toBase58() || '';
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
@@ -44,109 +46,128 @@ export default function Dashboard() {
   };
 
   const menuItems = [
-    { id: 'overview', label: 'My assets', icon: Wallet },
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'tips', label: 'Tip Jar', icon: Gift },
     { id: 'embed', label: 'Share & Embed', icon: CodeIcon },
-    { id: 'analytics', label: 'Explore', icon: Globe },
+    { id: 'analytics', label: 'Analytics', icon: PieChart },
     { id: 'history', label: 'Transactions', icon: Clock },
-    { id: 'yield', label: 'Savings', icon: TrendingUp },
+    { id: 'payouts', label: 'Withdraw', icon: DollarSign },
     { id: 'settings', label: 'Settings', icon: Shield },
   ];
 
   return (
-    <div className="min-h-screen bg-main-bg text-white font-sans flex flex-col md:flex-row">
+    <div className="flex h-screen bg-main-bg text-white overflow-hidden font-sans relative">
       <ReferralModal 
         isOpen={isReferralOpen} 
         onClose={() => setIsReferralOpen(false)} 
         referralCode={profile.referralCode}
       />
 
-      {/* Professional Sidebar */}
-      <aside className="w-full md:w-72 bg-main-bg border-r border-surface-900 p-6 flex flex-col shrink-0">
-        <div className="flex items-center gap-2 mb-10 px-2">
-          <div className="w-8 h-8 rounded-lg bg-brand-500/20 flex items-center justify-center">
-             <Zap size={20} className="text-brand-500" />
-          </div>
-          <span className="text-xl font-black tracking-tight">Personal</span>
-        </div>
+      {/* --- MOBILE HEADER --- */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface-950/80 backdrop-blur-md border-b border-surface-900 flex items-center justify-between px-6 z-40">
+        
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-xl bg-surface-900 border border-surface-800 text-surface-400"
+        >
+          {isSidebarOpen ? <XCircle size={20} /> : <MoreHorizontal size={20} />}
+        </button>
+      </div>
 
-        <nav className="flex-1 space-y-1">
+      {/* --- SIDEBAR --- */}
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      <aside className={`
+        fixed md:static inset-y-0 left-0 w-72 border-r border-surface-900 flex flex-col shrink-0 bg-surface-950 md:bg-surface-950/20 z-50 transition-transform duration-300 transform
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        
+
+        {/* Navigation Menu */}
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname.includes(item.id) || (item.id === 'overview' && location.pathname === '/dashboard');
             return (
               <button
                 key={item.id}
-                onClick={() => navigate(`/dashboard/${item.id === 'overview' ? '' : item.id}`)}
-                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all font-bold text-sm ${
+                onClick={() => {
+                  navigate(`/dashboard/${item.id === 'overview' ? '' : item.id}`);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
                   isActive 
-                    ? 'bg-surface-900 text-white' 
-                    : 'text-surface-500 hover:text-white hover:bg-surface-950'
+                    ? 'bg-surface-900 border border-surface-800 text-brand-500 shadow-sm' 
+                    : 'text-surface-500 hover:text-white hover:bg-surface-950/50'
                 }`}
               >
-                <item.icon size={20} className={isActive ? 'text-brand-500' : ''} />
+                <item.icon size={18} />
                 {item.label}
               </button>
             );
           })}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-surface-900">
-           <button onClick={handleDisconnect} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-surface-500 hover:text-white transition-all font-bold text-sm">
-             <LogOut size={20} />
-             Logout
-           </button>
+        {/* User Identity Section */}
+        <div className="p-6 border-t border-surface-900 bg-surface-950/40 mt-auto">
+           <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-surface-800 border border-surface-700 overflow-hidden shrink-0">
+                {profile.nftAvatar?.image ? (
+                  <img src={profile.nftAvatar.image} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-600/20 to-brand-800/10">
+                    <ImageIcon size={18} className="text-surface-600" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-sm truncate">{profile.solDomain || profile.displayName || 'Creator'}</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] font-mono text-surface-500 uppercase">{shortAddress}</span>
+                  <button onClick={copyAddress} className="text-surface-600 hover:text-brand-500 transition-colors">
+                    {copied ? <Check size={10} className="text-brand-500" /> : <Copy size={10} />}
+                  </button>
+                </div>
+              </div>
+           </div>
+           
+           <div className="grid grid-cols-2 gap-2">
+             <a 
+               href={`https://solscan.io/account/${address}`}
+               target="_blank"
+               rel="noopener noreferrer"
+               className="btn-secondary !text-[10px] !py-2 flex items-center justify-center gap-1 bg-surface-900/50 border-surface-800"
+             >
+               Explore <ExternalLink size={10} />
+             </a>
+             <button 
+               onClick={handleDisconnect}
+               className="btn-secondary !text-[10px] !py-2 flex items-center justify-center gap-1 bg-surface-900/50 border-surface-800 text-accent-red hover:bg-accent-red/5"
+             >
+               Logout <LogOut size={10} />
+             </button>
+           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
-        {/* Top bar */}
-        <header className="h-20 border-b border-surface-900 px-8 flex items-center justify-between sticky top-0 bg-main-bg z-20">
-          <div className="md:hidden flex items-center gap-2">
-             <Zap size={20} className="text-brand-500" />
-             <span className="font-black">TipLnk</span>
-          </div>
-          
-          <div className="hidden md:flex flex-1 max-w-md">
-            {/* Search Placeholder like Busha */}
-            <div className="w-full bg-surface-900 border border-surface-800 rounded-full px-4 h-11 flex items-center gap-3 text-surface-500">
-               <Globe size={18} />
-               <span className="text-sm">Search assets, creators...</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="p-2.5 rounded-full hover:bg-surface-900 text-surface-400 transition-all">
-              <Clock size={20} />
-            </button>
-            <button className="p-2.5 rounded-full hover:bg-surface-900 text-surface-400 transition-all">
-              <Zap size={20} />
-            </button>
-            
-            <div className="h-10 w-px bg-surface-900 mx-2" />
-
-            <div className="flex items-center gap-3 pl-2 cursor-pointer group">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold leading-tight group-hover:text-brand-400 transition-colors">{profile.displayName || 'Creator'}</p>
-                <p className="text-[10px] text-surface-500 font-mono mt-0.5">{shortAddress}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-surface-900 border border-surface-800 flex items-center justify-center overflow-hidden">
-                {profile.nftAvatar?.image ? (
-                   <img src={profile.nftAvatar.image} alt="" className="w-full h-full object-cover" />
-                ) : (
-                   <ImageIcon size={18} className="text-surface-700" />
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-8">
+      {/* --- MAIN CONTENT --- */}
+      <main className="flex-1 overflow-y-auto bg-[#0a0d11] pt-16 md:pt-0">
+        <div className="p-4 md:p-6 lg:p-8 max-w-6xl mx-auto">
           <Routes>
             <Route index element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
             <Route path="overview" element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
-            <Route path="embed" element={<EmbedGenerator handle={profile.handle} profileUrl={`${window.location.origin}/u/${profile.handle}`} />} />
+            <Route path="tips" element={<TipWidget />} />
+            <Route path="embed" element={<EmbedGenerator handle={profile.handle} profileUrl={`${window.location.origin}/${profile.handle}`} />} />
             <Route path="analytics" element={<CreatorAnalyticsPanel />} />
             <Route path="history" element={<TransactionHistoryTab />} />
+            <Route path="payouts" element={<PayoutPanel />} />
+            <Route path="settings" element={<SettingTab onInvite={() => setIsReferralOpen(true)} />} />
+            <Route path="*" element={<Navigate to="overview" replace />} />
           </Routes>
         </div>
       </main>
@@ -155,7 +176,97 @@ export default function Dashboard() {
 }
 
 /* ─── Overview Tab ─── */
-export function OverviewTab({ onInvite }) {
+export function OverviewTab() {
+  const { totalTipsUSDC, tipsReceived, profile } = useApp();
+  const portfolio = useWalletPortfolio();
+
+  const stats = [
+    { label: 'Portfolio Value', value: portfolio.loading ? '...' : `$${portfolio.totalValueUSD.toFixed(0)}`, icon: Wallet, color: 'text-brand-400', bgColor: 'bg-brand-600/10' },
+    { label: 'Tips Earned', value: `$${totalTipsUSDC.toFixed(2)}`, icon: DollarSign, color: 'text-accent-green', bgColor: 'bg-accent-green/10' },
+    { label: 'Tip Count', value: tipsReceived.length, icon: Gift, color: 'text-accent-purple', bgColor: 'bg-accent-purple/10' },
+    { label: 'SOL Balance', value: portfolio.loading ? '...' : `${portfolio.solBalance.toFixed(3)} ◎`, icon: Zap, color: 'text-accent-cyan', bgColor: 'bg-accent-cyan/10' },
+  ];
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat-card">
+            <div className={`w-9 h-9 rounded-xl ${stat.bgColor} flex items-center justify-center mb-3`}>
+              <stat.icon size={16} className={stat.color} />
+            </div>
+            <p className="text-xl md:text-2xl font-bold">{stat.value}</p>
+            <p className="text-surface-500 text-xs mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent Tips */}
+      <div className="glass-card p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Gift size={18} className="text-brand-400" /> Recent Tips
+        </h3>
+        {tipsReceived.length === 0 ? (
+          <div className="text-center py-10">
+            <Gift size={32} className="text-surface-700 mx-auto mb-3" />
+            <p className="text-surface-500 text-sm">No tips yet. Share your tip page to start receiving.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {tipsReceived.slice(0, 5).map((tip, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-surface-800/40 hover:bg-surface-800/60 transition-colors">
+                <div className="flex items-center gap-3">
+                  <ArrowDownLeft size={14} className="text-accent-green" />
+                  <div>
+                    <p className="font-medium text-sm">{tip.sender}</p>
+                    <p className="text-surface-500 text-xs">{tip.inputAmount} {tip.inputToken}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-accent-green text-sm">+${tip.amountUSDC.toFixed(2)}</p>
+                  <p className="text-surface-600 text-xs">{new Date(tip.timestamp).toLocaleTimeString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="glass-card-hover p-5 cursor-pointer group">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-600/10 flex items-center justify-center">
+              <Share2 size={16} className="text-brand-400" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">Share Tip Page</h4>
+              <p className="text-surface-500 text-xs">Copy your link</p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card-hover p-5 cursor-pointer group">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
+              <QrCode size={16} className="text-accent-cyan" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">QR Code</h4>
+              <p className="text-surface-500 text-xs">Scan-to-Reward</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-5 mt-6">
+        <ShareQRPanel />
+      </div>
+    </div>
+  );
+}
+/* ─── Setting Tab ─── */
+export function SettingTab({ onInvite }) {
   const { totalTipsUSDC, profile } = useApp();
   const portfolio = useWalletPortfolio();
 
@@ -175,20 +286,6 @@ export function OverviewTab({ onInvite }) {
       icon: Gift, 
       action: onInvite,
       color: 'text-accent-yellow'
-    },
-    { 
-      id: 'limits', 
-      title: 'Account limits', 
-      desc: 'Know your spending limits', 
-      icon: Shield, 
-      color: 'text-accent-orange'
-    },
-    { 
-      id: 'statement', 
-      title: 'Wallet statement', 
-      desc: 'Your financial history readily available', 
-      icon: FileJson, 
-      color: 'text-accent-green'
     },
   ];
 
@@ -226,57 +323,6 @@ export function OverviewTab({ onInvite }) {
         </div>
       </section>
 
-      {/* Asset Overview Section like Busha Screenshot 3 */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-           <h2 className="text-xl font-bold">My Assets</h2>
-           <div className="flex bg-surface-900 rounded-full p-1">
-             <button className="px-4 py-1.5 rounded-full bg-brand-500 text-black text-xs font-bold">Cash</button>
-             <button className="px-4 py-1.5 rounded-full text-surface-500 text-xs font-bold">Crypto</button>
-           </div>
-        </div>
-
-        <div className="bg-surface-900 border border-surface-800 rounded-[24px] overflow-hidden">
-          <div className="p-8 border-b border-surface-800 bg-surface-950/30">
-            <p className="text-xs font-bold text-surface-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-              Total Balance <Eye size={14} />
-            </p>
-            <h3 className="text-4xl font-black">
-              ${Number(portfolio.totalValueUSD + totalTipsUSDC).toFixed(2)} 
-              <span className="text-surface-500 text-lg ml-2 font-medium">USDC</span>
-            </h3>
-
-            <div className="flex gap-3 mt-8">
-               <button className="flex-1 btn-primary !h-12 !py-0 flex items-center justify-center gap-2">
-                 <ArrowUpRight size={18} /> Trade
-               </button>
-               <button className="flex-1 btn-secondary !h-12 !py-0 flex items-center justify-center gap-2">
-                 <ArrowDownLeft size={18} /> Deposit
-               </button>
-               <button className="flex-1 btn-secondary !h-12 !py-0 flex items-center justify-center gap-2">
-                 <Send size={18} /> Send
-               </button>
-            </div>
-          </div>
-
-          <div className="p-4 space-y-2">
-            <AssetRow 
-              name="USDC" 
-              label="USD Coin" 
-              balance={totalTipsUSDC.toFixed(2)} 
-              value={`$${totalTipsUSDC.toFixed(2)}`} 
-              icon="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
-            />
-            <AssetRow 
-              name="SOL" 
-              label="Solana" 
-              balance={portfolio.solBalance.toFixed(3)} 
-              value={`$${(portfolio.solBalance * 150).toFixed(2)}`} // Mock price
-              icon="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-            />
-          </div>
-        </div>
-      </section>
 
       <ShareQRPanel />
     </div>

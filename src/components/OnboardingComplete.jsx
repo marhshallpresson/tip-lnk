@@ -41,10 +41,7 @@ export default function OnboardingComplete({ onFinish }) {
           <QrCode size={16} className="text-accent-cyan" />
           <span className="text-surface-400 text-[10px] uppercase font-bold">QR Code</span>
         </div>
-        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
-          <Zap size={16} className="text-accent-orange" />
-          <span className="text-surface-400 text-[10px] uppercase font-bold">Go Live</span>
-        </div>
+        
       </div>
 
       <button onClick={onFinish} className="btn-primary flex items-center gap-2 mx-auto group">
