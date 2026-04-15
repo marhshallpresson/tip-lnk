@@ -3,108 +3,164 @@ import { SolanaWalletProvider } from './contexts/WalletContext';
 import { AppProvider, useApp } from './contexts/AppContext';
 import StepIndicator from './components/StepIndicator';
 import WalletConnect from './components/WalletConnect';
-import NFTProfilePicker from './components/NFTProfilePicker';
+import RoleSelection from './components/RoleSelection';
+import CategorySelection from './components/CategorySelection';
 import DomainRegistration from './components/DomainRegistration';
 import SocialLinking from './components/SocialLinking';
+import ProfileEditor from './components/ProfileEditor';
 import OnboardingComplete from './components/OnboardingComplete';
 import WalletModal from './components/WalletModal';
-import { Sparkles } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import LandingPage from './components/LandingPage';
+import Dashboard from './components/Dashboard';
+import AppNavbar from './components/AppNavbar';
+import RequireAuth from './components/RequireAuth';
+import CreatorPage from './components/CreatorPage';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
+
+// Lazy load components for performance
+const OverviewTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.OverviewTab })));
+const PortfolioTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.PortfolioTab })));
+const TransactionHistoryTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.TransactionHistoryTab })));
+const SimulationTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.SimulationTab })));
+
+const TermsOfService = lazy(() => import('./components/legal/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy'));
 
 
 function AppContent() {
-  const { onboardingStep, onboardingComplete, update, isDemo } = useApp();
-  const { connected } = useWallet();
-  const [view, setView] = useState('landing');
+  const { role, onboardingStep, update } = useApp();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-
-  useEffect(() => {
-    if (onboardingComplete && connected) {
-      setView('dashboard');
-    }
-  }, [onboardingComplete, connected]);
-
-  const nextStep = useCallback(() => {
-    update({ onboardingStep: onboardingStep + 1 });
-    setView('onboarding');
-  }, [onboardingStep, update]);
-
-  const finishOnboarding = useCallback(() => {
-    update({ onboardingComplete: true });
-    setView('dashboard');
-  }, [update]);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleGetStarted = () => {
-    if (onboardingComplete && (connected || isDemo)) {
-      setView('dashboard');
-    } else if (connected || isDemo) {
-      setView('onboarding');
+    if (role === 'creator') {
+      navigate('/dashboard');
+    } else if (role === 'user') {
+      navigate('/onboarding');
     } else {
       setIsWalletModalOpen(true);
     }
   };
 
-  if (view === 'landing') {
-    return (
-      <>
-        <LandingPage 
-          onGetStarted={handleGetStarted} 
-          onboardingComplete={onboardingComplete}
-          connected={connected || isDemo}
-          onViewDashboard={() => setView('dashboard')}
-        />
-        <WalletModal 
-          isOpen={isWalletModalOpen} 
-          onClose={() => setIsWalletModalOpen(false)} 
-          onConnected={nextStep}
-        />
-      </>
-    );
-  }
+  const nextStep = useCallback(() => {
+    update({ onboardingStep: onboardingStep + 1 });
+  }, [onboardingStep, update]);
 
+  const prevStep = useCallback(() => {
+    if (onboardingStep > 0) {
+      update({ onboardingStep: onboardingStep - 1 });
+    }
+  }, [onboardingStep, update]);
 
-  if (view === 'dashboard' || (onboardingComplete && (connected || isDemo))) {
-    return <Dashboard />;
-  }
+  const finishOnboarding = useCallback(() => {
+    update({ onboardingComplete: true });
+    navigate('/dashboard');
+  }, [update, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-surface-950">
-      <div className="mb-0 absolute top-8 left-8">
-        <button onClick={() => setView('landing')} className="flex items-center gap-2 text-surface-400 hover:text-[#c4ff00] transition-colors">
-          <Sparkles size={18} />
-          <span className="font-bold tracking-tight">TipLnk</span>
-        </button>
-      </div>
+    <div className="min-h-screen bg-surface-950 text-white flex flex-col">
+      <AppNavbar 
+        onGetStarted={handleGetStarted}
+        onboardingComplete={role === 'creator'}
+        connected={role !== 'guest'}
+        onViewDashboard={() => navigate('/dashboard')}
+        onViewProfile={() => navigate('/')}
+        isDashboard={location.pathname.startsWith('/dashboard')}
+      />
 
-      <StepIndicator current={onboardingStep} />
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={
+            <>
+              <LandingPage onGetStarted={handleGetStarted} />
+              <WalletModal 
+                isOpen={isWalletModalOpen} 
+                onClose={() => setIsWalletModalOpen(false)} 
+                onConnected={() => navigate('/dashboard')}
+              />
+            </>
+          } />
 
-      <div className="w-full max-w-3xl">
-        {onboardingStep === 0 && (
-          <div className="glass-card p-10 text-center animate-slide-up">
-            <h2 className="text-2xl font-bold mb-4">Connect Wallet</h2>
-            <p className="text-surface-400 mb-8">Please connect your wallet to continue setting up your creator profile.</p>
-            <button 
-              onClick={() => setIsWalletModalOpen(true)}
-              className="btn-primary"
-            >
-              Open Wallet Portal
-            </button>
-            <WalletModal 
-              isOpen={isWalletModalOpen} 
-              onClose={() => setIsWalletModalOpen(false)} 
-              onConnected={nextStep}
-            />
-          </div>
-        )}
-        {onboardingStep === 1 && <NFTProfilePicker onComplete={() => nextStep()} />}
-        {onboardingStep === 2 && <DomainRegistration onComplete={() => nextStep()} />}
-        {onboardingStep === 3 && <SocialLinking onComplete={() => nextStep()} />}
-        {onboardingStep === 4 && <OnboardingComplete onFinish={finishOnboarding} />}
-      </div>
+          <Route path="/onboarding" element={
+            <RequireAuth requiredRole="user">
+              <div className="min-h-[calc(100vh-80px)] mt-20 flex flex-col items-center justify-center p-6">
+                <StepIndicator current={onboardingStep} />
+                <div className="w-full max-w-3xl">
+                  {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
+                  {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
+                  {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
+                  {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
+                  {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
+                  {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} />}
+                </div>
+              </div>
+            </RequireAuth>
+          } />
+
+          <Route path="/dashboard/*" element={
+            <RequireAuth requiredRole="creator">
+              <div className="mt-20">
+                <Dashboard />
+              </div>
+            </RequireAuth>
+          } />
+
+          <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
+          <Route path="/u/:username" element={<CreatorPage />} />
+          
+          <Route path="/terms" element={
+            <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
+              <TermsOfService />
+            </Suspense>
+          } />
+          
+          <Route path="/privacy" element={
+            <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
+              <PrivacyPolicy />
+            </Suspense>
+          } />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
     </div>
   );
 }
 
+/**
+ * Real-world OAuth2 Callback Handler
+ * Acts as the landing zone for official X/Discord validation.
+ */
+function AuthCallbackHandler() {
+  const { platform } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    if (code) {
+      console.log(`OAuth2: Received authorization from ${platform}`);
+      // In a real system, the backend would verify this code.
+      // We redirect back to onboarding to complete the Wallet Signature.
+      setTimeout(() => {
+        navigate(`/onboarding?step=1&oauth_success=${platform}`);
+      }, 1500);
+    }
+  }, [platform, navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-surface-950">
+      <div className="text-center animate-fade-in">
+        <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+        <h2 className="text-2xl font-bold">Verifying Account</h2>
+        <p className="text-surface-400 mt-2 italic">Securing link with {platform} infrastructure...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   return (

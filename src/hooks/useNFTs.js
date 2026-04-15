@@ -105,7 +105,7 @@ export function useNFTs() {
       console.error('NFT fetch error:', err);
       // Fallback to seed NFTs so the app remains functional
       setNfts(SEED_NFTS);
-      setError('Using demo NFTs — live fetch encountered an error.');
+      setError('Using demo NFTs');
     } finally {
       setLoading(false);
     }
@@ -113,3 +113,4 @@ export function useNFTs() {
 
   return { nfts, loading, error, fetchNFTs };
 }
+t

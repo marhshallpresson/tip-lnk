@@ -5,16 +5,16 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f0f4ff',
-          100: '#dbe4ff',
-          200: '#bac8ff',
-          300: '#91a7ff',
-          400: '#748ffc',
-          500: '#5c7cfa',
-          600: '#4c6ef5',
-          700: '#4263eb',
-          800: '#3b5bdb',
-          900: '#364fc7',
+          50: '#f0fff4',
+          100: '#dcffe9',
+          200: '#bdffd6',
+          300: '#8affb8',
+          400: '#00f075', // Busha-style bright green
+          500: '#00D265', // Main Busha Green
+          600: '#00b356',
+          700: '#009447',
+          800: '#007538',
+          900: '#005729',
         },
         surface: {
           50: '#f8f9fa',

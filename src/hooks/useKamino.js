@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSecurityGuardian } from './useSecurityGuardian';
 
 // ─── SendAI Kamino klend-sdk Simulation ───
 const MAIN_MARKET = '7uSSTPu2SJYyR84i1zSvcr62TDR9X9eLoR9D9reW6RjO';
@@ -24,6 +25,8 @@ export function useKamino(walletConnected) {
   const [depositing, setDepositing] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [streamData, setStreamData] = useState({ connected: false, lastUpdate: null });
+  const [risks, setRisks] = useState([]);
+  const guardian = useSecurityGuardian();
   const intervalRef = useRef(null);
 
   // Simulate WebSocket streaming of vault positions
@@ -71,6 +74,32 @@ export function useKamino(walletConnected) {
   const deposit = useCallback(
     async (amount) => {
       setDepositing(true);
+      setRisks([]);
+
+      // Security Check: Audit vault and amount
+      const riskAssessment = [];
+      if (amount > 10000) {
+        riskAssessment.push({ severity: 'high', message: 'Large deposit detected. Ensure vault liquidity is sufficient.' });
+      }
+      
+      // Simulate Guardian analysis of Kamino program logs
+      const logs = [
+        "Program Kamino11111111111111111111111111111111 invoke [1]",
+        "Program log: Instruction: InitializeUserMetadata",
+        "Program log: Instruction: DepositReserveLiquidity",
+        "Program Kamino11111111111111111111111111111111 success"
+      ];
+      
+      const guardianRisks = guardian.analyzeSimulationLogs(logs);
+      const finalRisks = [...riskAssessment, ...guardianRisks];
+      
+      if (finalRisks.some(r => r.severity === 'critical')) {
+        setDepositing(false);
+        setRisks(finalRisks);
+        throw new Error("Security Guardian blocked transaction: Critical risk detected.");
+      }
+
+      setRisks(finalRisks);
       
       // Simulate KaminoAction.buildDepositTxns(market, amount, mint)
       await new Promise((r) => setTimeout(r, 2000));
@@ -121,5 +150,7 @@ export function useKamino(walletConnected) {
     totalEarnings,
     totalValue,
     streamData,
+    risks,
+    clearRisks: () => setRisks([]),
   };
 }

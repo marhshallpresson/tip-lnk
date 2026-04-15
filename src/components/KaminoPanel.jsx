@@ -12,7 +12,10 @@ import {
   Percent,
   Clock,
   Wifi,
-  Sparkles,
+  Star,
+  ShieldAlert,
+  ShieldCheck,
+  Search,
 } from 'lucide-react';
 
 export default function KaminoPanel() {
@@ -30,6 +33,8 @@ export default function KaminoPanel() {
     totalEarnings,
     totalValue,
     streamData,
+    risks,
+    clearRisks,
   } = useKamino(connected);
 
   const [depositAmount, setDepositAmount] = useState('');
@@ -59,7 +64,7 @@ export default function KaminoPanel() {
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-2">
-          <span className="badge-brand bg-[#0038FF]/10 text-[#0038FF] border border-[#0038FF]/30"><Sparkles size={12} className="inline mr-1" /> JitoSOL Strategies</span>
+          <span className="badge-brand bg-[#0038FF]/10 text-[#0038FF] border border-[#0038FF]/30"><Star size={12} className="inline mr-1" /> JitoSOL Strategies</span>
         </div>
       </div>
 
@@ -95,11 +100,29 @@ export default function KaminoPanel() {
           className={streamData.connected ? 'text-accent-green' : 'text-accent-red'}
         />
         <span>
-          {streamData.connected ? 'Live streaming' : 'Disconnected'}
+          {streamData.connected ? 'Live streaming yields' : 'Disconnected'}
           {streamData.lastUpdate &&
-            ` — last update ${new Date(streamData.lastUpdate).toLocaleTimeString()}`}
+            ` — synced ${new Date(streamData.lastUpdate).toLocaleTimeString()}`}
         </span>
       </div>
+
+      {/* Security Risks Alert (if any) */}
+      {risks.length > 0 && (
+        <div className="bg-accent-red/10 border border-accent-red/30 p-4 rounded-xl space-y-2 animate-pulse">
+          <div className="flex items-center gap-2 text-accent-red font-bold text-sm">
+            <ShieldAlert size={16} />
+            Security Guardian Audit Results
+          </div>
+          <div className="space-y-1">
+            {risks.map((risk, i) => (
+              <p key={i} className="text-xs text-accent-red/80 flex items-center gap-1">
+                • {risk.message}
+              </p>
+            ))}
+          </div>
+          <button onClick={clearRisks} className="text-[10px] text-accent-red hover:underline uppercase tracking-tighter">Dismiss Audit</button>
+        </div>
+      )}
 
       {/* Vault Selector & Deposit */}
       <div className="glass-card p-6">
@@ -126,11 +149,10 @@ export default function KaminoPanel() {
                   <button
                     key={vault.id}
                     onClick={() => setSelectedVault(vault)}
-                    className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden ${
-                      selectedVault.id === vault.id
+                    className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden ${selectedVault.id === vault.id
                         ? 'border-[#c4ff00] bg-[#c4ff00]/5'
                         : 'border-surface-700 hover:border-surface-500'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{vault.logo}</span>

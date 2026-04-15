@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { QRCodeSVG } from 'qrcode.react';
+import * as QRCode from 'qrcode.react';
+const QRCodeSVG = QRCode.QRCodeSVG || QRCode.default?.QRCodeSVG || QRCode.default;
 import { Copy, Check, ExternalLink } from 'lucide-react';
 
 export default function ShareQRPanel() {
   const { profile } = useApp();
-  const tipUrl = `https://tiplnk.sol/tip/${profile.solDomain || 'creator.sol'}`;
+  const tipUrl = `https://${profile.solDomain || 'creator.tiplnk.sol'}`;
   const [copied, setCopied] = useState(false);
 
   const copyUrl = () => {

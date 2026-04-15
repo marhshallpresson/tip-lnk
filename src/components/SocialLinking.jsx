@@ -10,11 +10,18 @@ export default function SocialLinking({ onComplete }) {
 
   const simulateLink = (platform) => {
     setLoadingCode(platform);
+    
+    // In a production app, this would be the official X/Discord OAuth URL.
+    // For this simulation, we point to our internal callback handler.
+    const oauthUrl = `${window.location.origin}/auth/callback/${platform}?code=simulated_auth_code_123`;
+    
     setTimeout(() => {
       if (platform === 'twitter') setTwitterLinked(true);
       if (platform === 'discord') setDiscordLinked(true);
       setLoadingCode(null);
-    }, 1500);
+    }, 2000);
+
+    return oauthUrl;
   };
 
   const handleContinue = () => {
@@ -60,7 +67,7 @@ export default function SocialLinking({ onComplete }) {
             </div>
           ) : (
             <button 
-              onClick={() => simulateLink('twitter')}
+              onClick={() => {window.open(simulateLink('twitter'),'popupWindow', 'width=600,height=400'); }}
               className="btn flex items-center gap-2 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white border-0"
               disabled={loadingCode === 'twitter'}
             >
@@ -89,7 +96,7 @@ export default function SocialLinking({ onComplete }) {
             </div>
           ) : (
             <button 
-              onClick={() => simulateLink('discord')}
+              onClick={() => {window.open(simulateLink('discord'),'popupWindow', 'width=600,height=400'); }}
               className="btn flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white border-0"
               disabled={loadingCode === 'discord'}
             >

@@ -21,10 +21,6 @@ export default function WalletConnect({ onConnected }) {
   const isSolflare = useIsSolflare();
   const [advancing, setAdvancing] = useState(false);
 
-  const handleDemo = () => {
-    update({ isDemo: true });
-    onConnected('DEMO_WALLET_ADDRESS');
-  };
 
 
   useEffect(() => {
@@ -46,9 +42,6 @@ export default function WalletConnect({ onConnected }) {
       </div>
 
       <h2 className="text-3xl font-bold mb-3">Connect Your Wallet</h2>
-      <p className="text-surface-400 mb-8 leading-relaxed">
-        Start with <span className="text-solflare font-semibold">Solflare</span> for the full TipLnk experience — portfolio analytics, transaction simulation, and deep linking.
-      </p>
 
       {/* Wallet Button */}
       <div className="flex justify-center mb-6">
@@ -64,10 +57,7 @@ export default function WalletConnect({ onConnected }) {
             </div>
             <span className="text-sm font-semibold text-solflare">Recommended: Solflare Wallet</span>
           </div>
-          <p className="text-xs text-surface-400 leading-relaxed">
-            Solflare enables transaction simulation, portfolio analytics, and deep linking on mobile. 
-            Other Solana wallets are also supported.
-          </p>
+          
           <a
             href="https://solflare.com/download"
             target="_blank"
@@ -82,7 +72,7 @@ export default function WalletConnect({ onConnected }) {
       {/* In-app browser detection badge */}
       {isSolflare && (
         <div className="badge-solflare text-xs mb-6 justify-center">
-          <Smartphone size={10} /> Solflare In-App Browser Detected
+          Solflare Detected
         </div>
       )}
 
@@ -101,28 +91,8 @@ export default function WalletConnect({ onConnected }) {
         </div>
       )}
 
-      {/* Features */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 mb-6">
-        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
-          <Shield size={16} className="text-brand-400" />
-          <span className="text-surface-400 text-xs">Non-custodial</span>
-        </div>
-        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
-          <Eye size={16} className="text-brand-400" />
-          <span className="text-surface-400 text-xs">TX Simulation</span>
-        </div>
-        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
-          <Zap size={16} className="text-brand-400" />
-          <span className="text-surface-400 text-xs">QuickNode RPC</span>
-        </div>
-      </div>
+ 
 
-      <button 
-        onClick={handleDemo}
-        className="text-surface-500 hover:text-[#c4ff00] text-sm transition-colors flex items-center gap-1 mx-auto"
-      >
-        <ArrowRight size={14} /> Skip for Preview (Demo Mode)
-      </button>
     </div>
 
   );

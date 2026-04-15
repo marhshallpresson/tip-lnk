@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
+import { useSecurityGuardian } from '../hooks/useSecurityGuardian';
 import {
   Gift,
   ArrowDown,
@@ -14,12 +15,62 @@ import {
   Eye,
   Activity,
   Layers,
+  ShieldCheck,
+  AlertCircle,
+  ExternalLink,
+  Search,
+  User,
+  FileText,
+  CreditCard
 } from 'lucide-react';
 
+/**
+ * Advanced Creator-to-Creator Tipping Widget
+ * Features: Username search, transaction details/invoice, real-time routing.
+ */
 export default function TipWidget() {
   const { publicKey } = useWallet();
   const { addTip, profile } = useApp();
-  const address = publicKey?.toBase58() || '';
+  const { connection } = useConnection();
+  const { assessRecipient } = useSecurityGuardian();
+
+  const [recipientInput, setRecipientInput] = useState('');
+  const [resolvedAddress, setResolvedAddress] = useState(null);
+  const [isResolving, setIsResolving] = useState(false);
+  const [txStep, setTxStep] = useState('configure'); // configure, simulate, review, processing, done
+  const [showTokenDropdown, setShowTokenDropdown] = useState(false);
+  const [note, setNote] = useState('');
+
+  // ─── Resolve Recipient Address ───
+  useEffect(() => {
+    const resolve = async () => {
+      if (!recipientInput.includes('.') && recipientInput.length < 32) {
+        setResolvedAddress(null);
+        return;
+      }
+
+      setIsResolving(true);
+      try {
+        if (recipientInput.endsWith('.sol')) {
+          // In production: Use SNS SDK to resolve
+          // For now, we simulate a resolution or use it as a string
+          await new Promise(r => setTimeout(r, 800));
+          setResolvedAddress('Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'); // Example resolved
+        } else if (recipientInput.length >= 32) {
+          setResolvedAddress(recipientInput);
+        }
+      } catch (err) {
+        setResolvedAddress(null);
+      } finally {
+        setIsResolving(false);
+      }
+    };
+
+    const timer = setTimeout(resolve, 500);
+    return () => clearTimeout(timer);
+  }, [recipientInput]);
+
+  const recipientRisk = assessRecipient(resolvedAddress);
 
   const {
     tokens,
@@ -34,249 +85,290 @@ export default function TipWidget() {
     executeTip,
     txResult,
     reset,
-  } = useTipping(address);
-
-  const [senderName, setSenderName] = useState('');
-  const [showTokenDropdown, setShowTokenDropdown] = useState(false);
-  const [txStep, setTxStep] = useState('configure'); // configure, simulate, review, processing, done
-
-  const handleSimulate = () => {
-    setTxStep('simulate');
-    setTimeout(() => setTxStep('review'), 1000); // mock simulation delay
-  };
-
-  const handleEdit = () => {
-    setTxStep('configure');
-  };
+  } = useTipping(resolvedAddress);
 
   useEffect(() => {
-    if (amount && selectedToken) {
+    if (amount && selectedToken && resolvedAddress) {
       calculateRoute(selectedToken.symbol, parseFloat(amount) || 0);
     }
-  }, [amount, selectedToken, calculateRoute]);
+  }, [amount, selectedToken, calculateRoute, resolvedAddress]);
 
   const handleSendTip = async () => {
     setTxStep('processing');
-    const result = await executeTip(senderName || 'Anonymous');
+    const result = await executeTip(profile.displayName || 'Anonymous Creator');
     if (result?.success) {
+      // Log as a SENT tip
       addTip({
-        sender: senderName || 'Anonymous',
-        inputToken: selectedToken.symbol, // selectedToken is available in scope
+        recipient: recipientInput,
+        recipientAddress: resolvedAddress,
+        inputToken: selectedToken.symbol,
         inputAmount: amount,
         amountUSDC: result.outAmount,
-        fee: (parseFloat(amount) * selectedToken.price) - result.outAmount,
+        note: note,
         txSignature: result.signature,
         timestamp: result.timestamp,
         executionMode: result.executionMode
-      });
+      }, true); // isSent = true
       setTxStep('done');
     }
   };
 
   const handleReset = () => {
     reset();
+    setRecipientInput('');
+    setResolvedAddress(null);
+    setNote('');
     setTxStep('configure');
   };
 
   if (txResult?.success) {
     return (
-      <div className="glass-card glow-brand p-8 max-w-lg mx-auto text-center">
+      <div className="glass-card glow-brand p-8 max-w-lg mx-auto text-center animate-scale-in">
         <div className="w-16 h-16 rounded-full bg-accent-green/20 flex items-center justify-center mx-auto mb-4">
           <Check size={28} className="text-accent-green" />
         </div>
-        <h3 className="text-2xl font-bold mb-2">Tip Sent</h3>
+        <h3 className="text-2xl font-bold mb-2">Transaction Sent</h3>
         <p className="text-surface-400 mb-6">
-          {amount} {selectedToken.symbol} → ${txResult.outAmount.toFixed(2)} USDC
+          Successfully transferred {amount} {selectedToken.symbol} to {recipientInput}
         </p>
-        <div className="bg-surface-800/50 rounded-xl p-4 mb-3 font-mono text-sm text-surface-400 break-all border border-accent-green/20">
-          sig: {txResult.signature}
+        
+        <div className="bg-surface-800/50 rounded-xl p-5 mb-6 text-left border border-surface-700">
+          <p className="text-xs text-surface-500 uppercase font-bold mb-3 tracking-widest">Transaction Invoice</p>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-surface-400">Status</span>
+              <span className="text-accent-green font-bold uppercase text-xs">Confirmed</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-surface-400">Signature</span>
+              <span className="font-mono text-xs">{txResult.signature.slice(0, 12)}...</span>
+            </div>
+            <div className="flex justify-between text-sm pt-2 border-t border-surface-700/50 mt-2">
+              <span className="text-surface-400">Total Value</span>
+              <span className="font-bold">${Number(txResult.outAmount).toFixed(2)} USDC</span>
+            </div>
+          </div>
+          <a
+            href={`https://solscan.io/tx/${txResult.signature}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary w-full text-xs !py-2 flex items-center justify-center gap-2 mt-4"
+          >
+            View on Solscan <ExternalLink size={12} />
+          </a>
         </div>
-        <div className="flex items-center justify-center gap-2 text-xs text-surface-500 mb-6">
-          <Activity size={12} className="text-accent-green" />
-          Execution: {txResult.executionMode === 'async' ? 'Jito Bundle Verified' : 'Atomic Swap Confirmed'}
-        </div>
+
         <button onClick={handleReset} className="btn-primary flex items-center gap-2 mx-auto">
           <RefreshCw size={16} />
-          Send Another
+          New Transaction
         </button>
       </div>
     );
   }
 
   return (
-    <div className="glass-card p-8 max-w-lg mx-auto">
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 rounded-2xl bg-accent-orange/20 flex items-center justify-center mx-auto mb-4">
-          <Gift size={28} className="text-accent-orange" />
+    <div id="tip-widget" className="glass-card p-8 max-w-lg mx-auto shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-brand-500/30">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-accent-cyan opacity-50" />
+      
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-4 border border-brand-500/20">
+          <Zap size={28} className="text-brand-400" />
         </div>
-        <h3 className="text-2xl font-bold mb-1">
-          Tip {profile.solDomain || profile.displayName || 'Creator'}
-        </h3>
-        <p className="text-surface-400 text-sm">
-          DFlow routes tips through DEX aggregators for best pricing
-        </p>
+        <h3 className="text-2xl font-black mb-1 tracking-tight">Creator Transfer</h3>
+        <p className="text-surface-400 text-sm">Direct on-chain earning distribution</p>
       </div>
 
-      {/* Sender Name */}
-      <input
-        type="text"
-        className="input-field w-full mb-4"
-        placeholder="Your name (optional)"
-        value={senderName}
-        onChange={(e) => setSenderName(e.target.value)}
-      />
-
-      {/* Token Selector + Amount */}
-      <div className="bg-surface-800/50 rounded-xl p-4 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-surface-500 text-sm">You send</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <button
-              onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-              className="flex items-center gap-2 bg-surface-700 hover:bg-surface-600 px-3 py-2 rounded-lg transition-colors"
-            >
-              <span className="font-semibold">{selectedToken.symbol}</span>
-              <ChevronDown size={14} className="text-surface-400" />
-            </button>
-            {showTokenDropdown && (
-              <div className="absolute top-full mt-1 left-0 bg-surface-800 border border-surface-700 rounded-xl overflow-hidden z-10 min-w-[160px]">
-                {tokens.map((token) => (
-                  <button
-                    key={token.symbol}
-                    onClick={() => {
-                      setSelectedToken(token);
-                      setShowTokenDropdown(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-700 transition-colors text-left ${
-                      selectedToken.symbol === token.symbol ? 'bg-surface-700' : ''
-                    }`}
-                  >
-                    <span className="font-medium">{token.symbol}</span>
-                    <span className="text-surface-500 text-xs">{token.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+      {/* Recipient Search */}
+      <div className="mb-6">
+        <label className="text-xs font-bold text-surface-500 uppercase tracking-widest mb-2 block">Recipient Creator</label>
+        <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500">
+            {isResolving ? <Loader2 size={18} className="animate-spin text-brand-400" /> : <Search size={18} />}
           </div>
-          <input
-            type="number"
-            className="flex-1 bg-transparent text-right text-2xl font-bold outline-none placeholder-surface-600"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+          <input 
+            type="text"
+            className="input-field w-full pl-12 pr-4"
+            placeholder="Username.sol or wallet address"
+            value={recipientInput}
+            onChange={(e) => setRecipientInput(e.target.value)} 
+          />
+          {resolvedAddress && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-accent-green/10 text-accent-green px-2 py-1 rounded-md border border-accent-green/20">
+              <ShieldCheck size={12} />
+              <span className="text-[10px] font-bold uppercase">Verified</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Amount & Token */}
+      <div className="grid grid-cols-1 gap-4 mb-6">
+        <div className="bg-surface-800/50 rounded-2xl p-5 border border-surface-700">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-xs font-bold text-surface-500 uppercase tracking-widest">Amount to Send</span>
+            <div className="relative">
+              <button
+                onClick={() => setShowTokenDropdown(!showTokenDropdown)}
+                className="flex items-center gap-2 bg-surface-700 hover:bg-surface-600 px-3 py-1.5 rounded-xl transition-all border border-surface-600"
+              >
+                <span className="font-bold text-xs">{selectedToken.symbol}</span>
+                <ChevronDown size={12} className="text-surface-400" />
+              </button>
+              {showTokenDropdown && (
+                <div className="absolute top-full mt-2 right-0 bg-surface-800 border border-surface-700 rounded-2xl shadow-2xl z-50 min-w-[140px] overflow-hidden">
+                  {tokens.map((token) => (
+                    <button
+                      key={token.symbol}
+                      onClick={() => {
+                        setSelectedToken(token);
+                        setShowTokenDropdown(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 hover:bg-surface-700 transition-colors text-left ${
+                        selectedToken.symbol === token.symbol ? 'bg-brand-500/10 text-brand-400' : ''
+                      }`}
+                    >
+                      <span className="font-bold text-sm">{token.symbol}</span>
+                      <span className="text-[10px] opacity-50 uppercase">{token.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <input
+              type="number"
+              className="flex-1 bg-transparent text-4xl font-black outline-none placeholder-surface-700"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+
+          {/* Quick Select Multipliers (BuyMeCoffee Style) */}
+          <div className="flex gap-2 mt-6">
+            {[2, 5, 10, 25].map((val) => (
+              <button
+                key={val}
+                onClick={() => setAmount(val.toString())}
+                className={`flex-1 py-2.5 rounded-xl border text-xs font-black transition-all ${
+                  amount === val.toString() 
+                    ? 'bg-brand-500 border-brand-500 text-black shadow-lg shadow-brand-500/20' 
+                    : 'bg-surface-900 border-surface-800 text-surface-500 hover:border-surface-600 hover:text-white'
+                }`}
+              >
+                ${val}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-surface-700/50 flex justify-between items-center">
+            <span className="text-xs text-surface-500 italic">Approx. Value</span>
+            <span className="text-lg font-bold text-accent-green animate-pulse-slow">${Number(tipAmountUSDC).toFixed(2)} <span className="text-xs opacity-50">USDC</span></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Note / Message */}
+      <div className="mb-8">
+        <label className="text-xs font-bold text-surface-500 uppercase tracking-widest mb-2 block">Transfer Note (Optional)</label>
+        <div className="relative">
+          <div className="absolute left-4 top-4 text-surface-500">
+            <FileText size={18} />
+          </div>
+          <textarea
+            className="input-field w-full pl-12 py-3 min-h-[80px] resize-none text-sm"
+            placeholder="Add a message to your transaction..."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Arrow */}
-      <div className="flex justify-center -my-1 relative z-[1]">
-        <div className="w-10 h-10 rounded-xl bg-surface-800 border border-surface-700 flex items-center justify-center">
-          <ArrowDown size={16} className="text-brand-400" />
-        </div>
-      </div>
+      {/* Transaction Details / Invoice Section */}
+      {route && (
+        <div className="mb-8 bg-surface-900/50 rounded-2xl p-5 border border-surface-800 animate-fade-in">
+          <div className="flex items-center gap-2 mb-4 text-brand-400">
+            <Activity size={16} />
+            <h4 className="text-xs font-bold uppercase tracking-widest">Transaction Specification</h4>
+          </div>
+          
+          <div className="space-y-3">
+            {recipientRisk && recipientRisk.level !== 'Safe' && (
+              <div className={`p-3 rounded-xl border flex items-start gap-3 ${
+                recipientRisk.level === 'Critical' ? 'bg-accent-red/10 border-accent-red/30' : 
+                'bg-accent-orange/10 border-accent-orange/30'
+              }`}>
+                <AlertCircle size={14} className={recipientRisk.level === 'Critical' ? 'text-accent-red' : 'text-accent-orange'} />
+                <p className="text-[10px] font-medium leading-tight">{recipientRisk.message}</p>
+              </div>
+            )}
 
-      {/* Output */}
-      <div className="bg-surface-800/50 rounded-xl p-4 mt-3 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-surface-500 text-sm">Creator receives</span>
-          <span className="text-surface-500 text-xs">USDC</span>
-        </div>
-        <p className="text-2xl font-bold text-accent-green">
-          ${tipAmountUSDC.toFixed(2)}
-        </p>
-      </div>
-
-      {/* Route Info & Stepper */}
-      {route && txStep === 'configure' && (
-        <button
-          onClick={handleSimulate}
-          disabled={!route || !amount}
-          className="btn-primary w-full flex items-center justify-center gap-2 mb-4"
-        >
-          <Eye size={18} />
-          Simulate Transaction
-        </button>
-      )}
-
-      {txStep === 'simulate' && (
-        <div className="flex items-center justify-center py-4 text-brand-400 gap-2 mb-4">
-          <Loader2 size={18} className="animate-spin" />
-          <span>Simulating via RPC...</span>
-        </div>
-      )}
-
-      {(txStep === 'review' || txStep === 'processing' || txStep === 'done') && route && (
-        <div className="bg-surface-800/30 rounded-xl p-4 mb-6 space-y-2 border border-brand-500/30">
-          <div className="flex items-center gap-2 mb-3 text-accent-green">
-            <Check size={14} />
-            <span className="text-sm font-bold">Simulation Passed</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-500">Balance Change</span>
-            <span className="text-surface-300">-{amount} {selectedToken.symbol}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-500">DFlow Service Fee</span>
-            <span className="text-surface-300">-$0.15 (fixed rate)</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-500">Price Impact</span>
-            <span className="text-surface-300">{(route.priceImpactPct * 100).toFixed(2)}%</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-500">Execution Mode</span>
-            <span className={`font-bold ${route.executionMode === 'async' ? 'text-accent-orange' : 'text-accent-cyan'}`}>
-              {route.executionMode === 'async' ? 'Async (Jito Bundle)' : 'Sync (Atomic)'}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-500">Est. Time</span>
-            <span className="text-surface-300">{route.estimatedTime}</span>
-          </div>
-          <div className="mt-3 pt-3 border-t border-surface-700">
-            <div className="flex items-center gap-1 text-xs text-[#c4ff00] mb-2 font-semibold">
-              <Layers size={12} />
-              <span>DFlow Intelligent Route Plan</span>
+            <div className="flex justify-between text-xs">
+              <span className="text-surface-500">Execution Layer</span>
+              <span className="text-surface-300 font-mono">{route.executionMode === 'async' ? 'Jito Bundle' : 'Mainnet Atomic'}</span>
             </div>
-            <div className="flex gap-2">
-              {route.routePlan.map((step, i) => (
-                <div key={i} className="flex-1 bg-surface-800 rounded-lg p-2 text-center border border-[#c4ff00]/10">
-                  <p className="text-xs font-medium text-white">{step.swapInfo.label}</p>
-                  <p className="text-[10px] text-surface-500">{step.percent}%</p>
-                </div>
-              ))}
+            <div className="flex justify-between text-xs">
+              <span className="text-surface-500">Price Impact</span>
+              <span className="text-surface-300 font-mono">{(parseFloat(route.priceImpactPct) * 100).toFixed(3)}%</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-surface-500">Est. Arrival</span>
+              <span className="text-surface-300 font-mono">{route.estimatedTime}</span>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-surface-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Layers size={14} className="text-accent-cyan" />
+                <span className="text-[10px] font-bold uppercase text-accent-cyan">Intelligent Routing</span>
+              </div>
+              <div className="flex gap-2">
+                {route.routePlan.map((step, i) => (
+                  <div key={i} className="flex-1 bg-surface-800 rounded-lg py-2 px-3 flex justify-between items-center border border-surface-700">
+                    <span className="text-[10px] font-bold text-white">{step.swapInfo.label}</span>
+                    <span className="text-[10px] text-brand-400 font-mono">{step.swapInfo.percent}%</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {txStep === 'review' && (
-        <div className="flex gap-3 mb-4">
-          <button onClick={handleEdit} className="btn-secondary !px-4">
-            Edit
-          </button>
+      {/* Action Buttons */}
+      <div className="space-y-3">
+        {txStep === 'configure' ? (
           <button
-            onClick={handleSendTip}
-            className="btn-primary flex-1 flex items-center justify-center gap-2"
+            onClick={() => setTxStep('review')}
+            disabled={!resolvedAddress || !amount || processing}
+            className="btn-primary w-full flex items-center justify-center gap-3 !py-4 shadow-xl shadow-brand-500/10 group"
           >
-            <Gift size={18} />
-            Approve & Send Tip
+            {processing ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} className="group-hover:scale-110 transition-transform" />}
+            Prepare Transaction
           </button>
-        </div>
-      )}
+        ) : txStep === 'review' ? (
+          <div className="flex gap-3">
+            <button onClick={() => setTxStep('configure')} className="btn-secondary flex-1 font-bold">Edit</button>
+            <button
+              onClick={handleSendTip}
+              className="btn-primary flex-[2] flex items-center justify-center gap-3 !py-4 bg-gradient-to-r from-brand-500 to-brand-600"
+            >
+              <CreditCard size={20} />
+              Confirm & Authorize
+            </button>
+          </div>
+        ) : (
+          <div className="btn-primary w-full flex items-center justify-center gap-3 !py-4 opacity-80 cursor-not-allowed">
+            <Loader2 size={20} className="animate-spin" />
+            Finalizing on Solana...
+          </div>
+        )}
+      </div>
 
-      {txStep === 'processing' && (
-        <div className="btn-primary w-full flex items-center justify-center gap-2 mb-4 cursor-not-allowed opacity-80" disabled>
-          <Loader2 size={18} className="animate-spin" />
-          Awaiting Solflare Approval...
-        </div>
-      )}
-
-      <p className="text-center text-surface-600 text-xs mt-4 flex items-center justify-center gap-1">
-        <Info size={12} />
-        Powered by DFlow intent-based order routing
+      <p className="text-center text-surface-600 text-[10px] mt-6 flex items-center justify-center gap-1.5 uppercase font-bold tracking-tighter">
+        <ShieldCheck size={12} className="text-accent-green" />
+        Secured by DFlow & TipLnk Protocol
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 
-const STEPS = ['Connect Wallet', 'Pick NFT Avatar', 'Claim Domain', 'Link Socials', 'Ready!'];
+const STEPS = ['Choose Role', 'Identify Niche', 'Claim URL', 'Verify Socials', 'Customize', 'Ready!'];
 
 export default function StepIndicator({ current }) {
   return (

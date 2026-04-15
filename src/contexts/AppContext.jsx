@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { getProfile, saveProfile, logTip } from '../utils/database';
 
 const AppContext = createContext(null);
 
@@ -8,35 +10,88 @@ const defaultState = {
   onboardingStep: 0,
   onboardingComplete: false,
   profile: {
-    nftAvatar: null,
-    solDomain: null,
+    avatarUrl: null,
+    avatarType: 'none', // none, nft, social, uploaded
+    solDomain: '',
     displayName: '',
+    socials: {
+      twitter: null,
+      discord: null,
+      isTwitterVerified: false,
+      isDiscordVerified: false,
+    },
+    referralCode: 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    referrals: [],
   },
   nfts: [],
   nftsLoading: false,
   tipsReceived: [],
+  tipsSent: [],
   kaminoPositions: [],
   totalTipsUSDC: 0,
   kaminoDeposited: 0,
   kaminoEarnings: 0,
-  isDemo: false,
 };
 
-
-function loadState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return { ...defaultState, ...JSON.parse(saved) };
-  } catch {}
-  return defaultState;
-}
-
 export function AppProvider({ children }) {
-  const [state, setState] = useState(loadState);
+  const { publicKey, connected } = useWallet();
+  const pubkeyStr = publicKey?.toBase58() || null;
+  
+  const [state, setState] = useState(defaultState);
+  const [dbSynced, setDbSynced] = useState(false);
 
+  // ─── Phase 1: Local Cache Hydration ───
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    if (pubkeyStr) {
+      const saved = localStorage.getItem(`${STORAGE_KEY}_${pubkeyStr}`);
+      if (saved) {
+        setState({ ...defaultState, ...JSON.parse(saved) });
+      } else {
+        setState(defaultState);
+      }
+    } else {
+      setState(defaultState);
+    }
+  }, [pubkeyStr]);
+
+  // ─── Phase 2: Supabase Infrastructure Sync ───
+  useEffect(() => {
+    const syncWithDb = async () => {
+      if (pubkeyStr && !dbSynced) {
+        console.log('Syncing with Supabase via eitherway.ai...');
+        const dbProfile = await getProfile(pubkeyStr);
+        if (dbProfile) {
+          setState(prev => ({ ...prev, ...dbProfile }));
+        }
+        setDbSynced(true);
+      }
+    };
+    syncWithDb();
+  }, [pubkeyStr, dbSynced]);
+
+  // Reset sync flag on disconnect
+  useEffect(() => {
+    if (!pubkeyStr) {
+      setDbSynced(false);
+    }
+  }, [pubkeyStr]);
+
+  // ─── Phase 3: Persistence ───
+  useEffect(() => {
+    if (pubkeyStr && state !== defaultState) {
+      // Local Cache
+      localStorage.setItem(`${STORAGE_KEY}_${pubkeyStr}`, JSON.stringify(state));
+      
+      // Remote Sync (Supabase via eitherway.ai)
+      saveProfile(pubkeyStr, state);
+    }
+  }, [state, pubkeyStr]);
+
+  const role = useMemo(() => {
+    if (!connected || !pubkeyStr) return 'guest';
+    if (state.onboardingComplete) return 'creator';
+    return 'user';
+  }, [connected, pubkeyStr, state.onboardingComplete]);
 
   const update = useCallback((partial) => {
     setState((prev) => ({ ...prev, ...partial }));
@@ -49,21 +104,31 @@ export function AppProvider({ children }) {
     }));
   }, []);
 
-  const addTip = useCallback((tip) => {
-    setState((prev) => ({
-      ...prev,
-      tipsReceived: [tip, ...prev.tipsReceived],
-      totalTipsUSDC: prev.totalTipsUSDC + tip.amountUSDC,
-    }));
-  }, []);
+  const addTip = useCallback((tip, isSent = false) => {
+    setState((prev) => {
+      const newState = { ...prev };
+      if (isSent) {
+        newState.tipsSent = [tip, ...prev.tipsSent];
+      } else {
+        newState.tipsReceived = [tip, ...prev.tipsReceived];
+        newState.totalTipsUSDC = prev.totalTipsUSDC + tip.amountUSDC;
+      }
+      return newState;
+    });
+    if (pubkeyStr) {
+      logTip(pubkeyStr, tip, isSent);
+    }
+  }, [pubkeyStr]);
 
   const resetOnboarding = useCallback(() => {
     setState(defaultState);
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+    if (pubkeyStr) {
+      localStorage.removeItem(`${STORAGE_KEY}_${pubkeyStr}`);
+    }
+  }, [pubkeyStr]);
 
   return (
-    <AppContext.Provider value={{ ...state, update, updateProfile, addTip, resetOnboarding }}>
+    <AppContext.Provider value={{ ...state, role, dbSynced, update, updateProfile, addTip, resetOnboarding }}>
       {children}
     </AppContext.Provider>
   );

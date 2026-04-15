@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Globe, Check, Loader2, AlertCircle, Search, Zap } from 'lucide-react';
+import { Globe, Check, Loader2, AlertCircle, Search, Zap, ChevronLeft } from 'lucide-react';
 
 // ─── SendAI Solana Agent Kit Integration (MiscPlugin) ───
 // Simulate .sol domain lookup via resolveDomain handler
 const TAKEN_DOMAINS = ['alice', 'bob', 'crypto', 'solana', 'nft', 'defi'];
 
-export default function DomainRegistration({ onComplete }) {
+export default function DomainRegistration({ onComplete, onBack }) {
   const { updateProfile } = useApp();
   const [domain, setDomain] = useState('');
   const [checking, setChecking] = useState(false);
@@ -46,15 +46,19 @@ export default function DomainRegistration({ onComplete }) {
 
   return (
     <div className="glass-card glow-brand p-8 sm:p-10 max-w-lg mx-auto animate-slide-up">
-      <div className="text-center mb-8">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent-cyan/30 to-accent-cyan/10 flex items-center justify-center mx-auto mb-6">
-          <Globe size={36} className="text-accent-cyan" />
+      <div className="flex items-center gap-4 mb-8">
+        <button 
+          onClick={onBack}
+          className="p-2 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition-all"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <div className="text-left">
+          <h2 className="text-3xl font-bold">Claim <span className="text-brand-400">$your.tiplnk.sol</span></h2>
+          <p className="text-surface-400 text-sm leading-relaxed">
+            Register your SNS subdomain as your on-chain creator identity. 
+          </p>
         </div>
-        <h2 className="text-3xl font-bold mb-3">Claim <span className="text-brand-400">$your.tiplnk.sol</span></h2>
-        <p className="text-surface-400 text-sm leading-relaxed">
-          Register your SNS subdomain as your on-chain creator identity. 
-          Share <span className="text-brand-400 font-medium">$name.tiplnk.sol</span> instead of a wallet address.
-        </p>
       </div>
 
       {registered ? (
