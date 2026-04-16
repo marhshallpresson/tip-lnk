@@ -7,7 +7,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-[#0d1117] text-white pt-32 pb-20 px-4">
       <div className="max-w-3xl mx-auto">
-        <button 
+        <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-surface-400 hover:text-[#c4ff00] transition-colors mb-8 group"
         >
@@ -40,7 +40,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-xl font-bold text-white mb-4">2. How We Store Information</h2>
               <p>
-                Core application state is stored locally in your browser's persistent storage. For cross-device profile synchronization, we utilize secure infrastructure (e.g., Supabase) to store your profile metadata. No private keys or seeds are ever transmitted or stored.
+                Core application state is stored locally in your browser's persistent storage. For cross-device profile synchronization, we utilize secure infrastructure to store your profile metadata. No private keys or seeds are ever transmitted or stored.
               </p>
             </section>
 

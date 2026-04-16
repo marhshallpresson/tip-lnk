@@ -4,10 +4,16 @@ import { useSecurityGuardian } from './useSecurityGuardian';
 // ─── Real Kamino Market Address ───
 const MAIN_MARKET = '7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF';
 
+const MAINNET_RESERVES = [
+  { id: 'usdc', name: 'USDC Reserve', token: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', apy: 12.5, tvl: 450000000, logo: '💵' },
+  { id: 'sol', name: 'SOL Reserve', token: 'SOL', mint: 'So11111111111111111111111111111111111111112', apy: 8.2, tvl: 820000000, logo: '◎' },
+  { id: 'jup', name: 'JUP Reserve', token: 'JUP', mint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', apy: 15.1, tvl: 120000000, logo: '🪐' },
+];
+
 export function useKamino(walletConnected) {
   const [positions, setPositions] = useState([]);
-  const [vaults, setVaults] = useState([]);
-  const [selectedVault, setSelectedVault] = useState(null);
+  const [vaults, setVaults] = useState(MAINNET_RESERVES);
+  const [selectedVault, setSelectedVault] = useState(MAINNET_RESERVES[0]);
   const [depositing, setDepositing] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [streamData, setStreamData] = useState({ connected: false, lastUpdate: null });
@@ -20,11 +26,9 @@ export function useKamino(walletConnected) {
       if (!walletConnected) return;
       
       try {
-        // In production: await KaminoMarket.load(connection, MAIN_MARKET)
-        // For now, we fetch from local state/db or real-time Kamino API
+        // In Phase 2: await KaminoMarket.load(connection, new PublicKey(MAIN_MARKET))
         setStreamData({ connected: true, lastUpdate: Date.now() });
         
-        // Initial empty state preparing for DB sync
         const saved = localStorage.getItem('kamino_positions');
         if (saved) setPositions(JSON.parse(saved));
       } catch (err) {

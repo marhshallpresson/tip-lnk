@@ -20,6 +20,7 @@ import {
 
 import ReferralModal from './ReferralModal';
 import EmbedGenerator from './EmbedGenerator';
+import SettingsModal from './SettingsModal';
 
 export default function Dashboard() {
   const { publicKey, disconnect } = useWallet();
@@ -29,16 +30,12 @@ export default function Dashboard() {
   const port = useWalletPortfolio();
   const [copied, setCopied] = useState(false);
   const [isReferralOpen, setIsReferralOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const address = publicKey?.toBase58() || '';
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleDisconnect = () => {
     disconnect();
@@ -47,9 +44,8 @@ export default function Dashboard() {
 
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'tips', label: 'Tip Jar', icon: Gift },
+    { id: 'analytics', label: 'Tip Jar', icon: Gift },
     { id: 'embed', label: 'Share & Embed', icon: CodeIcon },
-    { id: 'analytics', label: 'Analytics', icon: PieChart },
     { id: 'history', label: 'Transactions', icon: Clock },
     { id: 'payouts', label: 'Withdraw', icon: DollarSign },
     { id: 'settings', label: 'Settings', icon: Shield },
@@ -60,7 +56,12 @@ export default function Dashboard() {
       <ReferralModal 
         isOpen={isReferralOpen} 
         onClose={() => setIsReferralOpen(false)} 
-        referralCode={profile.referralCode}
+        referralId={profile.referralId || profile.solDomain?.replace('.tiplnk.sol', '') || 'creator'}
+      />
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
       />
 
       {/* --- MOBILE HEADER --- */}
@@ -78,13 +79,13 @@ export default function Dashboard() {
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm "
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       <aside className={`
-        fixed md:static inset-y-0 left-0 w-72 border-r border-surface-900 flex flex-col shrink-0 bg-surface-950 md:bg-surface-950/20 z-50 transition-transform duration-300 transform
+        fixed md:static inset-y-0 left-0 w-50 border-r border-surface-900 flex flex-col shrink-0 bg-surface-950 md:bg-surface-950/20 z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         
@@ -113,46 +114,6 @@ export default function Dashboard() {
           })}
         </nav>
 
-        {/* User Identity Section */}
-        <div className="p-6 border-t border-surface-900 bg-surface-950/40 mt-auto">
-           <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-surface-800 border border-surface-700 overflow-hidden shrink-0">
-                {profile.nftAvatar?.image ? (
-                  <img src={profile.nftAvatar.image} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-600/20 to-brand-800/10">
-                    <ImageIcon size={18} className="text-surface-600" />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-sm truncate">{profile.solDomain || profile.displayName || 'Creator'}</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] font-mono text-surface-500 uppercase">{shortAddress}</span>
-                  <button onClick={copyAddress} className="text-surface-600 hover:text-brand-500 transition-colors">
-                    {copied ? <Check size={10} className="text-brand-500" /> : <Copy size={10} />}
-                  </button>
-                </div>
-              </div>
-           </div>
-           
-           <div className="grid grid-cols-2 gap-2">
-             <a 
-               href={`https://solscan.io/account/${address}`}
-               target="_blank"
-               rel="noopener noreferrer"
-               className="btn-secondary !text-[10px] !py-2 flex items-center justify-center gap-1 bg-surface-900/50 border-surface-800"
-             >
-               Explore <ExternalLink size={10} />
-             </a>
-             <button 
-               onClick={handleDisconnect}
-               className="btn-secondary !text-[10px] !py-2 flex items-center justify-center gap-1 bg-surface-900/50 border-surface-800 text-accent-red hover:bg-accent-red/5"
-             >
-               Logout <LogOut size={10} />
-             </button>
-           </div>
-        </div>
       </aside>
 
       {/* --- MAIN CONTENT --- */}
@@ -161,12 +122,11 @@ export default function Dashboard() {
           <Routes>
             <Route index element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
             <Route path="overview" element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
-            <Route path="tips" element={<TipWidget />} />
-            <Route path="embed" element={<EmbedGenerator handle={profile.handle} profileUrl={`${window.location.origin}/${profile.handle}`} />} />
             <Route path="analytics" element={<CreatorAnalyticsPanel />} />
+            <Route path="embed" element={<EmbedGenerator creatorAddress={address} handle={profile.solDomain || profile.displayName || address} />} />
             <Route path="history" element={<TransactionHistoryTab />} />
             <Route path="payouts" element={<PayoutPanel />} />
-            <Route path="settings" element={<SettingTab onInvite={() => setIsReferralOpen(true)} />} />
+            <Route path="settings" element={<SettingTab onInvite={() => setIsReferralOpen(true)} onOpenSettings={() => setIsSettingsOpen(true)} />} />
             <Route path="*" element={<Navigate to="overview" replace />} />
           </Routes>
         </div>
@@ -265,8 +225,9 @@ export function OverviewTab() {
     </div>
   );
 }
+
 /* ─── Setting Tab ─── */
-export function SettingTab({ onInvite }) {
+export function SettingTab({ onInvite, onOpenSettings }) {
   const { totalTipsUSDC, profile } = useApp();
   const portfolio = useWalletPortfolio();
 
@@ -277,6 +238,7 @@ export function SettingTab({ onInvite }) {
       desc: 'Review and update your personal info', 
       icon: Users, 
       badge: 'Verified',
+      action: onOpenSettings,
       color: 'text-brand-500'
     },
     { 
@@ -428,4 +390,3 @@ export function TransactionHistoryTab() {
     </div>
   );
 }
-

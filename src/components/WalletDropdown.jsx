@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useApp } from '../contexts/AppContext';
-import { ChevronDown, ChevronUp, User, LayoutDashboard, Gift, CreditCard, RefreshCw, HelpCircle, LogOut } from 'lucide-react';
+import { ChevronDown, ChevronUp, User, LayoutDashboard, Gift, CreditCard, RefreshCw, HelpCircle, LogOut, Copy, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function WalletDropdown() {
@@ -9,6 +9,8 @@ export default function WalletDropdown() {
   const { profile, resetOnboarding } = useApp();
   const [isOpen, setIsOpen] = useState(false);
   const [priceInSol, setPriceInSol] = useState(false);
+
+    const [copied, setCopied] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -30,6 +32,11 @@ export default function WalletDropdown() {
     disconnect();
     resetOnboarding();
     setIsOpen(false);
+  };
+    const copyAddress = () => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const navTo = (path) => {
@@ -58,6 +65,29 @@ export default function WalletDropdown() {
           <div className="px-4 py-2">
             <p className="text-xs font-semibold text-surface-500 mb-2">Creator Portal</p>
             <div className="space-y-1">
+              
+              <div className="btn-secondary flex flex-col items-start p-3">
+                <p className="font-bold text-sm truncate mb-1">{profile.solDomain || profile.displayName || 'Creator'}</p>
+                <div className="flex items-center gap-1.5 w-full justify-between">
+                  <span className="text-[10px] font-mono text-surface-500 uppercase">{shortAddress}</span>
+                  <div className="flex gap-1.5">
+                    <button onClick={copyAddress} className="p-1 rounded-md bg-surface-800 hover:bg-surface-700 text-surface-400 hover:text-white transition-colors" title="Copy Address">
+                      {copied ? <Check size={10} className="text-brand-500" /> : <Copy size={10} />}
+                    </button>
+                    <a
+                      href={`https://solscan.io/account/${address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 rounded-md bg-surface-800 hover:bg-surface-700 text-surface-400 hover:text-white transition-colors"
+                      title="View on Solscan"
+                    >
+                      <ExternalLink size={10} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+           
+           
               <button onClick={() => navTo(`/${profile.solDomain || 'creator'}`)} className="w-full flex items-center justify-between text-sm text-surface-200 hover:text-white hover:bg-surface-800/80 p-2 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
                   <User size={16} className="text-surface-400" />
@@ -95,16 +125,7 @@ export default function WalletDropdown() {
           <div className="px-4 py-2">
             <p className="text-xs font-semibold text-surface-500 mb-2">Settings</p>
             <div className="space-y-1">
-              <div className="w-full flex items-center justify-between text-sm text-surface-200 p-2 rounded-lg hover:bg-surface-800/80 transition-colors cursor-pointer" onClick={() => setPriceInSol(!priceInSol)}>
-                <div className="flex items-center gap-3">
-                  <span className="text-surface-400">§</span>
-                  <span>Price in SOL</span>
-                </div>
-                <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${priceInSol ? 'bg-white' : 'bg-surface-700'}`}>
-                  <div className={`w-3 h-3 rounded-full bg-surface-900 transition-transform ${priceInSol ? 'translate-x-4' : 'translate-x-0'}`} />
-                </div>
-              </div>
-
+            
               <button onClick={() => {}} className="w-full flex items-center gap-3 text-sm text-surface-200 hover:text-white hover:bg-surface-800/80 p-2 rounded-lg transition-colors">
                 <RefreshCw size={16} className="text-surface-400" />
                 <span>Change Wallet</span>

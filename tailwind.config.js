@@ -45,6 +45,9 @@ export default {
           light: '#FFA940',
           dark: '#CC7000',
         },
+        // Phantom brand purple for partner highlighting
+        'phantom-purple': '#8C4EFF',
+        'phantom-dark': '#5B21B6',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

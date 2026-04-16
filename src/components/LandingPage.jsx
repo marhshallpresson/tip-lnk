@@ -131,7 +131,7 @@ export default function LandingPage({ onGetStarted, onboardingComplete, connecte
           <p className="text-center text-[#c4ff00] font-bold tracking-widest uppercase text-[10px] sm:text-sm mb-10">Join 10,000+ Creators on TipLnk</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {[
-               { name: 'Voxel Artist', handle: '@voxel.tiplnk.sol', color: 'bg-emerald-500' },
+               { name: 'Mobot Defi', handle: '@mobot.tiplnk.sol', color: 'bg-emerald-500' },
                { name: 'DeFi Analyst', handle: '@defi.tiplnk.sol', color: 'bg-blue-500' },
                { name: 'Music Producer', handle: '@beats.tiplnk.sol', color: 'bg-purple-500' },
                { name: 'Web3 Dev', handle: '@dev.tiplnk.sol', color: 'bg-orange-500' }
@@ -212,8 +212,8 @@ export default function LandingPage({ onGetStarted, onboardingComplete, connecte
           </div>
           <p className="text-surface-500 text-sm">© 2026 TipLnk. Built for the Frontier.</p>
           <div className="flex gap-6">
-            <a href="#" className="text-surface-400 hover:text-[#c4ff00] transition-colors"><TwitterIcon /></a>
-            <a href="#" className="text-surface-400 hover:text-[#c4ff00] transition-colors"><GithubIcon /></a>
+            <a href="x.com/useTipLnk" className="text-surface-400 hover:text-[#c4ff00] transition-colors"><TwitterIcon /></a>
+            <a href="https://github.com/marhshallpresson/tip-lnk" className="text-surface-400 hover:text-[#c4ff00] transition-colors"><GithubIcon /></a>
           </div>
         </div>
       </footer>

@@ -21,8 +21,8 @@ export default function WalletModal({ isOpen, onClose, onConnected }) {
           <X size={24} />
         </button>
         
-        <WalletConnect onConnected={(addr) => {
-          onConnected(addr);
+        <WalletConnect onConnected={(addr, isAuth) => {
+          onConnected(addr, isAuth);
           onClose();
         }} />
       </div>

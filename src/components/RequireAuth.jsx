@@ -22,7 +22,7 @@ export default function RequireAuth({ children, requiredRole }) {
       <div className="min-h-screen flex items-center justify-center bg-surface-950">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-surface-400 animate-pulse">Synchronizing Profile...</p>
+          <p className="text-surface-400 animate-pulse">Monitor your Growth</p>
         </div>
       </div>
     );

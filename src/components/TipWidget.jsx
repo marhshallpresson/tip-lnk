@@ -34,7 +34,7 @@ export default function TipWidget({ fixedRecipient = null }) {
   const { connection } = useConnection();
   const { assessRecipient } = useSecurityGuardian();
 
-  const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
+  const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || profile.displayName || '');
   const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
   const [isResolving, setIsResolving] = useState(false);
   const [txStep, setTxStep] = useState('configure'); // configure, simulate, review, processing, done
@@ -49,39 +49,29 @@ export default function TipWidget({ fixedRecipient = null }) {
     }
     
     const resolveHandle = async () => {
-      if (!recipientInput || recipientInput.length < 3) {
+      if (!recipientInput || recipientInput.length < 32) { // Basic validation for Solana address length
         setResolvedAddress(null);
         return;
       }
 
       setIsResolving(true);
       try {
-        // 1. Check if it's already a valid SOL address
+        // For phase 1, we only resolve valid Solana addresses. SNS/handle resolution is Phase 2.
         if (recipientInput.length >= 32 && recipientInput.length <= 44) {
+          // A simple check for base58 characters could be added here for more robustness
           setResolvedAddress(recipientInput);
-          setIsResolving(false);
-          return;
+        } else {
+          setResolvedAddress(null);
         }
-
-        // 2. Simulate SNS/Handle resolution (e.g., test.sol)
-        // In production: await agent.resolve(recipientInput)
-        setTimeout(() => {
-          if (recipientInput.includes('.') || recipientInput.length > 5) {
-            // Mock destination for demo
-            setResolvedAddress('HN7cABqLq46Es1jh92dQQisG62sr6pD8HCHLSRsfK34Z');
-          } else {
-            setResolvedAddress(null);
-          }
-          setIsResolving(false);
-        }, 500);
       } catch (err) {
         console.error('Resolution error:', err);
         setResolvedAddress(null);
+      } finally {
         setIsResolving(false);
       }
     };
 
-    const timer = setTimeout(resolveHandle, 500);
+    const timer = setTimeout(resolveHandle, 300);
     return () => clearTimeout(timer);
   }, [recipientInput, fixedRecipient]);
 
@@ -214,13 +204,43 @@ export default function TipWidget({ fixedRecipient = null }) {
               value={recipientInput}
               onChange={(e) => setRecipientInput(e.target.value)} 
             />
-            {resolvedAddress && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-accent-green/10 text-accent-green px-2 py-1 rounded-md border border-accent-green/20">
-                <ShieldCheck size={12} />
-                <span className="text-[10px] font-bold uppercase">Verified</span>
-              </div>
-            )}
           </div>
+
+          {resolvedAddress && (
+            <div className="mt-4 p-3 bg-surface-800/50 rounded-xl border border-surface-700 flex flex-col items-start text-sm animate-fade-in">
+                {profile.solDomain && publicKey?.toBase58() === resolvedAddress && (
+                    <div className="flex items-center gap-2 mb-2 text-brand-400">
+                        <User size={14} />
+                        <span className="font-bold text-xs uppercase tracking-wider">Your Domain: {profile.solDomain}</span>
+                    </div>
+                )}
+                <div className="flex items-center w-full justify-between">
+                    <span className="font-mono text-surface-300 break-all">{resolvedAddress.slice(0, 6)}...{resolvedAddress.slice(-6)}</span>
+                    <div className="flex gap-2 ml-4">
+                        <button 
+                            onClick={() => navigator.clipboard.writeText(resolvedAddress)}
+                            className="p-1.5 rounded-md bg-surface-700 hover:bg-surface-600 text-surface-300 hover:text-white transition-colors"
+                            title="Copy Address"
+                        >
+                            <FileText size={14} />
+                        </button>
+                        <a 
+                            href={`https://solscan.io/account/${resolvedAddress}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-md bg-surface-700 hover:bg-surface-600 text-surface-300 hover:text-white transition-colors"
+                            title="View on Solscan"
+                        >
+                            <ExternalLink size={14} />
+                        </a>
+                    </div>
+                </div>
+                <div className="flex items-center gap-1.5 mt-2 bg-accent-green/10 text-accent-green px-2 py-1 rounded-md border border-accent-green/20">
+                    <ShieldCheck size={12} />
+                    <span className="text-[10px] font-bold uppercase">Verified Address</span>
+                </div>
+            </div>
+          )}
         </div>
       )}
 

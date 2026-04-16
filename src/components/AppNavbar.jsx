@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Zap, ArrowRight, User, LayoutDashboard } from 'lucide-react';
+import { Zap, ArrowRight, User, LayoutDashboard, LogOut } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useApp } from '../contexts/AppContext';
 import WalletDropdown from './WalletDropdown';
 
 export default function AppNavbar({ 
@@ -11,6 +13,8 @@ export default function AppNavbar({
   isDashboard = false 
 }) {
   const [scrolled, setScrolled] = useState(false);
+  const { publicKey, disconnect } = useWallet();
+  const { resetOnboarding } = useApp();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -18,62 +22,77 @@ export default function AppNavbar({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled || isDashboard 
-        ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-[#c4ff00]/20' 
-        : 'bg-transparent'
-    }`}>
-      <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={onViewProfile}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c4ff00] to-green-600 flex items-center justify-center shadow-[0_0_15px_rgba(196,255,0,0.4)]">
-            <Zap size={20} className="text-black" />
-          </div>
-          <span className="text-2xl font-black tracking-tight text-white">TipLnk</span>
-        </div>
+  const handleLogout = () => {
+    disconnect();
+    resetOnboarding();
+  };
 
-        <div className="hidden md:flex items-center gap-8 font-medium">
-          {!isDashboard ? (
-            <>
-              <a href="#features" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Features</a>
-              <a href="#compare" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Compare</a>
-              {onboardingComplete && (
-                <button 
-                  onClick={onViewDashboard}
-                  className="flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 font-bold transition-all"
-                >
-                   Dashboard
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              
-            </>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {connected ? (
-            <WalletDropdown />
-          ) : (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={onGetStarted} 
-                className="btn-secondary text-sm !px-6 hidden sm:block"
-              >
-                Log In
-              </button>
-              <button 
-                onClick={onGetStarted} 
-                className="btn-primary text-sm !px-6 flex items-center gap-2"
-              >
-                Start Earning <ArrowRight size={16} />
-              </button>
+  const address = publicKey?.toBase58() || '';
+  const shortAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50">
+      {/* Top Utility Bar (User Section) */}
+      
+
+      {/* Main Navigation Bar */}
+      <nav className={`transition-all duration-300 ${
+        scrolled || isDashboard 
+          ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-[#c4ff00]/20' 
+          : 'bg-transparent'
+      }`}>
+        <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={onViewProfile}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c4ff00] to-green-600 flex items-center justify-center shadow-[0_0_15px_rgba(196,255,0,0.4)]">
+              <Zap size={20} className="text-black" />
             </div>
-          )}
+            <span className="text-2xl font-black tracking-tight text-white">TipLnk</span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-8 font-medium">
+            {!isDashboard ? (
+              <>
+                <a href="#features" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Features</a>
+                <a href="#compare" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Compare</a>
+                {onboardingComplete && (
+                  <button 
+                    onClick={onViewDashboard}
+                    className="flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 font-bold transition-all"
+                  >
+                     Dashboard
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                
+              </>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {!connected && (
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={onGetStarted} 
+                  className="btn-secondary text-sm !px-6 hidden sm:block"
+                >
+                  Log In
+                </button>
+                <button 
+                  onClick={onGetStarted} 
+                  className="btn-primary text-sm !px-6 flex items-center gap-2"
+                >
+                  Start Earning <ArrowRight size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+          {connected && (
+            <WalletDropdown />
+      )}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

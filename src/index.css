@@ -85,6 +85,19 @@
   .step-dot-pending {
     @apply bg-surface-800;
   }
+
+  /* Badges */
+  .badge-solflare {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-solflare;
+    background-color: rgba(255, 140, 0, 0.1);
+    border: 1px solid #FF8C00;
+  }
+
+  .badge-phantom {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ;
+    background-color: rgba(140, 78, 255, 0.1);
+    border: 1px solid #8C4EFF;
+  }
 }
 
 /* Wallet adapter overrides */

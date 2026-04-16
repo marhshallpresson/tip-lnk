@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Gift, Copy, X, Check, Users } from 'lucide-react';
 
-export default function ReferralModal({ isOpen, onClose, referralCode = 'REF-6G90UK' }) {
+export default function ReferralModal({ isOpen, onClose, referralId = 'creator' }) {
   const [activeTab, setActiveTab] = useState('referrals');
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   if (!isOpen) return null;
 
-  const referralLink = `https://tiplnk.com?ref=${referralCode}`;
+  const referralLink = `${window.location.origin}/ref/${referralId}`;
 
   const copyToClipboard = (text, setCopied) => {
     navigator.clipboard.writeText(text);
@@ -42,18 +42,18 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'REF-6G9
         <div className="px-8 pb-8">
           <div className="bg-surface-900 border border-surface-800 rounded-2xl p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-surface-500 uppercase tracking-widest">Your Referral Code</span>
+              <span className="text-xs font-bold text-surface-500 uppercase tracking-widest">Your Referral ID</span>
               <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center">
-                 <span className="text-[10px] font-black text-white">X</span>
+                 <span className="text-[10px] font-black text-white">#</span>
               </div>
             </div>
             
             <div className="flex gap-2 mb-4">
               <div className="flex-1 bg-black/40 border border-surface-800 rounded-xl px-4 py-3 font-mono font-bold text-white flex items-center">
-                {referralCode}
+                {referralId}
               </div>
               <button 
-                onClick={() => copyToClipboard(referralCode, setCopiedCode)}
+                onClick={() => copyToClipboard(referralId, setCopiedCode)}
                 className="btn-secondary !px-4 !py-3 flex items-center gap-2 text-brand-400 border-brand-500/20"
               >
                 {copiedCode ? <Check size={16} /> : <Copy size={16} />}

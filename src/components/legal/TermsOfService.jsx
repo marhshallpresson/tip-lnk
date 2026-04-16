@@ -34,7 +34,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-bold text-white mb-4">2. Description of Service</h2>
               <p>
-                TipLnk provides a decentralized, non-custodial interface on the Solana blockchain that enables users to create creator profiles, register SNS subdomains, and facilitate peer-to-peer tipping using third-party routing protocols (e.g., DFlow, Jupiter).
+                TipLnk provides a decentralized, non-custodial interface on the Solana blockchain that enables users to create creator profiles, register SNS subdomains, and facilitate payment tipping using third-party routing protocols (e.g., DFlow, Jupiter).
               </p>
             </section>
 

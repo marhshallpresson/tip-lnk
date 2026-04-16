@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useAuth } from './AuthContext';
 import { getProfile, saveProfile, logTip } from '../utils/database';
 
 const AppContext = createContext(null);
@@ -14,14 +15,27 @@ const defaultState = {
     avatarType: 'none', // none, nft, social, uploaded
     solDomain: '',
     displayName: '',
+    bio: '',
+    roleTitle: '',
+    roleTier: null,
+    category: null,
+    location: '',
+    link: '',
+    preferences: {
+      generationSound: 'first', // first, always, never
+    },
     socials: {
       twitter: null,
       discord: null,
+      youtube: null,
+      instagram: null,
+      pinterest: null,
+      github: null,
       isTwitterVerified: false,
       isDiscordVerified: false,
     },
-    referralCode: 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-    referrals: [],
+    referralId: '', // Will be set to username
+    referrals: [], // Real referral data only
   },
   nfts: [],
   nftsLoading: false,
@@ -40,7 +54,8 @@ const defaultState = {
 
 export function AppProvider({ children }) {
   const { publicKey, connected, wallet } = useWallet();
-  const pubkeyStr = publicKey?.toBase58() || null;
+  const { user: authUser, loading: authLoading } = useAuth();
+  const pubkeyStr = publicKey?.toBase58() || (authUser ? `auth_${authUser.id}` : null);
   
   const [state, setState] = useState(defaultState);
   const [dbSynced, setDbSynced] = useState(false);
@@ -51,9 +66,7 @@ export function AppProvider({ children }) {
     const initAgent = async () => {
       if (connected && wallet && pubkeyStr) {
         try {
-          // In production: import { SolanaAgentKit } from 'solana-agent-kit'
-          // We provide the interface for AI-driven autonomous distribution
-          console.log(`AI Agent Initialized for ${pubkeyStr} - Ready for Phase 2 Autonomy`);
+          // Initialize interface for Phase 2 autonomous actions
           setAgent({
             id: 'tiplnk-agent-01',
             status: 'active',
@@ -117,20 +130,36 @@ export function AppProvider({ children }) {
   }, [state, pubkeyStr]);
 
   const role = useMemo(() => {
-    if (!connected || !pubkeyStr) return 'guest';
+    if (authLoading) return 'guest'; // Hold until auth state is known
+    if (!connected && !authUser) return 'guest';
     if (state.onboardingComplete) return 'creator';
     return 'user';
-  }, [connected, pubkeyStr, state.onboardingComplete]);
+  }, [connected, authUser, authLoading, state.onboardingComplete]);
 
   const update = useCallback((partial) => {
     setState((prev) => ({ ...prev, ...partial }));
   }, []);
 
   const updateProfile = useCallback((partial) => {
-    setState((prev) => ({
-      ...prev,
-      profile: { ...prev.profile, ...partial },
-    }));
+    setState((prev) => {
+      const newProfile = { ...prev.profile, ...partial };
+      
+      // Auto-generate referralId from username/domain if missing
+      if (!newProfile.referralId) {
+        const baseName = newProfile.solDomain 
+          ? newProfile.solDomain.replace('.tiplnk.sol', '') 
+          : (newProfile.displayName || '').toLowerCase().replace(/\s+/g, '');
+        
+        if (baseName) {
+          newProfile.referralId = baseName;
+        }
+      }
+
+      return {
+        ...prev,
+        profile: newProfile,
+      };
+    });
   }, []);
 
   const addTip = useCallback((tip, isSent = false) => {
@@ -157,7 +186,7 @@ export function AppProvider({ children }) {
   }, [pubkeyStr]);
 
   return (
-    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, addTip, resetOnboarding }}>
+    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, addTip, resetOnboarding, publicKey, connected }}>
       {children}
     </AppContext.Provider>
   );

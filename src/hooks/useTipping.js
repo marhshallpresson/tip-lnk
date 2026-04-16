@@ -52,33 +52,32 @@ export function useTipping(creatorAddress) {
       const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
       
       try {
-        // ─── DFlow Order API Simulation ───
-        // In production: GET https://quote-api.dflow.net/order?inputMint=...
-        const price = await fetchPrice(tokenSymbol);
+        // ─── Real DFlow Order API Integration ───
         const amountInLamports = toLamports(tokenAmount, token.decimals);
         
-        const priceScaled = BigInt(Math.floor(price * 1_000_000));
-        const outAmountInLamports = (amountInLamports * priceScaled) / BigInt(Math.pow(10, token.decimals));
-        const outAmountFormatted = fromLamports(outAmountInLamports, 6);
+        const params = new URLSearchParams({
+          inputMint: token.mint,
+          outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+          amount: amountInLamports.toString(),
+          slippageBps: '50',
+          userPublicKey: publicKey?.toBase58() || '',
+        });
 
+        const response = await fetch(`https://quote-api.dflow.net/order?${params}`);
+        if (!response.ok) throw new Error('DFlow API returned an error');
+        
+        const order = await response.json();
+        
+        const outAmountFormatted = fromLamports(BigInt(order.outAmount), 6);
         setTipAmountUSDC(outAmountFormatted);
 
         // Professional Route Payload (DFlow Schema)
         setRoute({
-          inputMint: token.mint,
-          outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          inAmount: amountInLamports.toString(),
-          outAmount: outAmountInLamports.toString(),
-          minOutAmount: (outAmountInLamports * BigInt(9950) / BigInt(10000)).toString(), // 0.5% slippage
-          priceImpactPct: parseFloat(tokenAmount) > 1000 ? "0.02" : "0.001",
-          executionMode: parseFloat(outAmountFormatted) > 100 ? 'async' : 'sync',
-          transaction: 'base64_encoded_tx_from_dflow_api', // Placeholder
-          routePlan: [
-            { swapInfo: { label: 'Jupiter', percent: 100 } }
-          ],
-          estimatedTime: parseFloat(outAmountFormatted) > 100 ? '~25s (Jito)' : '~6s (Atomic)'
+          ...order,
+          estimatedTime: order.executionMode === 'async' ? '~25s (Jito)' : '~6s (Atomic)'
         });
       } catch (err) {
+        console.error('Routing Engine Error:', err);
         setError('Routing engine unavailable. Please try again.');
       }
     },
@@ -112,10 +111,7 @@ export function useTipping(creatorAddress) {
             ...latestBlockhash
           }, 'confirmed');
         } else {
-          // Fallback or development mock signature if API didn't return a real TX yet
-          // In production, this branch should be removed or throw error
-          signature = `sig_${Math.random().toString(36).slice(2, 10)}`;
-          await new Promise(r => setTimeout(r, 1000));
+          throw new Error('Real-time routing engine did not return a valid transaction. Please try again.');
         }
 
         const result = {
