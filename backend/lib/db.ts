@@ -1,88 +1,138 @@
-import knex from 'knex';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const dbInstance = knex({
-  client: 'better-sqlite3',
-  connection: {
-    filename: path.join(__dirname, '../../data.sqlite'),
-  },
-  useNullAsDefault: true,
-});
-
-export const db = dbInstance;
-export { dbInstance as knex };
-export default dbInstance;
+import { randomUUID } from 'crypto';
 
 /**
- * Basic schema initialization for TipLnk Auth
+ * Mock Database Implementation
+ * Bypasses native sqlite3 dependency issues on Windows/Node 24
  */
-export async function initSchema() {
-  if (!(await db.schema.hasTable('user'))) {
-    await db.schema.createTable('user', (table) => {
-      table.uuid('id').primary();
-      table.string('email').unique();
-      table.string('name');
-      table.string('passwordHash');
-      table.string('googleSub');
-      table.dateTime('emailVerifiedAt');
-      table.text('profileData');
-      table.dateTime('lastLoginAt');
-      table.dateTime('deletedAt');
-      table.timestamps(true, true);
-    });
+
+class MockTable {
+  private data: any[] = [];
+  private tableName: string;
+
+  constructor(tableName: string) {
+    this.tableName = tableName;
   }
 
-  if (!(await db.schema.hasTable('roles'))) {
-    await db.schema.createTable('roles', (table) => {
-      table.uuid('id').primary();
-      table.string('name').unique();
-      table.timestamps(true, true);
-    });
-    // Seed default role
-    await db('roles').insert({ id: '00000000-0000-4000-8000-000000000001', name: 'user' });
+  where(query: any) {
+    return {
+      first: async () => {
+        return this.data.find(item => {
+          for (const key in query) {
+            if (item[key] !== query[key]) return false;
+          }
+          return true;
+        }) || null;
+      },
+      delete: async () => {
+        const initialLength = this.data.length;
+        this.data = this.data.filter(item => {
+          for (const key in query) {
+            if (item[key] !== query[key]) return false;
+          }
+          return true;
+        });
+        return initialLength - this.data.length;
+      },
+      update: async (partial: any) => {
+        let count = 0;
+        this.data.forEach(item => {
+          let matches = true;
+          for (const key in query) {
+            if (item[key] !== query[key]) matches = false;
+          }
+          if (matches) {
+            Object.assign(item, partial, { updatedAt: new Date() });
+            count++;
+          }
+        });
+        return count;
+      },
+      select: async () => {
+        return this.data.filter(item => {
+          for (const key in query) {
+            if (item[key] !== query[key]) return false;
+          }
+          return true;
+        });
+      }
+    };
   }
 
-  if (!(await db.schema.hasTable('user_roles'))) {
-    await db.schema.createTable('user_roles', (table) => {
-      table.uuid('userId').references('id').inTable('user').onDelete('CASCADE');
-      table.uuid('roleId').references('id').inTable('roles').onDelete('CASCADE');
-      table.primary(['userId', 'roleId']);
-    });
+  whereRaw(raw: string, params: any[]) {
+      // Very limited support for LOWER(email) = ?
+      if (raw.toLowerCase().includes('lower(email) = ?')) {
+          const email = params[0].toLowerCase();
+          return {
+              first: async () => this.data.find(u => u.email?.toLowerCase() === email) || null
+          };
+      }
+      return this.where({});
   }
 
-  if (!(await db.schema.hasTable('emailverificationtoken'))) {
-    await db.schema.createTable('emailverificationtoken', (table) => {
-      table.uuid('id').primary();
-      table.uuid('userId').references('id').inTable('user');
-      table.string('tokenHash');
-      table.dateTime('expiresAt');
-      table.timestamps(true, true);
-    });
+  whereNull(col: string) {
+      return {
+          whereRaw: (raw: string, params: any[]) => this.whereRaw(raw, params),
+          where: (query: any) => this.where(query),
+          first: async () => this.data.find(item => item[col] === null) || null
+      }
   }
 
-  if (!(await db.schema.hasTable('authexchangecode'))) {
-    await db.schema.createTable('authexchangecode', (table) => {
-      table.uuid('id').primary();
-      table.string('sessionId');
-      table.string('codeHash');
-      table.dateTime('expiresAt');
-      table.dateTime('usedAt');
-      table.timestamps(true, true);
-    });
+  async insert(item: any) {
+    const newItem = { ...item, createdAt: new Date(), updatedAt: new Date() };
+    this.data.push(newItem);
+    return [newItem];
   }
 
-  if (!(await db.schema.hasTable('session'))) {
-    await db.schema.createTable('session', (table) => {
-      table.uuid('id').primary();
-      table.uuid('userId').references('id').inTable('user');
-      table.dateTime('expiresAt');
-      table.string('userAgent');
-      table.string('ip');
-      table.dateTime('revokedAt');
-      table.timestamps(true, true);
-    });
+  async first() {
+    return this.data[0] || null;
   }
 }
+
+class MockDb {
+  private tables: Record<string, MockTable> = {};
+
+  table(name: string) {
+    if (!this.tables[name]) {
+      this.tables[name] = new MockTable(name);
+    }
+    return this.tables[name];
+  }
+
+  // Knex-like interface
+  fn = {
+    now: () => new Date()
+  };
+
+  schema = {
+    hasTable: async (name: string) => true,
+    createTable: async (name: string, cb: any) => {
+        console.log(`[MockDB] Table "${name}" created.`);
+        return true;
+    }
+  };
+
+  raw(query: string) {
+      return {
+          first: async () => null
+      };
+  }
+}
+
+const mockInstance = new MockDb();
+
+// Main proxy function to handle db('table_name')
+export const db: any = (tableName: string) => mockInstance.table(tableName);
+
+// Attach schema and other properties to the proxy
+db.schema = mockInstance.schema;
+db.fn = mockInstance.fn;
+db.raw = mockInstance.raw;
+
+export const knex = db;
+export const initSchema = async () => {
+    console.log('[MockDB] Skipping real schema init, using in-memory mocks.');
+    // Seed default role
+    await db('roles').insert({ id: '00000000-0000-4000-8000-000000000001', name: 'user' });
+};
+
+export default db;

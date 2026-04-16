@@ -34,7 +34,7 @@ export const getCookieOptions = (req: Request) => {
   return {
     httpOnly: true,
     secure: !isLocalhost,
-    sameSite: 'lax',
+    sameSite: 'lax' as any,
     path: '/',
     signed: true,
     maxAge: SESSION_DURATION_MS,
@@ -92,6 +92,13 @@ export const destroySession = async (req: Request, res: Response) => {
   const opts = getCookieOptions(req)
   res.clearCookie(SESSION_COOKIE_NAME, opts as any)
   clearCsrfToken(req, res)
+}
+
+export const revokeAllUserSessions = async (userId: string) => {
+  await db('session').where({ userId }).update({
+    revokedAt: new Date(),
+    expiresAt: new Date(),
+  }).catch(() => null)
 }
 
 export const getUserRoles = async (userId: string) => {

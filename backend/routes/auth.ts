@@ -1,11 +1,11 @@
 import { Router, type Request, type Response } from 'express'
 import * as oidc from 'openid-client'
-import { db } from '../lib/db.js'
-import { sendMail } from '../lib/mailer.js'
-import { templates } from '../lib/mail-templates.js'
-import { hashPassword, randomCode, randomToken, sha256Hex, verifyPassword } from '../lib/password.js'
+import { db } from '../lib/db'
+import { sendMail } from '../lib/mailer'
+import { templates } from '../lib/mail-templates'
+import { hashPassword, randomCode, randomToken, sha256Hex, verifyPassword } from '../lib/password'
 import { randomUUID } from 'crypto'
-import { logError, serializeError, log } from '../lib/logger.js'
+import { logError, serializeError, log } from '../lib/logger'
 import { 
     createSession, 
     destroySession, 
@@ -13,9 +13,9 @@ import {
     getCookieOptions, 
     getUserRoles,
     revokeAllUserSessions
-} from '../lib/session.js'
-import { resolveSessionTokenSecret, signSessionToken } from '../lib/session-token.js'
-import { ensureCsrfToken } from '../lib/csrf.js'
+} from '../lib/session'
+import { resolveSessionTokenSecret, signSessionToken } from '../lib/session-token'
+import { ensureCsrfToken } from '../lib/csrf'
 
 const router = Router()
 
@@ -317,10 +317,10 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     
     const opts = getCookieOptions(req)
     const clearOpts = clearCookieOpts(opts as any)
-    res.clearCookie('g_state', clearOpts)
-    res.clearCookie('g_verifier', clearOpts)
-    res.clearCookie('g_nonce', clearOpts)
-    res.clearCookie('g_next', clearOpts)
+    res.clearCookie('g_state', clearOpts as any)
+    res.clearCookie('g_verifier', clearOpts as any)
+    res.clearCookie('g_nonce', clearOpts as any)
+    res.clearCookie('g_next', clearOpts as any)
 
     if (!stateCookie || !verifierCookie || !nonceCookie) {
       redirectToLoginWithOAuthError(req, res, 'missing_state', nextCookie)
@@ -336,6 +336,10 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     })
 
     const claims = tokenSet.claims()
+    if (!claims) {
+      redirectToLoginWithOAuthError(req, res, 'oauth_failed', nextCookie)
+      return
+    }
     const sub = typeof claims.sub === 'string' ? claims.sub : null
     const email = typeof claims.email === 'string' ? normalizeEmail(claims.email) : null
     const emailVerified = Boolean((claims as any).email_verified)

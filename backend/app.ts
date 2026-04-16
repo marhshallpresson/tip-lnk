@@ -6,6 +6,7 @@ import compression from 'compression'
 import { randomUUID } from 'crypto'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth.js'
+import solanaRoutes from './routes/solana.js'
 import { logError, logRequest, serializeError } from './lib/logger.js'
 import { csrfProtection } from './middleware/csrf.js'
 
@@ -65,6 +66,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/solana', solanaRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

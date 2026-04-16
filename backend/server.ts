@@ -1,6 +1,6 @@
-import app from './app.js';
-import { db, initSchema } from './lib/db.js';
-import { logError, serializeError } from './lib/logger.js';
+import app from './app.js'
+import { db, initSchema } from './lib/db.js'
+import { logError, serializeError } from './lib/logger.js'
 
 const PORT = Number(process.env.PORT || process.env.API_PORT || 3005);
 
