@@ -48,7 +48,8 @@ export const sendMail = async (args: {
     subject: args.subject,
     text: args.text,
     html: args.html,
-  })  if (shouldNotify) {
+  })
+  if (shouldNotify) {
     createNotification(args.notify as CreateNotificationArgs).catch(() => null)
   }
   return { skipped: false as const }

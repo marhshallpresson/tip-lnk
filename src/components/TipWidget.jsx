@@ -350,7 +350,7 @@ export default function TipWidget({ fixedRecipient = null }) {
 
   // ─── Step 1: Default Configure View ───
   return (
-    <div id="tip-widget" className="glass-card p-10 max-w-lg mx-auto shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-brand-500/30">
+    <div id="tip-widget" className="glass-card p-6 sm:p-10 max-w-lg mx-auto shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-brand-500/30">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-accent-cyan opacity-50" />
       
       <div className="text-center mb-10">
@@ -383,12 +383,12 @@ export default function TipWidget({ fixedRecipient = null }) {
       )}
 
       {/* Amount & Multipliers */}
-      <div className="bg-surface-900 border border-surface-800 rounded-[32px] p-8 mb-8">
+      <div className="bg-surface-900 border border-surface-800 rounded-[32px] p-6 sm:p-8 mb-8">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <span className="text-4xl font-black text-white">$</span>
+            <span className="text-3xl sm:text-4xl font-black text-white">$</span>
             <input
               type="number"
-              className="w-32 bg-transparent text-5xl font-black outline-none placeholder-surface-800 caret-brand-500"
+              className="w-24 sm:w-32 bg-transparent text-4xl sm:text-5xl font-black outline-none placeholder-surface-800 caret-brand-500"
               placeholder="5"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

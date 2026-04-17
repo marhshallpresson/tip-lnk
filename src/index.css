@@ -98,6 +98,29 @@
     background-color: rgba(140, 78, 255, 0.1);
     border: 1px solid #8C4EFF;
   }
+
+  /* Mobile UI Overrides */
+  @media (max-width: 640px) {
+    .btn-primary, .btn-secondary, .btn-outline {
+      @apply w-full px-4 py-4 text-base;
+    }
+    
+    .glass-card {
+      @apply rounded-xl p-4;
+    }
+
+    .home-card {
+      @apply rounded-xl p-5;
+    }
+
+    h1 {
+      @apply text-3xl;
+    }
+    
+    .input-field {
+      @apply text-base px-4 py-4;
+    }
+  }
 }
 
 /* Wallet adapter overrides */

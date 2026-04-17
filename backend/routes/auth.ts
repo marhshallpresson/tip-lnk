@@ -225,7 +225,7 @@ const issueAuthExchangeCode = async (sessionId: string) => {
     codeHash,
     expiresAt,
     usedAt: null,
-    createdAt: new Date(),
+    created_at: new Date(),
   })
 
   return { code, expiresAt }
@@ -246,7 +246,7 @@ const issueEmailVerification = async (userId: string, email: string, name: strin
     userId,
     tokenHash,
     expiresAt,
-    createdAt: new Date(),
+    created_at: new Date(),
   })
   
   console.log(`[Email Verification] Code for ${email}: ${code}`)
@@ -273,7 +273,7 @@ const issuePasswordReset = async (userId: string, email: string, name: string, r
     userId,
     tokenHash,
     expiresAt,
-    createdAt: new Date(),
+    created_at: new Date(),
   })
 
   const link = `${appUrl(req)}/reset-password?token=${token}`
@@ -372,7 +372,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     if (!user) {
       user = await findUserByEmailInsensitive(email)
       if (user) {
-        await db('user').where({ id: user.id }).update({ googleSub: sub, updatedAt: new Date() })
+        await db('user').where({ id: user.id }).update({ googleSub: sub, updated_at: new Date() })
       } else {
         const userId = randomUUID()
         await db('user').insert({
@@ -382,8 +382,8 @@ router.get('/google/callback', async (req: Request, res: Response) => {
           googleSub: sub,
           emailVerifiedAt: new Date(),
           profileData: JSON.stringify({ photo_url: picture }),
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         })
         user = await db('user').where({ id: userId }).first()
         
@@ -433,8 +433,8 @@ router.post('/register', async (req: Request, res: Response) => {
       name,
       passwordHash,
       profileData: JSON.stringify({}),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      created_at: new Date(),
+      updated_at: new Date(),
     })
 
     const role = await db('roles').where({ name: 'user' }).first()
@@ -510,7 +510,7 @@ router.post('/wallet-login', async (req: Request, res: Response) => {
     try {
       const sessionUser = await getSessionUser(req);
       if (sessionUser) {
-        await db('user').where({ id: sessionUser.id }).update({ walletAddress, updatedAt: new Date() });
+        await db('user').where({ id: sessionUser.id }).update({ walletAddress, updated_at: new Date() });
         res.status(200).json({ success: true, user: { ...sessionUser, walletAddress } });
         return;
       }
@@ -530,8 +530,8 @@ router.post('/wallet-login', async (req: Request, res: Response) => {
             name: 'Phantom User',
             walletAddress,
             profileData: JSON.stringify({ displayName: 'Phantom Creator' }),
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
           });
           user = await db('user').where({ id: userId }).first();
         }
@@ -669,8 +669,8 @@ router.post('/exchange', async (req: Request, res: Response) => {
             name: 'Phantom Creator',
             walletAddress,
             profileData: JSON.stringify({ displayName: 'New Creator', provider: 'phantom-google' }),
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
           });
           user = await db('user').where({ id: userId }).first();
         }

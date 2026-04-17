@@ -25,6 +25,15 @@ const TermsOfService = lazy(() => import('./components/legal/TermsOfService'));
 const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy'));
 
 
+// Auto-scroll to top on navigation
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function AppContent() {
   const { role, onboardingStep, update } = useApp();
   const { showWalletModal, setShowWalletModal } = useAuth();
@@ -58,6 +67,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-surface-950 text-white flex flex-col">
+      <ScrollToTop />
       {/* Standard App Navbar - Hidden on White-Label Creator Pages */}
       {!location.pathname.match(/^\/[^/]+$/) || ['/terms', '/privacy', '/onboarding', '/dashboard'].some(p => location.pathname.startsWith(p)) ? (
         <AppNavbar 

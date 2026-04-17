@@ -57,7 +57,7 @@ export const createSession = async (
     expiresAt,
     userAgent,
     ip,
-    createdAt: new Date()
+    created_at: new Date()
   })
 
   const opts = getCookieOptions(req)

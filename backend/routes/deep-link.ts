@@ -70,7 +70,7 @@ router.post('/link-social', async (req: Request, res: Response) => {
       id: walletAddress, 
       walletAddress,
       [column]: handle.replace(/^@/, ''),
-      updatedAt: new Date()
+      updated_at: new Date()
     }).onConflict('walletAddress').merge()
 
     res.json({ success: true, message: `Successfully linked verified ${platform} handle.` })

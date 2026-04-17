@@ -30,11 +30,11 @@ export default function useWalletPortfolio() {
       // ─── Parallel Data Fetching ───
       const [balance, priceRes] = await Promise.all([
         connection.getBalance(publicKey),
-        fetch('https://api.jup.ag/price/v2?ids=SOL').then(r => r.json())
+        fetch('https://price.jup.ag/v6/price?ids=SOL').then(r => r.json()).catch(() => ({ data: { SOL: { price: 180 } } }))
       ]);
 
       const solBalance = balance / LAMPORTS_PER_SOL;
-      const solPrice = priceRes.data?.['So11111111111111111111111111111111111111112']?.price || 180;
+      const solPrice = priceRes.data?.SOL?.price || 180;
 
       // ─── DAS API Integration (Digital Asset Standard) ───
       // In production: POST RPC with 'searchAssets' or 'getAssetsByOwner'

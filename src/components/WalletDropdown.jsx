@@ -50,9 +50,16 @@ export default function WalletDropdown() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-surface-700 bg-surface-900/60 hover:bg-surface-800 transition-colors"
       >
-        <div className="w-5 h-5 rounded-full bg-gradient-to-r from-accent-cyan to-brand-500 overflow-hidden">
-          {profile.nftAvatar?.image && !profile.nftAvatar.image.includes('placeholder') && (
-            <img src={profile.nftAvatar.image} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+        <div className="w-5 h-5 rounded-full bg-surface-800 overflow-hidden flex items-center justify-center border border-surface-700">
+          {profile.avatarUrl || (profile.nftAvatar?.image && !profile.nftAvatar.image.includes('placeholder')) ? (
+            <img 
+              src={profile.avatarUrl || profile.nftAvatar.image} 
+              alt="" 
+              className="w-full h-full object-cover" 
+              onError={(e) => { e.target.style.display = 'none'; }} 
+            />
+          ) : (
+            <User size={12} className="text-surface-500" />
           )}
         </div>
         <span className="text-sm font-medium text-white font-mono tracking-tight">{shortAddress}</span>

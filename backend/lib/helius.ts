@@ -122,7 +122,7 @@ export async function backfillTransactions(address: string, limit = 100) {
       await db('indexer_state').insert({
         address,
         lastIndexedSlot: maxSlot,
-        updatedAt: new Date()
+        updated_at: new Date()
       }).onConflict('address').merge();
     }
 

@@ -128,16 +128,37 @@ export default function SettingsModal({ isOpen, onClose }) {
           <section className="space-y-4">
              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-surface-600">Your Avatar</h3>
              <div className="p-6 bg-surface-900/40 border border-surface-800/60 rounded-2xl flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full bg-brand-600 flex items-center justify-center text-white text-2xl font-black shadow-lg border-2 border-surface-900">
-                  {getInitials(formData.displayName)}
+                <div className="relative group">
+                  <div className="w-20 h-20 rounded-2xl bg-surface-800 flex items-center justify-center text-white text-2xl font-black shadow-lg border border-surface-700 overflow-hidden">
+                    {profile.avatarUrl ? (
+                      <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      getInitials(formData.displayName)
+                    )}
+                  </div>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-surface-400 leading-relaxed mb-4">
-                    Your avatar is automatically generated based on your account.
+                    Set a custom picture or NFT as your profile avatar.
                   </p>
-                  <button className="btn-secondary !px-4 !py-2 text-xs font-bold">
+                  <label className="btn-secondary !px-4 !py-2 text-xs font-bold cursor-pointer inline-block">
                     Change Avatar
-                  </button>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            updateProfile({ avatarUrl: reader.result, avatarType: 'uploaded' });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
              </div>
           </section>

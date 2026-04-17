@@ -53,13 +53,16 @@ export default function CreatorPage() {
 
   const tipsReceived = creatorProfile?.tipsReceived || [];
   const totalTipsUSDC = creatorProfile?.totalTipsUSDC || 0;
-  const displayName = creatorProfile?.displayName || username;
-  const solDomain = creatorProfile?.solDomain || null;
-  const walletAddress = creatorProfile?.walletAddress || null;
-  const roleTitle = creatorProfile?.roleTitle || null;
-  const bio = creatorProfile?.bio || null;
-  const avatarUrl = creatorProfile?.avatarUrl || null;
-  const socials = creatorProfile?.socials || {};
+  
+  // Extract profile-specific fields from the nested profile object
+  const profile = creatorProfile?.profile || {};
+  const displayName = profile.displayName || username;
+  const solDomain = profile.solDomain || null;
+  const walletAddress = creatorProfile?.walletAddress || profile.walletAddress || null;
+  const roleTitle = profile.roleTitle || null;
+  const bio = profile.bio || null;
+  const avatarUrl = profile.avatarUrl || null;
+  const socials = profile.socials || {};
 
   const supporterCount = useMemo(() => {
     const unique = new Set(tipsReceived.map(t => t.sender));
@@ -157,7 +160,7 @@ export default function CreatorPage() {
                   )}
                   {socials.discord && (
                     <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5865F2]/10 text-[#5865F2]">
-                      <Twitter size={16} />
+                      <MessageCircle size={16} />
                       {socials.discord}
                     </div>
                   )}

@@ -78,7 +78,7 @@ router.get('/profile', async (req, res) => {
             email: `${wallet}@phantom.local`,
             walletAddress: wallet,
             profileData: JSON.stringify({ displayName: 'New Creator' }),
-            createdAt: new Date()
+            created_at: new Date()
         });
         user = await db('user').where({ id: userId }).first();
     }
@@ -106,7 +106,13 @@ router.get('/profile', async (req, res) => {
 router.post('/profile', async (req, res) => {
   const { walletAddress, profile } = req.body;
   try {
-    await db('user').where({ walletAddress }).orWhere({ id: walletAddress }).update({ profileData: JSON.stringify(profile) });
+    await db('user')
+      .where({ walletAddress })
+      .orWhere({ id: walletAddress })
+      .update({ 
+        profileData: JSON.stringify(profile),
+        updated_at: new Date()
+      });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to update profile' });
