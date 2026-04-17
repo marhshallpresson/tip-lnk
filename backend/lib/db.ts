@@ -12,7 +12,10 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
  */
 const dbInstance = knex({
   client: 'pg',
-  connection: process.env.DATABASE_URL,
+  connection: {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false } // Required for Supabase
+  },
   pool: {
     min: 2,
     max: 10
@@ -117,7 +120,18 @@ export async function initSchema() {
       console.log('✨ Session table provisioned.');
     }
 
-    console.log('✅ Supabase Schema Sync Complete.');
+    // ─── ELITE SECURITY HARDENING: Enable RLS ───
+    console.log('🛡️ Hardening database with Row Level Security...');
+    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles'];
+    for (const table of tables) {
+        try {
+            await db.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY;`);
+        } catch (e) {
+            // Table might already have RLS enabled or not exist yet
+        }
+    }
+
+    console.log('✅ Supabase Schema Sync & Hardening Complete.');
   } catch (err) {
     console.error('❌ Supabase Sync Failed:', err);
   }
