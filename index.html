@@ -37,6 +37,12 @@
 
 <body class="bg-surface-950 text-white antialiased " style="zoom: 85%;">
   <div id="root"></div>
+  <script>
+    // ─── Professional Wallet Standard Polyfill ───
+    if (typeof window !== 'undefined' && window.navigator && !window.navigator.wallets) {
+      window.navigator.wallets = [];
+    }
+  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 
