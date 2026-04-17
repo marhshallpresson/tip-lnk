@@ -19,6 +19,7 @@ const dbInstance = knex({
   },
   acquireConnectionTimeout: 10000
 });
+
 export const db = dbInstance;
 export { dbInstance as knex };
 export default dbInstance;
@@ -32,26 +33,34 @@ export async function initSchema() {
 
   try {
     // ─── BRUTAL RESET: User Table ───
-    // We drop and recreate once to fix the UUID -> STRING type mismatch permanently.
-    // In a live production app, we would use a migration, but for hackathon launch, this is the most reliable path.
-    if (process.env.RESET_DB === 'true' || !(await db.schema.hasTable('user'))) {
-        await db.schema.dropTableIfExists('user');
-        await db.schema.createTable('user', (table) => {
-          table.string('id').primary(); 
-          table.string('email').unique();
-          table.string('name');
-          table.string('passwordHash');
-          table.string('googleSub');
-          table.string('twitterHandle').unique();
-          table.string('discordHandle').unique();
-          table.string('walletAddress').unique();
-          table.dateTime('emailVerifiedAt');
-          table.text('profileData');
-          table.dateTime('lastLoginAt');
-          table.dateTime('deletedAt');
-          table.timestamps(true, true);
-        });
-        console.log('✨ User table provisioned with Elite String IDs.');
+    if (process.env.RESET_DB === 'true') {
+        console.log('🗑️ Brutal Reset active: Dropping existing tables...');
+        await db.raw('DROP TABLE IF EXISTS "session" CASCADE');
+        await db.raw('DROP TABLE IF EXISTS "user" CASCADE');
+        await db.raw('DROP TABLE IF EXISTS "tips" CASCADE');
+        await db.raw('DROP TABLE IF EXISTS "indexer_state" CASCADE');
+        await db.raw('DROP TABLE IF EXISTS "user_roles" CASCADE');
+        await db.raw('DROP TABLE IF EXISTS "roles" CASCADE');
+    }
+
+    // 1. User Table
+    if (!(await db.schema.hasTable('user'))) {
+      await db.schema.createTable('user', (table) => {
+        table.string('id').primary(); 
+        table.string('email').unique();
+        table.string('name');
+        table.string('passwordHash');
+        table.string('googleSub');
+        table.string('twitterHandle').unique();
+        table.string('discordHandle').unique();
+        table.string('walletAddress').unique();
+        table.dateTime('emailVerifiedAt');
+        table.text('profileData');
+        table.dateTime('lastLoginAt');
+        table.dateTime('deletedAt');
+        table.timestamps(true, true);
+      });
+      console.log('✨ User table provisioned.');
     }
 
     // 2. Tips Table
@@ -71,6 +80,7 @@ export async function initSchema() {
         table.index(['recipient']);
         table.index(['timestamp']);
       });
+      console.log('✨ Tips table provisioned.');
     }
 
     // 3. Indexer State
@@ -80,33 +90,34 @@ export async function initSchema() {
         table.bigInteger('lastIndexedSlot').defaultTo(0);
         table.dateTime('updatedAt').defaultTo(db.fn.now());
       });
+      console.log('✨ Indexer state table provisioned.');
     }
 
     // 4. Roles & Auth Tables
     if (!(await db.schema.hasTable('roles'))) {
       await db.schema.createTable('roles', (table) => {
-        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.string('id').primary();
         table.string('name').unique();
         table.timestamps(true, true);
       });
-      await db('roles').insert({ name: 'user' }).onConflict('name').ignore();
+      console.log('✨ Roles table provisioned.');
     }
 
     if (!(await db.schema.hasTable('session'))) {
       await db.schema.createTable('session', (table) => {
-        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
-        table.uuid('userId').references('id').inTable('user');
+        table.string('id').primary();
+        table.string('userId').references('id').inTable('user');
         table.dateTime('expiresAt');
         table.string('userAgent');
         table.string('ip');
         table.dateTime('revokedAt');
         table.timestamps(true, true);
       });
+      console.log('✨ Session table provisioned.');
     }
 
     console.log('✅ Supabase Schema Sync Complete.');
   } catch (err) {
     console.error('❌ Supabase Sync Failed:', err);
-    // Do not exit process, allow backend to attempt reconnect
   }
 }
