@@ -19,13 +19,10 @@ async function start() {
   }
 }
 
-process.on('unhandledRejection', (reason) => {
-  logError('unhandled_rejection', { error: serializeError(reason) });
-});
+// ─── Professional Vercel Serverless Export ───
+// Only run the start() function if we are NOT on Vercel
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    start();
+}
 
-process.on('uncaughtException', (err) => {
-  logError('uncaught_exception', { error: serializeError(err) });
-  process.exit(1);
-});
-
-start();
+export default app;

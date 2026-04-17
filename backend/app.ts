@@ -10,9 +10,14 @@ import solanaRoutes from './routes/solana.js'
 import deepLinkRoutes from './routes/deep-link.js'
 import { logError, logRequest, serializeError } from './lib/logger.js'
 import { csrfProtection } from './middleware/csrf.js'
+import { initSchema } from './lib/db.js'
 
 // Load env
 dotenv.config()
+
+// ─── Professional Serverless DB Boot ───
+// Ensures Supabase schema is synced on cold-start
+initSchema().catch(err => console.error('Serverless DB Init Failed:', err));
 
 const app: express.Application = express()
 

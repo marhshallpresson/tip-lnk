@@ -31,10 +31,14 @@ export async function initSchema() {
   console.log('🚀 Synchronizing schema with Supabase...');
 
   try {
+    // Force recreate 'user' table to fix UUID type mismatch from previous runs
+    // Only do this during the Elite migration phase
+    // await db.schema.dropTableIfExists('user'); 
+
     // 1. User Table
     if (!(await db.schema.hasTable('user'))) {
       await db.schema.createTable('user', (table) => {
-        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.string('id').primary(); 
         table.string('email').unique();
         table.string('name');
         table.string('passwordHash');
@@ -48,6 +52,9 @@ export async function initSchema() {
         table.dateTime('deletedAt');
         table.timestamps(true, true);
       });
+    } else {
+        // Elite Migration: Ensure ID is VARCHAR if it was previously UUID
+        await db.raw('ALTER TABLE "user" ALTER COLUMN "id" TYPE VARCHAR(255)');
     }
 
     // 2. Tips Table

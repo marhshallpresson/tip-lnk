@@ -58,7 +58,17 @@ router.get('/profile', async (req, res) => {
   if (!wallet) return res.status(400).json({ error: 'Wallet required' });
 
   try {
-    let user = await db('user').where({ walletAddress: wallet }).orWhere({ googleSub: wallet }).orWhere({ id: wallet }).first();
+    // Advanced Query: Search by walletAddress first (most common), then googleSub, then id
+    let user = await db('user').where({ walletAddress: wallet }).first();
+    
+    if (!user) {
+        user = await db('user').where({ googleSub: wallet }).first();
+    }
+    
+    // Check if it's a valid UUID before searching ID column
+    if (!user && wallet.length === 36 && wallet.includes('-')) {
+        user = await db('user').where({ id: wallet }).first();
+    }
     
     // Auto-provision user if missing from Supabase
     if (!user) {
