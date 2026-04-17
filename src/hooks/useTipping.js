@@ -56,7 +56,8 @@ export function useTipping(creatorAddress) {
         const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
         const amountInLamports = toLamports(tokenAmount, token.decimals);
         
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
+        const isProd = import.meta.env.PROD;
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
         const params = new URLSearchParams({
           inputMint: token.mint,
           outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
@@ -97,7 +98,8 @@ export function useTipping(creatorAddress) {
 
       try {
         // ─── Phase 1: Professional Priority Fee Integration ───
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
+        const isProd = import.meta.env.PROD;
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
         const feeResponse = await fetch(`${API_BASE_URL}/api/solana/priority-fee?accounts=${route.inputMint},${route.outputMint},${creatorAddress}`);
         const { fees } = await feeResponse.json();
         

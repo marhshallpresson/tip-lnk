@@ -47,12 +47,12 @@ export default function WalletConnect({ onConnected }) {
   const { login, register, user: authUser, loginWithWallet } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
-  const [view, setView] = useState('wallets'); // selection, wallets, email-login, email-register, email-success
+  const [view, setView] = useState('wallets'); // selection, wallets, email-login, email-register, email-verify, email-success
   const [advancing, setAdvancing] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', code: '' });
   const [countdown, setCountdown] = useState(5);
   const navigate = useNavigate();
 
@@ -117,10 +117,8 @@ export default function WalletConnect({ onConnected }) {
             // Define the Elite Callback Zone
             const redirectUri = `${window.location.origin}/auth/callback/phantom-google`;
             
-            // Standardize the connect call with our production redirect
-            const result = await phantomSdk.connect('google', {
-                redirectUrl: redirectUri
-            });
+            // Standardize the connect call - Provider is first argument
+            const result = await phantomSdk.connect('google');
             
             // Note: If result is returned immediately, use it. 
             // If it redirects (popup), the AuthCallbackHandler handles the rest.
@@ -161,14 +159,23 @@ export default function WalletConnect({ onConnected }) {
       let result;
       if (view === 'email-login') {
         result = await login(formData.email, formData.password);
-      } else {
+      } else if (view === 'email-register') {
         result = await register(formData.name, formData.email, formData.password);
+      } else if (view === 'email-verify') {
+          // Verify code (simulated for flow)
+          if (formData.code.length === 6) {
+              setView('email-success');
+              return;
+          } else {
+              setAuthError('Please enter a valid 6-digit verification code.');
+              return;
+          }
       }
 
       if (result.success) {
-        // After email registration, we show a success screen prompting for wallet
+        // After email registration, we wait for verification code
         if (view === 'email-register') {
-            setView('email-success');
+            setView('email-verify');
         } else {
             // If just logging in, we might still want them to connect a wallet
             setView('wallets');
@@ -191,6 +198,52 @@ export default function WalletConnect({ onConnected }) {
   const isSolflareWallet = wallet?.adapter?.name?.toLowerCase().includes('solflare');
   const isPhantomWallet = wallet?.adapter?.name?.toLowerCase().includes('phantom');
   
+  if (view === 'email-verify') {
+    return (
+        <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up relative overflow-hidden">
+            <div className="w-16 h-16 rounded-full bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
+                <Mail size={32} className="text-brand-400" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2">Check your email</h2>
+            <p className="text-surface-400 text-sm mb-8 leading-relaxed">
+                We've sent a 6-digit verification code to <span className="text-white font-bold">{formData.email}</span>.
+            </p>
+            
+            {authError && (
+                <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-xl text-accent-red text-xs text-left">
+                    {authError}
+                </div>
+            )}
+
+            <form onSubmit={handleEmailAuth} className="space-y-6">
+                <div className="flex justify-center">
+                    <input 
+                        type="text" 
+                        name="code" 
+                        maxLength={6}
+                        required 
+                        autoFocus
+                        value={formData.code}
+                        onChange={handleInputChange}
+                        className="w-full max-w-[240px] h-16 bg-surface-900 border-2 border-surface-800 rounded-2xl text-center text-3xl tracking-[0.3em] font-black text-white focus:border-brand-500 transition-all outline-none" 
+                        placeholder="000000" 
+                    />
+                </div>
+                <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-lg">
+                    Verify & Continue
+                </button>
+            </form>
+            
+            <button 
+                onClick={() => setView('email-register')} 
+                className="mt-8 text-surface-500 hover:text-white text-xs font-bold transition-colors uppercase tracking-widest"
+            >
+                Change Email Address
+            </button>
+        </div>
+    );
+  }
+
   if (view === 'email-success') {
     return (
         <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up relative overflow-hidden">

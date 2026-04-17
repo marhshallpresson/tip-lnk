@@ -60,7 +60,8 @@ export default function TipWidget({ fixedRecipient = null }) {
       setIsResolving(true);
       try {
         // ─── Professional Handle & Address Resolution ───
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
+        const isProd = import.meta.env.PROD;
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
         
         // 1. Check if it's a social handle
         if (recipientInput.startsWith('@')) {

@@ -3,7 +3,8 @@
  * Redirects all database operations through our high-performance local backend.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
+const isProd = import.meta.env.PROD;
+const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
 
 async function safeFetch(url, options = {}) {
   try {

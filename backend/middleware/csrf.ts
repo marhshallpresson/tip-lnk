@@ -16,13 +16,18 @@ const hasSessionCookie = (req: Request) => {
 }
 
 const hasActiveSession = async (req: Request) => {
-  const sid = (req.signedCookies || {})[SESSION_COOKIE_NAME]
-  if (typeof sid !== 'string' || !sid.trim()) return false
-  const session = await db('session').where({ id: sid }).first().catch(() => null)
-  if (!session) return false
-  if (session.revokedAt) return false
-  if (new Date(session.expiresAt).getTime() < Date.now()) return false
-  return true
+  try {
+      const sid = (req.signedCookies || {})[SESSION_COOKIE_NAME]
+      if (typeof sid !== 'string' || !sid.trim()) return false
+      const session = await db('session').where({ id: sid }).first()
+      if (!session) return false
+      if (session.revokedAt) return false
+      if (new Date(session.expiresAt).getTime() < Date.now()) return false
+      return true
+  } catch (e) {
+      console.error('CSRF Session Check Fault:', e)
+      return false
+  }
 }
 
 export const csrfProtection = async (req: Request, res: Response, next: NextFunction) => {

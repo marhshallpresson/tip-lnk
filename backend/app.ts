@@ -42,9 +42,8 @@ app.use(helmet({
 app.use(compression())
 app.use(cors(corsOptions))
 
-const cookieSecret = process.env.SESSION_COOKIE_SECRET 
+const cookieSecret = process.env.SESSION_COOKIE_SECRET || 'tiplnk-default-secret- elite-hardening'
 app.use(cookieParser(cookieSecret))
-
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 

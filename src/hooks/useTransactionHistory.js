@@ -25,7 +25,8 @@ export default function useTransactionHistory() {
 
     try {
       // ─── Professional Helius Indexing Integration ───
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
+      const isProd = import.meta.env.PROD;
+      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
       const response = await fetch(`${API_BASE_URL}/api/solana/tips/${publicKey.toBase58()}`);
       
       if (!response.ok) throw new Error('Failed to fetch from indexer');

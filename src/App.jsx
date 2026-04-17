@@ -201,7 +201,7 @@ function AuthCallbackHandler() {
             body: JSON.stringify({ 
                 code, 
                 publicKey,
-                redirectUri: `${window.location.origin}/auth/callback/${platform}` 
+                redirectUri: `${window.location.origin}/auth/callback/${platform}`
             })
           });
 
