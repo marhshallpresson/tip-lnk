@@ -189,7 +189,8 @@ function AuthCallbackHandler() {
     if (code) {
       const exchangeCode = async () => {
         try {
-          const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.eitherway.ai';
+          const isProd = import.meta.env.PROD;
+          const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
           const response = await fetch(`${API_BASE}/api/auth/${platform}/callback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
