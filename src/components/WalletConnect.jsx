@@ -108,16 +108,44 @@ export default function WalletConnect({ onConnected }) {
     if (!provider) return;
     setLoadingProvider(provider);
     setAuthError(null);
+
+    // ─── Professional Popup Flow for Google Phantom ───
+    if (provider === 'google') {
+        try {
+            console.log(`Initiating Phantom ${provider} popup connection...`);
+            
+            // Define the Elite Callback Zone
+            const redirectUri = `${window.location.origin}/auth/callback/phantom-google`;
+            
+            // Standardize the connect call with our production redirect
+            const result = await phantomSdk.connect('google', {
+                redirectUrl: redirectUri
+            });
+            
+            // Note: If result is returned immediately, use it. 
+            // If it redirects (popup), the AuthCallbackHandler handles the rest.
+            if (result && result.publicKey) {
+              const addr = result.publicKey.toBase58();
+              await loginWithWallet(addr);
+              onConnected(addr);
+            }
+        } catch (err) {
+            console.error(`Phantom ${provider} Login Error:`, err);
+            setAuthError(err.message || 'An unknown error occurred during login.');
+        } finally {
+            setLoadingProvider(null);
+        }
+        return;
+    }
+
     try {
-      console.log(`Initiating Phantom ${provider} connection...`);
-      // Signature for Browser SDK is connect(providerName)
-      const result = await phantomSdk.connect(provider);
-      
+      console.log(`Initiating Phantom injected connection...`);
+      const result = await phantomSdk.connect('injected');
       if (result && result.publicKey) {
         onConnected(result.publicKey.toBase58());
       }
     } catch (err) {
-      console.error(`Phantom ${provider} Login Error:`, err);
+      console.error(`Phantom injected Login Error:`, err);
       setAuthError(err.message || 'An unknown error occurred during login.');
     } finally {
       setLoadingProvider(null);

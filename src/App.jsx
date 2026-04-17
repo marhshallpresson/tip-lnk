@@ -186,15 +186,23 @@ function AuthCallbackHandler() {
       return;
     }
 
-    if (code) {
+    if (code || params.get('publicKey')) {
       const exchangeCode = async () => {
         try {
           const isProd = import.meta.env.PROD;
           const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+          
+          // Phantom Google specifically might return the publicKey directly in the URL
+          const publicKey = params.get('publicKey');
+
           const response = await fetch(`${API_BASE}/api/auth/${platform}/callback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, redirectUri: `${window.location.origin}/auth/callback/${platform}` })
+            body: JSON.stringify({ 
+                code, 
+                publicKey,
+                redirectUri: `${window.location.origin}/auth/callback/${platform}` 
+            })
           });
 
           let data;
@@ -206,6 +214,19 @@ function AuthCallbackHandler() {
           }
 
           // Update profile with verified social data
+          if (platform === 'phantom-google') {
+              // This is a wallet connection success
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'OAUTH_SUCCESS',
+                  platform: 'phantom-google',
+                  publicKey: data.walletAddress
+                }, window.location.origin);
+                setTimeout(() => window.close(), 500);
+              }
+              return;
+          }
+
           updateProfile({
             socials: {
               [platform === 'twitter' ? 'twitter' : 'discord']: data.username,
