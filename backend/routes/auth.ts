@@ -16,8 +16,25 @@ import {
 } from '../lib/session'
 import { resolveSessionTokenSecret, signSessionToken } from '../lib/session-token'
 import { ensureCsrfToken } from '../lib/csrf'
+import { rateLimit } from 'express-rate-limit'
 
 const router = Router()
+
+// Elite Rate Limiter: Prevent brute-force on sensitive auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many authentication attempts. Please try again later.' }
+});
+
+router.use('/login', authLimiter);
+router.use('/register', authLimiter);
+router.use('/wallet-login', authLimiter);
+router.use('/twitter/callback', authLimiter);
+router.use('/discord/callback', authLimiter);
+router.use('/phantom-google/callback', authLimiter);
 
 router.get('/csrf', (req: Request, res: Response) => {
   const token = ensureCsrfToken(req, res)

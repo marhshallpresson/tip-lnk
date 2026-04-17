@@ -36,16 +36,7 @@ export async function initSchema() {
 
   try {
     // ─── ELITE SAFETY GUARD ───
-    // Only reset if this specific, dangerous flag is set.
-    if (process.env.DANGEROUS_RESET_DB_FOR_MIGRATION === 'true') {
-        console.log('⚠️ DANGER: Brutal Reset active. Dropping all production tables...');
-        await db.raw('DROP TABLE IF EXISTS "session" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "user" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "tips" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "indexer_state" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "user_roles" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "roles" CASCADE');
-    }
+    // Migration reset logic removed for production safety.
 
     // 1. User Table
     if (!(await db.schema.hasTable('user'))) {
@@ -120,14 +111,24 @@ export async function initSchema() {
       console.log('✨ Session table provisioned.');
     }
 
-    // ─── ELITE SECURITY HARDENING: Enable RLS ───
-    console.log('🛡️ Hardening database with Row Level Security...');
+    // ─── ELITE SECURITY HARDENING: Enable RLS & Policies ───
+    console.log('🛡️ Hardening database with Row Level Security Policies...');
     const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles'];
     for (const table of tables) {
         try {
             await db.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY;`);
+            
+            // Define Basic Isolation Policies (Defense in Depth)
+            // Note: These assume the app user context is set if accessing via Supabase Client
+            if (table === 'user') {
+                await db.raw(`CREATE POLICY "Users can only view their own profile" ON "${table}" FOR SELECT USING (id::text = current_setting('app.current_user_id', true));`);
+                await db.raw(`CREATE POLICY "Users can only update their own profile" ON "${table}" FOR UPDATE USING (id::text = current_setting('app.current_user_id', true));`);
+            }
+            if (table === 'tips') {
+                await db.raw(`CREATE POLICY "Users can only view their own tips" ON "${table}" FOR SELECT USING (sender = current_setting('app.current_user_wallet', true) OR recipient = current_setting('app.current_user_wallet', true));`);
+            }
         } catch (e) {
-            // Table might already have RLS enabled or not exist yet
+            // Policy might already exist
         }
     }
 

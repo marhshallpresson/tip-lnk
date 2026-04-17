@@ -27,8 +27,19 @@ app.disable('x-powered-by')
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, cb) => {
-    // In dev, allow all. In prod, we should restrict.
-    cb(null, true)
+    const allowedOrigins = [
+      process.env.APP_URL,
+      process.env.VITE_APP_URL,
+      'https://tiplnk.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ].filter(Boolean).map(url => url!.trim().replace(/\/+$/, ''));
+
+    if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ''))) {
+      cb(null, true);
+    } else {
+      cb(new Error('Cross-Origin Request Blocked by TipLnk Security Guardian'));
+    }
   },
   credentials: true,
   optionsSuccessStatus: 204,
@@ -37,13 +48,34 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false, // UI is separate
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://*.solana.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https://*", "blob:"],
+      connectSrc: [
+        "'self'", 
+        "https://*.solana.com", 
+        "https://*.helius-rpc.com", 
+        "https://api.jup.ag",
+        "https://api.eitherway.ai",
+        "wss://*.solana.com"
+      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
 }))
 app.use(compression())
 app.use(cors(corsOptions))
 
-const cookieSecret = process.env.SESSION_COOKIE_SECRET || 'tiplnk-default-secret- elite-hardening'
-app.use(cookieParser(cookieSecret))
+const cookieSecret = process.env.SESSION_COOKIE_SECRET;
+if (!cookieSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('CRITICAL SECURITY FAULT: SESSION_COOKIE_SECRET must be defined in production.');
+}
+app.use(cookieParser(cookieSecret || 'tiplnk-dev-secret-only'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
