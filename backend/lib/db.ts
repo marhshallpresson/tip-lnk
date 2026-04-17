@@ -31,30 +31,27 @@ export async function initSchema() {
   console.log('🚀 Synchronizing schema with Supabase...');
 
   try {
-    // Force recreate 'user' table to fix UUID type mismatch from previous runs
-    // Only do this during the Elite migration phase
-    // await db.schema.dropTableIfExists('user'); 
-
-    // 1. User Table
-    if (!(await db.schema.hasTable('user'))) {
-      await db.schema.createTable('user', (table) => {
-        table.string('id').primary(); 
-        table.string('email').unique();
-        table.string('name');
-        table.string('passwordHash');
-        table.string('googleSub');
-        table.string('twitterHandle').unique();
-        table.string('discordHandle').unique();
-        table.string('walletAddress').unique();
-        table.dateTime('emailVerifiedAt');
-        table.text('profileData');
-        table.dateTime('lastLoginAt');
-        table.dateTime('deletedAt');
-        table.timestamps(true, true);
-      });
-    } else {
-        // Elite Migration: Ensure ID is VARCHAR if it was previously UUID
-        await db.raw('ALTER TABLE "user" ALTER COLUMN "id" TYPE VARCHAR(255)');
+    // ─── BRUTAL RESET: User Table ───
+    // We drop and recreate once to fix the UUID -> STRING type mismatch permanently.
+    // In a live production app, we would use a migration, but for hackathon launch, this is the most reliable path.
+    if (process.env.RESET_DB === 'true' || !(await db.schema.hasTable('user'))) {
+        await db.schema.dropTableIfExists('user');
+        await db.schema.createTable('user', (table) => {
+          table.string('id').primary(); 
+          table.string('email').unique();
+          table.string('name');
+          table.string('passwordHash');
+          table.string('googleSub');
+          table.string('twitterHandle').unique();
+          table.string('discordHandle').unique();
+          table.string('walletAddress').unique();
+          table.dateTime('emailVerifiedAt');
+          table.text('profileData');
+          table.dateTime('lastLoginAt');
+          table.dateTime('deletedAt');
+          table.timestamps(true, true);
+        });
+        console.log('✨ User table provisioned with Elite String IDs.');
     }
 
     // 2. Tips Table

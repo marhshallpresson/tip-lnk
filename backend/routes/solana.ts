@@ -54,7 +54,7 @@ router.post('/send', async (req: express.Request, res: express.Response) => {
  * NOW INCLUDES ELITE SOCIAL METRICS
  */
 router.get('/profile', async (req, res) => {
-  const { wallet } = req.query;
+  const wallet = req.query.wallet as string;
   if (!wallet) return res.status(400).json({ error: 'Wallet required' });
 
   try {
@@ -81,6 +81,10 @@ router.get('/profile', async (req, res) => {
             createdAt: new Date()
         });
         user = await db('user').where({ id: userId }).first();
+    }
+
+    if (!user) {
+        return res.status(404).json({ success: false, error: 'User profile not found' });
     }
 
     const profile = JSON.parse(user.profileData || '{}');
