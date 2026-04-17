@@ -32,9 +32,10 @@ export async function initSchema() {
   console.log('🚀 Synchronizing schema with Supabase...');
 
   try {
-    // ─── BRUTAL RESET: User Table ───
-    if (process.env.RESET_DB === 'true') {
-        console.log('🗑️ Brutal Reset active: Dropping existing tables...');
+    // ─── ELITE SAFETY GUARD ───
+    // Only reset if this specific, dangerous flag is set.
+    if (process.env.DANGEROUS_RESET_DB_FOR_MIGRATION === 'true') {
+        console.log('⚠️ DANGER: Brutal Reset active. Dropping all production tables...');
         await db.raw('DROP TABLE IF EXISTS "session" CASCADE');
         await db.raw('DROP TABLE IF EXISTS "user" CASCADE');
         await db.raw('DROP TABLE IF EXISTS "tips" CASCADE');
