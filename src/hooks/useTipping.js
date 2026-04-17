@@ -52,9 +52,11 @@ export function useTipping(creatorAddress) {
       const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
       
       try {
-        // ─── Real DFlow Order API Integration ───
+        setError(null);
+        const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
         const amountInLamports = toLamports(tokenAmount, token.decimals);
         
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
         const params = new URLSearchParams({
           inputMint: token.mint,
           outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
@@ -63,18 +65,18 @@ export function useTipping(creatorAddress) {
           userPublicKey: publicKey?.toBase58() || '',
         });
 
-        const response = await fetch(`https://quote-api.dflow.net/order?${params}`);
-        if (!response.ok) throw new Error('DFlow API returned an error');
+        // Use our Professional Backend Proxy to avoid CORS
+        const response = await fetch(`${API_BASE_URL}/api/solana/dflow/quote?${params}`);
+        if (!response.ok) throw new Error('Professional routing engine failed');
         
         const order = await response.json();
         
         const outAmountFormatted = fromLamports(BigInt(order.outAmount), 6);
         setTipAmountUSDC(outAmountFormatted);
 
-        // Professional Route Payload (DFlow Schema)
         setRoute({
           ...order,
-          estimatedTime: order.executionMode === 'async' ? '~25s (Jito)' : '~6s (Atomic)'
+          estimatedTime: order.executionMode === 'async' ? '~15s (Jito Optimized)' : '~4s (Helius Fast)'
         });
       } catch (err) {
         console.error('Routing Engine Error:', err);
@@ -86,7 +88,10 @@ export function useTipping(creatorAddress) {
 
   const executeTip = useCallback(
     async (senderName) => {
-      if (!route || !publicKey || !signTransaction || !connection) return;
+      if (!route || !publicKey || !signTransaction || !connection) {
+        setError('Missing transaction data or wallet connection.');
+        return;
+      }
       setProcessing(true);
       setError(null);
 
@@ -100,20 +105,27 @@ export function useTipping(creatorAddress) {
         const priorityFee = fees?.high || 50000;
         console.log(`Professional Tip Landing: Applying ${priorityFee} micro-lamports priority fee.`);
 
-        // In a real implementation, we would add the ComputeBudget instruction here
-        // For this demo, we assume the route.transaction can be modified or already includes it
-        
         let signature;
-        if (route.transaction && route.transaction !== 'base64_encoded_tx_from_dflow_api') {
+        if (route.transaction) {
           const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
           const signedTx = await signTransaction(tx);
           
-          // Use Helius Sender (HTTPS) for sub-second landing
-          signature = await connection.sendTransaction(signedTx, {
-            skipPreflight: true, // Professional standard: bypass preflight for speed
-            maxRetries: 0,       // Helius Sender handles retries
+          // Use our Professional Backend Sender Relay
+          const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              transaction: Buffer.from(signedTx.serialize()).toString('base64') 
+            }),
           });
           
+          const submitData = await submitRes.json();
+          signature = submitData.result;
+          
+          if (!signature) {
+            throw new Error(submitData.error?.message || 'Helius Sender did not return a signature. Transaction might have failed.');
+          }
+
           // Wait for confirmation
           const latestBlockhash = await connection.getLatestBlockhash();
           await connection.confirmTransaction({

@@ -37,9 +37,9 @@ export default function RoleSelection({ onComplete }) {
       title: 'Creator',
       description: 'Streamers, Artists, Influencers, and Content Creators.',
       icon: Edit,
-      color: 'text-[#c4ff00]',
-      bgColor: 'bg-[#c4ff00]/10',
-      borderColor: 'border-[#c4ff00]/20'
+      color: 'text-[#00d265]',
+      bgColor: 'bg-[#00d265]/10',
+      borderColor: 'border-[#00d265]/20'
     },
     {
       id: 'freelancer',
@@ -67,19 +67,19 @@ export default function RoleSelection({ onComplete }) {
   };
 
   const togglePlatform = (platformId) => {
-    setSelectedPlatforms(prev => 
-      prev.includes(platformId) 
-        ? prev.filter(p => p !== platformId) 
+    setSelectedPlatforms(prev =>
+      prev.includes(platformId)
+        ? prev.filter(p => p !== platformId)
         : [...prev, platformId]
     );
   };
 
   const handleContinue = () => {
     const role = roles.find(r => r.id === selectedRoleId);
-    updateProfile({ 
+    updateProfile({
       roleTier: selectedRoleId,
       roleTitle: role.title,
-      platforms: selectedPlatforms 
+      platforms: selectedPlatforms
     });
     onComplete();
   };
@@ -89,7 +89,7 @@ export default function RoleSelection({ onComplete }) {
   return (
     <div className="glass-card glow-brand p-10 max-w-3xl mx-auto animate-slide-up">
       <div className="flex items-center gap-4 mb-8">
-        <button 
+        <button
           onClick={() => window.history.back()}
           className="p-2 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition-all"
         >
@@ -108,11 +108,10 @@ export default function RoleSelection({ onComplete }) {
           <button
             key={role.id}
             onClick={() => handleRoleSelect(role.id)}
-            className={`flex flex-col items-center text-center p-6 rounded-3xl border transition-all group ${
-              selectedRoleId === role.id 
-                ? `${role.borderColor} ${role.bgColor} ring-2 ring-brand-500/20 scale-[1.02]` 
+            className={`flex flex-col items-center text-center p-6 rounded-3xl border transition-all group ${selectedRoleId === role.id
+                ? `${role.borderColor} ${role.bgColor} ring-2 ring-brand-500/20 scale-[1.02]`
                 : 'border-surface-800 bg-surface-950/20 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'
-            }`}
+              }`}
           >
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${selectedRoleId === role.id ? 'rotate-6' : 'group-hover:rotate-6'} transition-transform`}>
               <role.icon size={32} className={selectedRoleId === role.id ? role.color : 'text-surface-500'} />
@@ -128,7 +127,7 @@ export default function RoleSelection({ onComplete }) {
       {selectedRoleId && (
         <div className="animate-fade-in">
           <div className="h-px bg-surface-800 mb-10" />
-          
+
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold mb-2">Which platforms do you use?</h3>
             <p className="text-surface-500 text-sm italic">Multi-selection: Select all that apply to your {selectedRoleId} workflow.</p>
@@ -141,11 +140,10 @@ export default function RoleSelection({ onComplete }) {
                 <button
                   key={platform.id}
                   onClick={() => togglePlatform(platform.id)}
-                  className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${
-                    isSelected
+                  className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${isSelected
                       ? 'bg-brand-500 border-brand-500 text-black shadow-lg shadow-brand-500/20 font-bold'
                       : 'border-surface-800 bg-surface-900 text-surface-400 hover:border-surface-700 hover:text-white'
-                  }`}
+                    }`}
                 >
                   <platform.icon size={18} />
                   <span className="text-sm">{platform.label}</span>

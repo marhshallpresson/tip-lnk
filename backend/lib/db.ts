@@ -1,138 +1,108 @@
-import { randomUUID } from 'crypto';
+import knex from 'knex';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 /**
- * Mock Database Implementation
- * Bypasses native sqlite3 dependency issues on Windows/Node 24
+ * Professional Supabase (PostgreSQL) Integration
+ * Replaces MockDB with a production-grade cloud database.
  */
+const dbInstance = knex({
+  client: 'pg',
+  connection: process.env.DATABASE_URL,
+  pool: {
+    min: 2,
+    max: 10
+  },
+  acquireConnectionTimeout: 10000
+});
+export const db = dbInstance;
+export { dbInstance as knex };
+export default dbInstance;
 
-class MockTable {
-  private data: any[] = [];
-  private tableName: string;
+/**
+ * Production Schema Initialization
+ * Automatically creates tables on your Supabase instance.
+ */
+export async function initSchema() {
+  console.log('🚀 Synchronizing schema with Supabase...');
 
-  constructor(tableName: string) {
-    this.tableName = tableName;
-  }
+  try {
+    // 1. User Table
+    if (!(await db.schema.hasTable('user'))) {
+      await db.schema.createTable('user', (table) => {
+        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.string('email').unique();
+        table.string('name');
+        table.string('passwordHash');
+        table.string('googleSub');
+        table.string('twitterHandle').unique();
+        table.string('discordHandle').unique();
+        table.string('walletAddress').unique();
+        table.dateTime('emailVerifiedAt');
+        table.text('profileData');
+        table.dateTime('lastLoginAt');
+        table.dateTime('deletedAt');
+        table.timestamps(true, true);
+      });
+    }
 
-  where(query: any) {
-    return {
-      first: async () => {
-        return this.data.find(item => {
-          for (const key in query) {
-            if (item[key] !== query[key]) return false;
-          }
-          return true;
-        }) || null;
-      },
-      delete: async () => {
-        const initialLength = this.data.length;
-        this.data = this.data.filter(item => {
-          for (const key in query) {
-            if (item[key] !== query[key]) return false;
-          }
-          return true;
-        });
-        return initialLength - this.data.length;
-      },
-      update: async (partial: any) => {
-        let count = 0;
-        this.data.forEach(item => {
-          let matches = true;
-          for (const key in query) {
-            if (item[key] !== query[key]) matches = false;
-          }
-          if (matches) {
-            Object.assign(item, partial, { updatedAt: new Date() });
-            count++;
-          }
-        });
-        return count;
-      },
-      select: async () => {
-        return this.data.filter(item => {
-          for (const key in query) {
-            if (item[key] !== query[key]) return false;
-          }
-          return true;
-        });
-      }
-    };
-  }
+    // 2. Tips Table
+    if (!(await db.schema.hasTable('tips'))) {
+      await db.schema.createTable('tips', (table) => {
+        table.string('signature').primary();
+        table.bigInteger('slot').notNullable();
+        table.dateTime('timestamp').notNullable();
+        table.string('sender').notNullable();
+        table.string('recipient').notNullable();
+        table.decimal('amount', 20, 8).notNullable();
+        table.string('tokenMint').notNullable();
+        table.string('tokenSymbol').notNullable();
+        table.string('status').defaultTo('confirmed');
+        table.string('type').defaultTo('tip');
+        table.index(['sender']);
+        table.index(['recipient']);
+        table.index(['timestamp']);
+      });
+    }
 
-  whereRaw(raw: string, params: any[]) {
-      // Very limited support for LOWER(email) = ?
-      if (raw.toLowerCase().includes('lower(email) = ?')) {
-          const email = params[0].toLowerCase();
-          return {
-              first: async () => this.data.find(u => u.email?.toLowerCase() === email) || null
-          };
-      }
-      return this.where({});
-  }
+    // 3. Indexer State
+    if (!(await db.schema.hasTable('indexer_state'))) {
+      await db.schema.createTable('indexer_state', (table) => {
+        table.string('address').primary();
+        table.bigInteger('lastIndexedSlot').defaultTo(0);
+        table.dateTime('updatedAt').defaultTo(db.fn.now());
+      });
+    }
 
-  whereNull(col: string) {
-      return {
-          whereRaw: (raw: string, params: any[]) => this.whereRaw(raw, params),
-          where: (query: any) => this.where(query),
-          first: async () => this.data.find(item => item[col] === null) || null
-      }
-  }
+    // 4. Roles & Auth Tables
+    if (!(await db.schema.hasTable('roles'))) {
+      await db.schema.createTable('roles', (table) => {
+        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.string('name').unique();
+        table.timestamps(true, true);
+      });
+      await db('roles').insert({ name: 'user' }).onConflict('name').ignore();
+    }
 
-  async insert(item: any) {
-    const newItem = { ...item, createdAt: new Date(), updatedAt: new Date() };
-    this.data.push(newItem);
-    return [newItem];
-  }
+    if (!(await db.schema.hasTable('session'))) {
+      await db.schema.createTable('session', (table) => {
+        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.uuid('userId').references('id').inTable('user');
+        table.dateTime('expiresAt');
+        table.string('userAgent');
+        table.string('ip');
+        table.dateTime('revokedAt');
+        table.timestamps(true, true);
+      });
+    }
 
-  async first() {
-    return this.data[0] || null;
+    console.log('✅ Supabase Schema Sync Complete.');
+  } catch (err) {
+    console.error('❌ Supabase Sync Failed:', err);
+    // Do not exit process, allow backend to attempt reconnect
   }
 }
-
-class MockDb {
-  private tables: Record<string, MockTable> = {};
-
-  table(name: string) {
-    if (!this.tables[name]) {
-      this.tables[name] = new MockTable(name);
-    }
-    return this.tables[name];
-  }
-
-  // Knex-like interface
-  fn = {
-    now: () => new Date()
-  };
-
-  schema = {
-    hasTable: async (name: string) => true,
-    createTable: async (name: string, cb: any) => {
-        console.log(`[MockDB] Table "${name}" created.`);
-        return true;
-    }
-  };
-
-  raw(query: string) {
-      return {
-          first: async () => null
-      };
-  }
-}
-
-const mockInstance = new MockDb();
-
-// Main proxy function to handle db('table_name')
-export const db: any = (tableName: string) => mockInstance.table(tableName);
-
-// Attach schema and other properties to the proxy
-db.schema = mockInstance.schema;
-db.fn = mockInstance.fn;
-db.raw = mockInstance.raw;
-
-export const knex = db;
-export const initSchema = async () => {
-    console.log('[MockDB] Skipping real schema init, using in-memory mocks.');
-    // Seed default role
-    await db('roles').insert({ id: '00000000-0000-4000-8000-000000000001', name: 'user' });
-};
-
-export default db;

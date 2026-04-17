@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useApp } from '../contexts/AppContext';
-import { ChevronDown, ChevronUp, User, LayoutDashboard, Gift, CreditCard, RefreshCw, HelpCircle, LogOut, Copy, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronUp, User, LayoutDashboard, Gift, CreditCard, Settings, HelpCircle, LogOut, Copy, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function WalletDropdown() {
@@ -126,9 +126,9 @@ export default function WalletDropdown() {
             <p className="text-xs font-semibold text-surface-500 mb-2">Settings</p>
             <div className="space-y-1">
             
-              <button onClick={() => {}} className="w-full flex items-center gap-3 text-sm text-surface-200 hover:text-white hover:bg-surface-800/80 p-2 rounded-lg transition-colors">
-                <RefreshCw size={16} className="text-surface-400" />
-                <span>Change Wallet</span>
+              <button onClick={() => navTo('/dashboard/settings')} className="w-full flex items-center gap-3 text-sm text-surface-200 hover:text-white hover:bg-surface-800/80 p-2 rounded-lg transition-colors">
+                <Settings size={16} className="text-surface-400" />
+                <span>Profile Settings</span>
               </button>
               
               <button onClick={() => {}} className="w-full flex items-center gap-3 text-sm text-surface-200 hover:text-white hover:bg-surface-800/80 p-2 rounded-lg transition-colors">

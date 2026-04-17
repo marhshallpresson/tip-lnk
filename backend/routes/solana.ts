@@ -1,13 +1,104 @@
+import axios from 'axios';
 import express from 'express';
-import { backfillTransactions, getPriorityFeeEstimate, getAssetsByOwner } from '../lib/helius';
-import { db } from '../lib/db';
+import { backfillTransactions, getPriorityFeeEstimate, getAssetsByOwner, aggregateSocialMetrics } from '../lib/helius.js';
+import { db } from '../lib/db.js';
+import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
 /**
- * Fetch indexed tips for a specific wallet.
- * High-performance retrieval from local DB instead of raw RPC.
+ * Professional DFlow Order Proxy
+ * Bypasses CORS and allows for backend-side fee injection.
  */
+router.get('/dflow/quote', async (req: express.Request, res: express.Response) => {
+  try {
+    const params = new URLSearchParams(req.query as any);
+    const DFLOW_API_KEY = process.env.VITE_DFLOW_API_KEY;
+    
+    const response = await axios.get(`https://quote-api.dflow.net/order?${params}`, {
+      headers: DFLOW_API_KEY ? { 'x-api-key': DFLOW_API_KEY } : {}
+    });
+    
+    res.json(response.data);
+  } catch (err: any) {
+    console.error('DFlow Proxy Error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ 
+      error: 'DFlow Quote Failed', 
+      details: err.response?.data 
+    });
+  }
+});
+
+/**
+ * Helius Sender Relay
+ * Submits signed transactions to the Helius Global Sender.
+ */
+router.post('/send', async (req: express.Request, res: express.Response) => {
+  const { transaction } = req.body;
+  try {
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '9e4676f0-adc3-4640-bca0-7dd9420d4281';
+    const response = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
+      jsonrpc: '2.0',
+      id: 'send-tx',
+      method: 'sendTransaction',
+      params: [transaction, { skipPreflight: true, maxRetries: 0 }]
+    });
+    res.json(response.data);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Transaction submission failed' });
+  }
+});
+
+/**
+ * Alias for frontend backward compatibility with legacy 'supabase' endpoints.
+ * NOW INCLUDES ELITE SOCIAL METRICS
+ */
+router.get('/profile', async (req, res) => {
+  const { wallet } = req.query;
+  if (!wallet) return res.status(400).json({ error: 'Wallet required' });
+
+  try {
+    let user = await db('user').where({ walletAddress: wallet }).orWhere({ googleSub: wallet }).orWhere({ id: wallet }).first();
+    
+    // Auto-provision user if missing from Supabase
+    if (!user) {
+        const userId = randomUUID();
+        await db('user').insert({
+            id: userId,
+            email: `${wallet}@phantom.local`,
+            walletAddress: wallet,
+            profileData: JSON.stringify({ displayName: 'New Creator' }),
+            createdAt: new Date()
+        });
+        user = await db('user').where({ id: userId }).first();
+    }
+
+    const profile = JSON.parse(user.profileData || '{}');
+    
+    // Aggregate Elite Social Metrics (Followers across accounts)
+    const socialMetrics = await aggregateSocialMetrics(user.twitterHandle, user.discordHandle);
+    profile.socialMetrics = socialMetrics;
+    profile.walletAddress = user.walletAddress;
+    profile.twitterHandle = user.twitterHandle;
+    profile.discordHandle = user.discordHandle;
+
+    res.json({ success: true, profile });
+  } catch (err) {
+    console.error('Profile Fetch Fault:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' });
+  }
+});
+
+router.post('/profile', async (req, res) => {
+  const { walletAddress, profile } = req.body;
+  try {
+    await db('user').where({ walletAddress }).orWhere({ id: walletAddress }).update({ profileData: JSON.stringify(profile) });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to update profile' });
+  }
+});
+
 router.get('/tips/:address', async (req, res) => {
   const { address } = req.params;
   try {
@@ -66,6 +157,46 @@ router.get('/assets/:owner', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to fetch assets.' });
   }
+});
+
+/**
+ * Professional Diagnostic Engine
+ * Deep checks all integrations (Helius, DFlow, DB).
+ */
+router.get('/diagnostic/check', async (req, res) => {
+  const results: any = { status: 'ok', checks: {} };
+  const TEST_WALLET = '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
+
+  try {
+    // 1. Check DFlow Proxy
+    const dflow = await axios.get(`https://quote-api.dflow.net/order`, {
+      params: {
+        inputMint: 'So11111111111111111111111111111111111111112',
+        outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        amount: '100000000',
+        slippageBps: '50',
+        userPublicKey: TEST_WALLET
+      }
+    });
+    results.checks.dflow = dflow.data.outAmount ? 'PASS' : 'FAIL';
+  } catch (e) { results.checks.dflow = 'FAIL'; }
+
+  try {
+    // 2. Check Helius RPC
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '9e4676f0-adc3-4640-bca0-7dd9420d4281';
+    const helius = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
+      jsonrpc: '2.0', id: 1, method: 'getHealth'
+    });
+    results.checks.helius = helius.data.result === 'ok' ? 'PASS' : 'FAIL';
+  } catch (e) { results.checks.helius = 'FAIL'; }
+
+  try {
+    // 3. Check DB
+    const dbCheck = await db('user').first();
+    results.checks.database = 'PASS';
+  } catch (e) { results.checks.database = 'FAIL'; }
+
+  res.json(results);
 });
 
 export default router;

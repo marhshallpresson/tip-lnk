@@ -10,7 +10,7 @@ export default {
           200: '#bdffd6',
           300: '#8affb8',
           400: '#00f075', // Busha-style bright green
-          500: '#00D265', // Main Busha Green
+          500: '#16e5a2', // Main Busha Green
           600: '#00b356',
           700: '#009447',
           800: '#007538',
@@ -31,13 +31,14 @@ export default {
         },
         'main-bg': '#0d1117',
         accent: {
-          neon: '#c4ff00',
+          neon: '#00d265',
           green: '#34d399',
           red: '#f87171',
           orange: '#fb923c',
           purple: '#a78bfa',
           cyan: '#22d3ee',
           yellow: '#fbbf24',
+          white: '#ffffffff'
         },
         // Solflare brand orange for partner highlighting
         solflare: {

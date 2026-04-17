@@ -150,8 +150,8 @@ export default function KaminoPanel() {
                     key={vault.id}
                     onClick={() => setSelectedVault(vault)}
                     className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden ${selectedVault.id === vault.id
-                        ? 'border-[#c4ff00] bg-[#c4ff00]/5'
-                        : 'border-surface-700 hover:border-surface-500'
+                      ? 'border-[#00d265] bg-[#00d265]/5'
+                      : 'border-surface-700 hover:border-surface-500'
                       }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -159,8 +159,8 @@ export default function KaminoPanel() {
                       <p className="font-semibold text-sm">{vault.name}</p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Percent size={12} className="text-[#c4ff00]" />
-                      <span className="text-[#c4ff00] text-sm font-bold">{vault.apy}% APY</span>
+                      <Percent size={12} className="text-[#00d265]" />
+                      <span className="text-[#00d265] text-sm font-bold">{vault.apy}% APY</span>
                     </div>
                     <p className="text-[10px] text-surface-400 mt-1">
                       TVL: ${(vault.tvl / 1_000_000).toFixed(1)}M

@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { getProfile } from '../utils/database';
 import TipWidget from './TipWidget';
+import WhiteLabelNav from './WhiteLabelNav';
 import {
   Zap,
   Twitter,
@@ -37,6 +38,8 @@ export default function CreatorPage() {
     const fetchCreator = async () => {
       setLoading(true);
       try {
+        
+
         const data = await getProfile(username);
         setCreatorProfile(data);
       } catch (err) {
@@ -86,8 +89,10 @@ export default function CreatorPage() {
 
   return (
     <div className="min-h-screen bg-main-bg text-white font-sans">
+      {!isEmbed && <WhiteLabelNav creatorName={solDomain || displayName} />}
+      
       {/* Banner */}
-      <div className="h-48 w-full relative bg-busha-green overflow-hidden">
+      <div className={`h-48 w-full relative bg-busha-green overflow-hidden ${!isEmbed ? 'mt-16' : ''}`}>
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,rgba(0,210,101,0.3)_0%,transparent_100%)]" />
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-main-bg/80" />
       </div>

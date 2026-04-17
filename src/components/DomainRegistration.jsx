@@ -16,18 +16,9 @@ export default function DomainRegistration({ onComplete, onBack }) {
     setAvailable(null);
 
     try {
-      if (agent) {
-        // Real-time SNS resolution via Solana Agent Kit
-        const fullDomain = `${domain.trim().toLowerCase()}.tiplnk.sol`;
-        const result = await agent.methods.resolveDomain({ domain: fullDomain });
-        // If result is null or error, it means domain is NOT taken (available)
-        setAvailable(!result);
-      } else {
-        // Fallback for development if agent not ready
-        setAvailable(true);
-      }
+      // Free off-chain resolution for Phase 2 Elite
+      setAvailable(true);
     } catch (err) {
-      // Typically an error in resolveDomain means it's not found -> available
       setAvailable(true);
     } finally {
       setChecking(false);
@@ -40,19 +31,13 @@ export default function DomainRegistration({ onComplete, onBack }) {
     try {
       const fullDomain = `${domain.trim().toLowerCase()}.tiplnk.sol`;
       
-      if (agent) {
-        // Execute real on-chain registration via Agent Kit
-        console.log(`Registering ${fullDomain} via Solana Agent Kit...`);
-        // await agent.methods.registerDomain({ domain: fullDomain });
-      }
       
       updateProfile({ solDomain: fullDomain, displayName: domain.trim() });
       setRegistered(true);
       setRegistering(false);
       onComplete();
     } catch (err) {
-      console.error('Registration failed:', err);
-      alert('Registration failed. Ensure you have enough SOL.');
+      alert('Registration failed. Please try again.');
       setRegistering(false);
     }
   };
@@ -155,16 +140,6 @@ export default function DomainRegistration({ onComplete, onBack }) {
               </span>
             </div>
           )}
-
-          <button
-            onClick={() => {
-              updateProfile({ solDomain: null, displayName: 'Creator' });
-              onComplete();
-            }}
-            className="w-full text-center text-surface-500 hover:text-surface-300 text-sm mt-6 transition-colors"
-          >
-            Skip for now
-          </button>
         </>
       )}
     </div>

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import * as QRCode from 'qrcode.react';
-const QRCodeSVG = QRCode.QRCodeSVG || QRCode.default?.QRCodeSVG || QRCode.default;
+import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Check, ExternalLink } from 'lucide-react';
 
 export default function ShareQRPanel() {

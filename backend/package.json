@@ -8,19 +8,21 @@
     "start": "npx tsx server.ts"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.5",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "knex": "^3.1.0",
-    "openid-client": "^6.3.3",
-    "bcryptjs": "^2.4.3",
-    "nodemailer": "^6.9.16",
+    "helmet": "^8.0.0",
     "jose": "^5.9.6",
-    "uuid": "^11.0.3",
+    "knex": "^3.1.0",
+    "nodemailer": "^6.9.16",
+    "openid-client": "^6.3.3",
+    "pg": "^8.20.0",
+    "postgres": "^3.4.9",
     "sqlite3": "^5.1.7",
-    "compression": "^1.7.5",
-    "helmet": "^8.0.0"
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@types/compression": "^1.7.5",

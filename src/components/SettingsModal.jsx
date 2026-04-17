@@ -260,8 +260,8 @@ export default function SettingsModal({ isOpen, onClose }) {
                 {/* Social Platforms */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { id: 'twitter', name: 'Twitter (X)', icon: Twitter, color: 'text-[#1DA1F2]', connected: !!profile?.socials?.twitter },
-                    { id: 'discord', name: 'Discord', icon: MessageSquare, color: 'text-[#5865F2]', connected: !!profile?.socials?.discord },
+                    { id: 'twitter', name: 'Twitter (X)', icon: Twitter, color: 'text-[#1DA1F2]', connected: !!profile?.twitterHandle, metrics: profile?.socialMetrics?.metrics?.twitter },
+                    { id: 'discord', name: 'Discord', icon: MessageSquare, color: 'text-[#5865F2]', connected: !!profile?.discordHandle, metrics: profile?.socialMetrics?.metrics?.discord },
                     { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'text-[#FF0000]', connected: !!profile?.socials?.youtube },
                     { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'text-[#E1306C]', connected: !!profile?.socials?.instagram },
                     { id: 'github', name: 'GitHub', icon: Github, color: 'text-[#F0F6FC]', connected: !!profile?.socials?.github },
@@ -272,7 +272,14 @@ export default function SettingsModal({ isOpen, onClose }) {
                         <div className={`w-8 h-8 rounded-lg bg-surface-900 flex items-center justify-center ${platform.connected ? platform.color : 'text-surface-600'}`}>
                           <platform.icon size={16} />
                         </div>
-                        <span className="text-xs font-bold text-surface-200">{platform.name}</span>
+                        <div>
+                            <span className="text-xs font-bold text-surface-200 block leading-none">{platform.name}</span>
+                            {platform.metrics && (
+                                <span className="text-[10px] text-brand-500 font-bold mt-1 block">
+                                    {platform.metrics.toLocaleString()} Followers
+                                </span>
+                            )}
+                        </div>
                       </div>
                       {platform.connected ? (
                         <div className="text-[10px] font-black text-brand-500 flex items-center gap-1">

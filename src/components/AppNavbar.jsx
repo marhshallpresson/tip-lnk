@@ -4,13 +4,13 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useApp } from '../contexts/AppContext';
 import WalletDropdown from './WalletDropdown';
 
-export default function AppNavbar({ 
-  onGetStarted, 
-  onboardingComplete, 
-  connected, 
-  onViewDashboard, 
+export default function AppNavbar({
+  onGetStarted,
+  onboardingComplete,
+  connected,
+  onViewDashboard,
   onViewProfile,
-  isDashboard = false 
+  isDashboard = false
 }) {
   const [scrolled, setScrolled] = useState(false);
   const { publicKey, disconnect } = useWallet();
@@ -33,64 +33,60 @@ export default function AppNavbar({
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
       {/* Top Utility Bar (User Section) */}
-      
+
 
       {/* Main Navigation Bar */}
-      <nav className={`transition-all duration-300 ${
-        scrolled || isDashboard 
-          ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-[#c4ff00]/20' 
+      <nav className={`transition-all duration-300 ${scrolled || isDashboard
+          ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-[#00d265]/20'
           : 'bg-transparent'
-      }`}>
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
+        }`}>
+        <div className="max-w-[1300px] mx-auto flex items-center justify-between px-3 sm:px-2 py-3">
           <div className="flex items-center gap-2 cursor-pointer" onClick={onViewProfile}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c4ff00] to-green-600 flex items-center justify-center shadow-[0_0_15px_rgba(196,255,0,0.4)]">
-              <Zap size={20} className="text-black" />
-            </div>
+
+            <img src="public/favicon.svg" className="w-8 h-8 " alt="Tip Lnk" />
             <span className="text-2xl font-black tracking-tight text-white">TipLnk</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8 font-medium">
+          <div className="hidden md:flex items-center gap-9 font-medium">
             {!isDashboard ? (
               <>
                 <a href="#features" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Features</a>
                 <a href="#compare" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Compare</a>
                 {onboardingComplete && (
-                  <button 
+                  <button
                     onClick={onViewDashboard}
                     className="flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 font-bold transition-all"
                   >
-                     Dashboard
+                    Dashboard
                   </button>
                 )}
               </>
             ) : (
               <>
-                
+
               </>
             )}
           </div>
-          
-          <div className="flex items-center gap-2">
+
             {!connected && (
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={onGetStarted} 
-                  className="btn-secondary text-sm !px-6 hidden sm:block"
+                <button
+                  onClick={onGetStarted}
+                  className="btn-secondary text-sm !px-5 hidden sm:block"
                 >
                   Log In
                 </button>
-                <button 
-                  onClick={onGetStarted} 
-                  className="btn-primary text-sm !px-6 flex items-center gap-2"
+                <button
+                  onClick={onGetStarted}
+                  className="btn-primary text-sm !px-5 flex items-center gap-2"
                 >
                   Start Earning <ArrowRight size={16} />
                 </button>
               </div>
             )}
-          </div>
           {connected && (
             <WalletDropdown />
-      )}
+          )}
         </div>
       </nav>
     </div>

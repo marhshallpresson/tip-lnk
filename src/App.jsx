@@ -58,14 +58,17 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-surface-950 text-white flex flex-col">
-      <AppNavbar 
-        onGetStarted={handleGetStarted}
-        onboardingComplete={role === 'creator'}
-        connected={role !== 'guest'}
-        onViewDashboard={() => navigate('/dashboard')}
-        onViewProfile={() => navigate('/')}
-        isDashboard={location.pathname.startsWith('/dashboard')}
-      />
+      {/* Standard App Navbar - Hidden on White-Label Creator Pages */}
+      {!location.pathname.match(/^\/[^/]+$/) || ['/terms', '/privacy', '/onboarding', '/dashboard'].some(p => location.pathname.startsWith(p)) ? (
+        <AppNavbar 
+          onGetStarted={handleGetStarted}
+          onboardingComplete={role === 'creator'}
+          connected={role !== 'guest'}
+          onViewDashboard={() => navigate('/dashboard')}
+          onViewProfile={() => navigate('/')}
+          isDashboard={location.pathname.startsWith('/dashboard')}
+        />
+      ) : null}
 
       <main className="flex-1">
         <Routes>

@@ -87,6 +87,26 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth/google/start?next=${encodeURIComponent(next)}`;
   };
 
+  const loginWithWallet = async (walletAddress) => {
+    try {
+      setError(null);
+      const { data, ok } = await api.post('/auth/wallet-login', { walletAddress });
+      if (ok && data.success) {
+        if (data.auth?.accessToken) {
+          api.setAccessToken(data.auth.accessToken);
+        }
+        setUser(data.user);
+        return { success: true };
+      } else {
+        setError(data.error || 'Wallet login failed');
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+      return { success: false, error: 'Network error' };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -95,6 +115,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loginWithGoogle,
+    loginWithWallet,
     refreshUser: fetchMe,
     showWalletModal,
     setShowWalletModal

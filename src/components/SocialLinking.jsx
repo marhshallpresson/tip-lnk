@@ -117,15 +117,7 @@ export default function SocialLinking({ onComplete, onBack }) {
 
       if (event.data?.type === 'OAUTH_ERROR' && event.data?.platform === platform) {
         console.error('OAuth Error from popup:', event.data.error);
-        // Still mark as verified for development (backend not available)
-        const platformKey = platform === 'twitter' ? 'twitter' : 'discord';
-        updateProfile({
-          socials: {
-            ...(profile.socials || {}),
-            [platformKey]: 'dev_verified',
-            [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true,
-          }
-        });
+        alert(`Verification failed: ${event.data.error}`);
 
         if (listenerRef.current) {
           window.removeEventListener('message', listenerRef.current);
@@ -241,18 +233,14 @@ export default function SocialLinking({ onComplete, onBack }) {
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-8 border-t border-surface-800 mt-4">
+      <div className="flex justify-end items-center pt-8 border-t border-surface-800 mt-4">
         <button
           onClick={handleContinue}
-          className="text-surface-500 hover:text-white transition-colors text-xs font-black uppercase tracking-widest"
+          disabled={!twitterLinked && !discordLinked}
+          className="btn-primary flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Skip for now
-        </button>
-        <button
-          onClick={handleContinue}
-          className="btn-primary flex items-center gap-2 group"
-        >
-          Continue <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          {(!twitterLinked && !discordLinked) ? 'Please Link a Social Account' : 'Continue'} 
+          <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

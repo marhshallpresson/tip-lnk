@@ -9,16 +9,16 @@ export default function PrivacyPolicy() {
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-surface-400 hover:text-[#c4ff00] transition-colors mb-8 group"
+          className="flex items-center gap-2 text-surface-400 hover:text-[#00d265] transition-colors mb-8 group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           Back
         </button>
 
-        <div className="glass-card p-8 md:p-12 border-[#c4ff00]/10">
+        <div className="glass-card p-8 md:p-12 border-[#00d265]/10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-[#c4ff00]/10 flex items-center justify-center border border-[#c4ff00]/20">
-              <Eye size={24} className="text-[#c4ff00]" />
+            <div className="w-12 h-12 rounded-xl bg-[#00d265]/10 flex items-center justify-center border border-[#00d265]/20">
+              <Eye size={24} className="text-[#00d265]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black">Privacy Policy</h1>
           </div>

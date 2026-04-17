@@ -481,6 +481,67 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 })
 
+router.post('/wallet-login', async (req: Request, res: Response) => {
+  try {
+    const walletAddress = req.body?.walletAddress;
+    if (!walletAddress) {
+      res.status(400).json({ success: false, error: 'Wallet address required' });
+      return;
+    }
+
+    // Advanced System: If user is currently logged in via email, link the wallet to their account
+    try {
+      const sessionUser = await getSessionUser(req);
+      if (sessionUser) {
+        await db('user').where({ id: sessionUser.id }).update({ walletAddress, updatedAt: new Date() });
+        res.status(200).json({ success: true, user: { ...sessionUser, walletAddress } });
+        return;
+      }
+    } catch (sessionErr) {
+      // Ignore session errors and proceed to auto-assign/login
+    }
+
+    // Auto-assign: If logging in directly via Phantom Google, create or fetch wallet-based account
+    let user;
+    try {
+        user = await db('user').where({ walletAddress }).first();
+        if (!user) {
+          const userId = randomUUID();
+          await db('user').insert({
+            id: userId,
+            email: `${walletAddress}@phantom.local`,
+            name: 'Phantom User',
+            walletAddress,
+            profileData: JSON.stringify({}),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          user = await db('user').where({ id: userId }).first();
+        }
+    } catch (dbErr) {
+        console.error('DB Provisioning Error:', dbErr);
+        return res.status(500).json({ success: false, error: 'Database provisioning failed' });
+    }
+
+    await db('user').where({ id: user.id }).update({ lastLoginAt: new Date() });
+    const session = await createSession(req, res, user.id);
+    const roles = await getUserRoles(user.id);
+
+    res.status(200).json({
+      success: true,
+      user: { id: user.id, email: user.email, name: user.name, walletAddress, roles, emailVerifiedAt: user.emailVerifiedAt },
+      auth: {
+        accessToken: session.accessToken,
+        tokenType: 'Bearer',
+        expiresAt: session.expiresAt.toISOString(),
+      },
+    });
+  } catch (e: any) {
+    logError('auth_wallet_login_error', { error: serializeError(e) });
+    res.status(500).json({ success: false, error: 'Wallet authentication failed' });
+  }
+});
+
 router.post('/logout', async (req: Request, res: Response) => {
   await destroySession(req, res)
   res.status(200).json({ success: true })

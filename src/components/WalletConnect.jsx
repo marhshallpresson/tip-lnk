@@ -10,7 +10,7 @@ import { BrowserSDK, AddressType } from '@phantom/browser-sdk';
 // --- Phantom SDK Setup ---
 const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID || "YOUR_APP_ID_HERE";
 const phantomSdk = new BrowserSDK({
-  providers: ["google", "injected"], // Apple removed as requested
+  providers: ["google", "injected"],
   appId: PHANTOM_APP_ID,
   addressTypes: [AddressType.solana],
   autoConnect: true, // Handles redirect result on page load!
@@ -44,7 +44,7 @@ function useIsPhantom() {
 
 export default function WalletConnect({ onConnected }) {
   const { connected, publicKey, wallet } = useWallet();
-  const { login, register, user: authUser } = useAuth();
+  const { login, register, user: authUser, loginWithWallet } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   const [view, setView] = useState('wallets'); // selection, wallets, email-login, email-register, email-success
@@ -60,10 +60,14 @@ export default function WalletConnect({ onConnected }) {
 
   // Handle connection events from Phantom SDK (crucial for social login callback)
   useEffect(() => {
-    const handleConnect = (connectEvent) => {
+    const handleConnect = async (connectEvent) => {
       console.log("Phantom SDK Connect Event:", connectEvent);
       if (connectEvent.publicKey) {
-        onConnected(connectEvent.publicKey.toBase58());
+        const addr = connectEvent.publicKey.toBase58();
+        setLoadingProvider('phantom_link');
+        await loginWithWallet(addr);
+        setLoadingProvider(null);
+        onConnected(addr);
       }
     };
 
@@ -71,20 +75,22 @@ export default function WalletConnect({ onConnected }) {
     
     // Check if autoConnect already resolved a connection
     if (phantomSdk.isConnected && phantomSdk.publicKey) {
-        onConnected(phantomSdk.publicKey.toBase58());
+        const addr = phantomSdk.publicKey.toBase58();
+        loginWithWallet(addr).then(() => onConnected(addr));
     }
 
     return () => {
       phantomSdk.off('connect', handleConnect);
     };
-  }, [onConnected]);
+  }, [onConnected, loginWithWallet]);
 
   useEffect(() => {
     if (connected && publicKey && !advancing) {
+      const addr = publicKey.toBase58();
       setAdvancing(true);
-      onConnected(publicKey.toBase58());
+      loginWithWallet(addr).then(() => onConnected(addr));
     }
-  }, [connected, publicKey, onConnected, advancing]);
+  }, [connected, publicKey, onConnected, advancing, loginWithWallet]);
 
   // Countdown and Auto-redirection logic
   useEffect(() => {
@@ -294,7 +300,7 @@ export default function WalletConnect({ onConnected }) {
           <button 
             onClick={() => handleSocialSelect('google')} 
             disabled={loadingProvider !== null} 
-            className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-[#6366f1] hover:bg-[#5558e3] text-white font-bold transition-all shadow-lg shadow-indigo-500/20"
+            className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-brand-500 text-black font-bold transition-all shadow-lg shadow-white-500/20"
           >
             {loadingProvider === 'google' ? (
               <Loader2 size={20} className="animate-spin" />

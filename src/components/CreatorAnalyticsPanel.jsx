@@ -3,10 +3,12 @@ import { useApp } from '../contexts/AppContext';
 
 /**
  * Real-time Creator Analytics
- * Displays metrics derived from actual tipsReceived state.
+ * Displays metrics derived from actual tipsReceived state and social metrics.
  */
 export default function CreatorAnalyticsPanel() {
-  const { totalTipsUSDC, tipsReceived } = useApp();
+  const { totalTipsUSDC, tipsReceived, profile } = useApp();
+
+  const totalReach = profile?.socialMetrics?.totalFollowers || 0;
 
   // Derive top supporters from real data
   const supporterMap = tipsReceived.reduce((acc, tip) => {
@@ -30,12 +32,12 @@ export default function CreatorAnalyticsPanel() {
           <h2 className="text-xl font-bold flex items-center gap-2">
             <BarChart3 className="text-brand-400" /> Creator Analytics
           </h2>
-          <p className="text-sm text-surface-400 mt-1">Metrics derived from your on-chain tipping activity.</p>
+          <p className="text-sm text-surface-400 mt-1">Metrics derived from your on-chain tipping activity and social reach.</p>
         </div>
       </div>
 
       {/* Main KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="glass-card p-5 border-t-2 border-t-accent-cyan">
           <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><DollarSign size={14}/> Total Volume</p>
           <p className="text-2xl font-bold text-white">${totalTipsUSDC.toFixed(2)}</p>
@@ -58,16 +60,19 @@ export default function CreatorAnalyticsPanel() {
           </p>
           <p className="text-xs text-surface-500 mt-2">USDC equivalent</p>
         </div>
+        <div className="glass-card p-5 border-t-2 border-t-accent-purple">
+          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><TrendingUp size={14}/> Total Reach</p>
+          <p className="text-2xl font-bold text-white">{totalReach.toLocaleString()}</p>
+          <p className="text-xs text-surface-500 mt-2">Social followers</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Earnings Trend Placeholder */}
         <div className="glass-card p-6 flex flex-col items-center justify-center min-h-[300px]">
           {tipsReceived.length > 0 ? (
              <div className="w-full h-full flex flex-col">
                 <h3 className="text-lg font-semibold mb-4 text-left w-full">Earnings Trend</h3>
                 <div className="flex-1 flex items-end justify-between gap-2 bg-surface-900/20 rounded-xl p-4">
-                   {/* Real-time bar simulation based on tips */}
                    {Array.from({ length: 7 }).map((_, i) => (
                      <div key={i} className="w-full bg-surface-800 rounded-t-sm h-4"></div>
                    ))}
@@ -82,7 +87,6 @@ export default function CreatorAnalyticsPanel() {
           )}
         </div>
 
-        {/* Top Supporters */}
         <div className="glass-card p-6">
           <h3 className="text-lg font-semibold mb-4">Top Supporters</h3>
           {topSupporters.length > 0 ? (
