@@ -39,17 +39,16 @@ export const sendMail = async (args: {
     return { skipped: true as const }
   }
   const hostname = new URL(env('APP_URL') || 'http://localhost').hostname
-  const fromAddress = env('SMTP_FROM') || `no-reply@${hostname}`
-  const fromName = env('SMTP_FROM_NAME') || env('APP_NAME') || 'TipLnk'
-  const transport = smtpTransport()
+  const fromAddress = env('SMTP_FROM') || env('SMTP_USER') || `no-reply@${hostname}`
+  const fromName = env('SMTP_FROM_NAME') || env('APP_NAME') || 'TipLnk Support'
+  const transport = smtpTransport()     
   await transport.sendMail({
     from: { name: fromName, address: fromAddress },
     to: args.to,
     subject: args.subject,
     text: args.text,
     html: args.html,
-  })
-  if (shouldNotify) {
+  })  if (shouldNotify) {
     createNotification(args.notify as CreateNotificationArgs).catch(() => null)
   }
   return { skipped: false as const }

@@ -207,34 +207,41 @@ router.get('/assets/:owner', async (req, res) => {
 /**
  * Professional Diagnostic Engine
  * Deep checks all integrations (Helius, DFlow, DB).
+ * SECURED: Requires platform admin secret.
  */
 router.get('/diagnostic/check', async (req, res) => {
+  const adminSecret = req.headers['x-admin-secret'];
+  if (!adminSecret || adminSecret !== process.env.ADMIN_SECRET) {
+      return res.status(403).json({ error: 'Unauthorized diagnostic access' });
+  }
+
   const results: any = { status: 'ok', checks: {} };
   const TEST_WALLET = '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
 
   try {
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
+    if (!HELIUS_API_KEY) throw new Error('Key Missing');
+
     // 1. Check DFlow Proxy
-    const dflow = await axios.get(`https://quote-api.dflow.net/order`, {
+    const dflow = await axios.get(`https://quote-api.dflow.net/order`, {        
       params: {
         inputMint: 'So11111111111111111111111111111111111111112',
         outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
         amount: '100000000',
         slippageBps: '50',
-        userPublicKey: TEST_WALLET
+        userPublicKey: TEST_WALLET      
       }
     });
     results.checks.dflow = dflow.data.outAmount ? 'PASS' : 'FAIL';
   } catch (e) { results.checks.dflow = 'FAIL'; }
 
   try {
-    // 2. Check Helius RPC
-    const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '9e4676f0-adc3-4640-bca0-7dd9420d4281';
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
     const helius = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
       jsonrpc: '2.0', id: 1, method: 'getHealth'
     });
-    results.checks.helius = helius.data.result === 'ok' ? 'PASS' : 'FAIL';
+    results.checks.helius = helius.data.result === 'ok' ? 'PASS' : 'FAIL';      
   } catch (e) { results.checks.helius = 'FAIL'; }
-
   try {
     // 3. Check DB
     const dbCheck = await db('user').first();

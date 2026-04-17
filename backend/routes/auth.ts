@@ -1,21 +1,21 @@
 import { Router, type Request, type Response } from 'express'
 import * as oidc from 'openid-client'
-import { db } from '../lib/db'
-import { sendMail } from '../lib/mailer'
-import { templates } from '../lib/mail-templates'
-import { hashPassword, randomCode, randomToken, sha256Hex, verifyPassword } from '../lib/password'
-import { randomUUID } from 'crypto'
-import { logError, serializeError, log } from '../lib/logger'
-import { 
-    createSession, 
-    destroySession, 
-    getSessionUser, 
-    getCookieOptions, 
+import { db } from '../lib/db.js'
+import { sendMail } from '../lib/mailer.js'
+import { templates } from '../lib/mail-templates.js'
+import { hashPassword, randomCode, randomToken, sha256Hex, verifyPassword } from '../lib/password.js'
+import { randomUUID } from 'crypto'     
+import { logError, serializeError, log } from '../lib/logger.js'
+import {
+    createSession,
+    destroySession,
+    getSessionUser,
+    getCookieOptions,
     getUserRoles,
     revokeAllUserSessions
-} from '../lib/session'
-import { resolveSessionTokenSecret, signSessionToken } from '../lib/session-token'
-import { ensureCsrfToken } from '../lib/csrf'
+} from '../lib/session.js'
+import { resolveSessionTokenSecret, signSessionToken } from '../lib/session-token.js'
+import { ensureCsrfToken } from '../lib/csrf.js'
 import { rateLimit } from 'express-rate-limit'
 
 const router = Router()
