@@ -24,6 +24,7 @@ import SettingsModal from './SettingsModal';
 
 export default function Dashboard() {
   const { publicKey, disconnect } = useWallet();
+  const { user: authUser, logout: authLogout } = useAuth();
   const { profile, resetOnboarding, totalTipsUSDC } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,9 +38,19 @@ export default function Dashboard() {
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
 
 
-  const handleDisconnect = () => {
-    disconnect();
-    resetOnboarding();
+  const handleDisconnect = async () => {
+    // ─── Professional Logout Sequence ───
+    try {
+        if (connected) {
+            await disconnect().catch(() => null);
+        }
+        await authLogout().catch(() => null);
+    } catch (e) {
+        console.warn('Logout cleanup incomplete:', e);
+    } finally {
+        resetOnboarding();  // Clear Local Cache
+        navigate('/');      // Return to Landing
+    }
   };
 
   const menuItems = [
@@ -94,10 +105,8 @@ export default function Dashboard() {
         fixed md:static inset-y-0 left-0 w-64 border-r border-surface-900 flex flex-col shrink-0 bg-surface-950 md:bg-surface-950/20 z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        
-
         {/* Navigation Menu */}
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname.includes(item.id) || (item.id === 'overview' && location.pathname === '/dashboard');
             return (
@@ -120,6 +129,16 @@ export default function Dashboard() {
           })}
         </nav>
 
+        {/* Logout Button */}
+        <div className="p-4 border-t border-surface-900 mt-auto">
+          <button
+            onClick={handleDisconnect}
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-accent-red hover:bg-accent-red/5 transition-all font-bold text-sm"
+          >
+            <LogOut size={18} />
+            Log Out
+          </button>
+        </div>
       </aside>
 
       {/* --- MAIN CONTENT --- */}

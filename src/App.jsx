@@ -144,6 +144,19 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      {/* --- Global Elite Overlays --- */}
+      <WalletModal 
+        isOpen={showWalletModal} 
+        onClose={() => setShowWalletModal(false)} 
+        onConnected={(addr, isAuth) => {
+          if (addr || isAuth) {
+             // If we are on landing, go to dashboard. 
+             // If we are already in dashboard (linking), stay there.
+             if (location.pathname === '/') navigate('/dashboard');
+          }
+        }}
+      />
     </div>
   );
 }

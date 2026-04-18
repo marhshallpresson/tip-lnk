@@ -114,24 +114,19 @@ export default function WalletConnect({ onConnected }) {
     // ─── Professional Popup Flow for Google Phantom ───
     if (provider === 'google') {
         try {
-            console.log(`Initiating Phantom ${provider} popup connection...`);
+            console.log(`Initiating Phantom Google popup connection...`);
             
-            // Define the Elite Callback Zone
-            const redirectUri = `${window.location.origin}/auth/callback/phantom-google`;
+            // Standardize the connect call - Must be an options object
+            const result = await phantomSdk.connect({ provider: 'google' });
             
-            // Standardize the connect call - Provider is first argument
-            const result = await phantomSdk.connect('google');
-            
-            // Note: If result is returned immediately, use it. 
-            // If it redirects (popup), the AuthCallbackHandler handles the rest.
             if (result && result.publicKey) {
               const addr = result.publicKey.toBase58();
               await loginWithWallet(addr);
               onConnected(addr);
             }
         } catch (err) {
-            console.error(`Phantom ${provider} Login Error:`, err);
-            setAuthError(err.message || 'An unknown error occurred during login.');
+            console.error(`Phantom Google Login Error:`, err);
+            setAuthError(err.message || 'Google wallet connection failed.');
         } finally {
             setLoadingProvider(null);
         }
@@ -140,13 +135,13 @@ export default function WalletConnect({ onConnected }) {
 
     try {
       console.log(`Initiating Phantom injected connection...`);
-      const result = await phantomSdk.connect('injected');
+      const result = await phantomSdk.connect({ provider: 'injected' });
       if (result && result.publicKey) {
         onConnected(result.publicKey.toBase58());
       }
     } catch (err) {
       console.error(`Phantom injected Login Error:`, err);
-      setAuthError(err.message || 'An unknown error occurred during login.');
+      setAuthError(err.message || 'Browser wallet connection failed.');
     } finally {
       setLoadingProvider(null);
     }
