@@ -8,6 +8,7 @@ import dotenv from 'dotenv'
 import authRoutes from './routes/auth.js'
 import solanaRoutes from './routes/solana.js'
 import deepLinkRoutes from './routes/deep-link.js'
+import adminRoutes from './routes/admin.js'
 import { logError, logRequest, serializeError } from './lib/logger.js'
 import { csrfProtection } from './middleware/csrf.js'
 import { initSchema } from './lib/db.js'
@@ -135,8 +136,13 @@ app.use('/api/admin', adminRoutes) // Elite Protocol God-View
  * Forwards requests to Helius instead of QuickNode.
  */
 app.post('/api/quicknode/rpc/solana', async (req, res) => {
+  const apiKey = process.env.HELIUS_API_KEY;
+  if (!apiKey) {
+      return res.status(500).json({ error: 'Helius API Key not configured in environment.' });
+  }
+
   try {
-    const { data } = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`, req.body, {
+    const { data } = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${apiKey}`, req.body, {
       headers: { 'Content-Type': 'application/json' }
     });
     res.json(data);
