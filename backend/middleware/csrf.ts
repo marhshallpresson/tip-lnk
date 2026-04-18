@@ -31,24 +31,39 @@ const hasActiveSession = async (req: Request) => {
 }
 
 export const csrfProtection = async (req: Request, res: Response, next: NextFunction) => {
+  // ─── Elite Skip Logic ───
+  // 1. Skip if not an API route
   if (!req.path.startsWith('/api')) {
     next()
     return
   }
 
-  // Auth endpoints must work without CSRF headers
+  // 2. Skip for SAFE methods (GET, HEAD, OPTIONS)
+  // This ensures profile fetches and initial data loads never hit a 403.
+  if (SAFE_METHODS.has(req.method.toUpperCase())) {
+    next()
+    return
+  }
+
+  // 3. Skip for profile loads (Public data)
+  if (req.path.startsWith('/api/solana/profile')) {
+    next()
+    return
+  }
+
+  // 4. Skip for Auth endpoints (managed by JWT/Sessions)
   if (req.path.startsWith('/api/auth')) {
     next()
     return
   }
 
-  // Bearer-token requests are not cookie-auth flows
+  // 4. Skip if Bearer token is present (Mobile/API flow)
   if (extractBearerToken(req)) {
     next()
     return
   }
 
-  // Enforce CSRF only for authenticated browser sessions.
+  // ─── Enforced CSRF for State-Changing Requests ───
   if (!hasSessionCookie(req)) {
     next()
     return
@@ -61,13 +76,9 @@ export const csrfProtection = async (req: Request, res: Response, next: NextFunc
   }
 
   const cookieToken = ensureCsrfToken(req, res)
-  if (SAFE_METHODS.has(req.method.toUpperCase())) {
-    next()
-    return
-  }
-
   const headerToken = getCsrfHeaderToken(req)
   const csrfCookie = getCsrfCookieToken(req)
+
   if (!headerToken || !csrfCookie || headerToken !== cookieToken) {
     res.status(403).json({ success: false, error: 'Invalid CSRF token' })
     return

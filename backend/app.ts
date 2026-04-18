@@ -139,13 +139,10 @@ app.post('/api/quicknode/rpc/solana', async (req, res) => {
   const isDevnet = process.env.VITE_SOLANA_NETWORK === 'devnet';
   const apiKey = process.env.HELIUS_API_KEY;
   
+  // ─── Professional Cluster Routing ───
   const rpcUrl = isDevnet 
     ? 'https://api.devnet.solana.com' 
     : `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
-
-  if (!isDevnet && !apiKey) {
-      return res.status(500).json({ error: 'Helius API Key not configured for mainnet.' });
-  }
 
   try {
     const { data } = await axios.post(rpcUrl, req.body, {

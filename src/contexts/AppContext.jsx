@@ -56,7 +56,7 @@ export function AppProvider({ children }) {
   const { publicKey, connected, wallet } = useWallet();
   const { user: authUser, loading: authLoading } = useAuth();
   const pubkeyStr = publicKey?.toBase58() || (authUser ? `auth_${authUser.id}` : null);
-  
+
   const [state, setState] = useState(defaultState);
   const [dbSynced, setDbSynced] = useState(false);
   const [agent, setAgent] = useState(null);
@@ -96,28 +96,28 @@ export function AppProvider({ children }) {
     }
   }, [pubkeyStr]);
 
-  // ─── Phase 2: Supabase Infrastructure Sync ───
+  // ─── Phase 2: Professional Supabase Sync ───
   useEffect(() => {
     const syncWithDb = async () => {
       if (pubkeyStr && !dbSynced) {
-        console.log('Syncing with Supabase via eitherway.ai...');
+
         const dbProfile = await getProfile(pubkeyStr);
         if (dbProfile) {
           // Flatten/Merge handles from root into profile object
           setState(prev => {
             const newState = { ...prev, ...dbProfile };
-            
+
             // Critical: If DB says onboarding is done, respect it immediately
             if (dbProfile.onboardingComplete === true) {
-                newState.onboardingComplete = true;
+              newState.onboardingComplete = true;
             }
 
             if (dbProfile.twitterHandle || dbProfile.discordHandle) {
-               newState.profile = {
-                 ...newState.profile,
-                 twitterHandle: dbProfile.twitterHandle || newState.profile.twitterHandle,
-                 discordHandle: dbProfile.discordHandle || newState.profile.discordHandle
-               };
+              newState.profile = {
+                ...newState.profile,
+                twitterHandle: dbProfile.twitterHandle || newState.profile.twitterHandle,
+                discordHandle: dbProfile.discordHandle || newState.profile.discordHandle
+              };
             }
             return newState;
           });
@@ -140,8 +140,8 @@ export function AppProvider({ children }) {
     if (pubkeyStr && state !== defaultState) {
       // Local Cache
       localStorage.setItem(`${STORAGE_KEY}_${pubkeyStr}`, JSON.stringify(state));
-      
-      // Remote Sync (Supabase via eitherway.ai)
+
+      // Remote Sync (Supabase Cloud)
       saveProfile(pubkeyStr, state);
     }
   }, [state, pubkeyStr]);
@@ -149,11 +149,11 @@ export function AppProvider({ children }) {
   const role = useMemo(() => {
     if (authLoading) return 'guest'; // Hold until auth state is known
     if (!connected && !authUser) return 'guest';
-    
+
     // Elite Admin Shortcut: Admins are always creators and skip onboarding
     const isAdmin = authUser?.roles?.includes('admin') || authUser?.email === 'admin@tiplnk.me';
     if (isAdmin || state.onboardingComplete) return 'creator';
-    
+
     return 'user';
   }, [connected, authUser, authLoading, state.onboardingComplete]);
 
@@ -164,13 +164,13 @@ export function AppProvider({ children }) {
   const updateProfile = useCallback((partial) => {
     setState((prev) => {
       const newProfile = { ...prev.profile, ...partial };
-      
+
       // Auto-generate referralId from username/domain if missing
       if (!newProfile.referralId) {
-        const baseName = newProfile.solDomain 
-          ? newProfile.solDomain.replace('.tiplnk.sol', '') 
+        const baseName = newProfile.solDomain
+          ? newProfile.solDomain.replace('.tiplnk.sol', '')
           : (newProfile.displayName || '').toLowerCase().replace(/\s+/g, '');
-        
+
         if (baseName) {
           newProfile.referralId = baseName;
         }

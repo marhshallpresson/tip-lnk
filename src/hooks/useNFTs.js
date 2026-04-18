@@ -69,4 +69,3 @@ export function useNFTs() {
 
   return { nfts, loading, error, fetchNFTs };
 }
-t
