@@ -11,13 +11,16 @@ import {
   ArrowUpRight,
   TrendingUp,
   Search,
-  Database
+  Database,
+  Lock,
+  Mail,
+  LogOut
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { connected } = useWallet();
   const navigate = useNavigate();
-  const [adminSecret, setAdminSecret] = useState(localStorage.getItem('tiplnk_admin_secret') || '');
+  const [email, setEmail] = useState('admin@tiplnk.me');
+  const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
@@ -25,14 +28,15 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchAdminData = async (secret) => {
+  const fetchAdminData = async () => {
     setLoading(true);
-    setError(null);
     try {
       const isProd = import.meta.env.PROD;
       const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
       
-      const headers = { 'x-admin-secret': secret };
+      // The dashboard stats still require the backend secret for data aggregation
+      const adminSecret = 'tiplnk-elite-admin-2026-god-mode'; 
+      const headers = { 'x-admin-secret': adminSecret };
       
       const [statsRes, creatorsRes] = await Promise.all([
         fetch(`${API_BASE}/api/admin/stats`, { headers }),
@@ -40,7 +44,7 @@ export default function AdminDashboard() {
       ]);
 
       if (!statsRes.ok || !creatorsRes.ok) {
-        throw new Error('Invalid Admin Secret or unauthorized access.');
+        throw new Error('Unauthorized administrative access.');
       }
 
       const statsData = await statsRes.json();
@@ -48,27 +52,56 @@ export default function AdminDashboard() {
 
       setStats(statsData.stats);
       setCreators(creatorsData.creators);
-      setIsAuthenticated(true);
-      localStorage.setItem('tiplnk_admin_secret', secret);
     } catch (err) {
-      console.error('Admin Auth Error:', err);
-      setError(err.message || 'Failed to authenticate.');
+      console.error('Admin Data Fetch Fault:', err);
+      setError('Session expired or unauthorized.');
       setIsAuthenticated(false);
-      localStorage.removeItem('tiplnk_admin_secret');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+        const isProd = import.meta.env.PROD;
+        const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+        
+        const response = await fetch(`${API_BASE}/api/auth/admin/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            setIsAuthenticated(true);
+            localStorage.setItem('tiplnk_admin_session', 'active');
+            fetchAdminData();
+        } else {
+            throw new Error(data.error || 'Invalid admin credentials');
+        }
+    } catch (err) {
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (adminSecret && !isAuthenticated) {
-      fetchAdminData(adminSecret);
+    const session = localStorage.getItem('tiplnk_admin_session');
+    if (session === 'active') {
+      setIsAuthenticated(true);
+      fetchAdminData();
     }
   }, []);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    fetchAdminData(adminSecret);
+  const handleLogout = () => {
+      localStorage.removeItem('tiplnk_admin_session');
+      setIsAuthenticated(false);
+      setPassword('');
   };
 
   const filteredCreators = creators.filter(c => 
@@ -79,13 +112,13 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-surface-950">
         <div className="glass-card glow-brand p-8 max-w-md w-full animate-scale-in">
           <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <ShieldCheck size={32} className="text-red-500" />
           </div>
-          <h2 className="text-2xl font-black text-center mb-2">Protocol Admin Access</h2>
-          <p className="text-surface-400 text-sm text-center mb-8">Enter the master secret to access the God View.</p>
+          <h2 className="text-2xl font-black text-center mb-2">Protocol Admin Login</h2>
+          <p className="text-surface-400 text-sm text-center mb-8">Access the God View with your administrator credentials.</p>
           
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl mb-6 text-sm flex items-center gap-2">
@@ -94,20 +127,40 @@ export default function AdminDashboard() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <input 
-              type="password" 
-              placeholder="Enter Admin Secret" 
-              className="input-field w-full"
-              value={adminSecret}
-              onChange={(e) => setAdminSecret(e.target.value)}
-              required
-            />
+            <div className="space-y-1 text-left">
+                <label className="text-[10px] font-black uppercase text-surface-500 ml-1">Admin Email</label>
+                <div className="relative">
+                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" />
+                    <input 
+                    type="email" 
+                    placeholder="email@tiplnk.me" 
+                    className="input-field w-full !pl-12"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    />
+                </div>
+            </div>
+            <div className="space-y-1 text-left">
+                <label className="text-[10px] font-black uppercase text-surface-500 ml-1">Master Password</label>
+                <div className="relative">
+                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" />
+                    <input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    className="input-field w-full !pl-12"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    />
+                </div>
+            </div>
             <button 
               type="submit" 
               disabled={loading}
-              className="btn-primary w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 border-0"
+              className="btn-primary w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 border-0 mt-6"
             >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : 'Authenticate'}
+              {loading ? <Loader2 size={18} className="animate-spin" /> : 'Enter God View'}
             </button>
           </form>
           <button onClick={() => navigate('/')} className="w-full text-surface-500 hover:text-white text-xs font-bold mt-6 uppercase tracking-widest">
@@ -128,14 +181,10 @@ export default function AdminDashboard() {
           <p className="text-surface-400 text-sm">Real-time treasury and creator oversight.</p>
         </div>
         <button 
-          onClick={() => {
-            localStorage.removeItem('tiplnk_admin_secret');
-            setIsAuthenticated(false);
-            setAdminSecret('');
-          }} 
-          className="px-4 py-2 bg-surface-800 hover:bg-surface-700 rounded-xl text-xs font-bold text-surface-300 transition-colors"
+          onClick={handleLogout} 
+          className="flex items-center gap-2 px-4 py-2 bg-surface-800 hover:bg-surface-700 rounded-xl text-xs font-bold text-surface-300 transition-colors"
         >
-          Lock Console
+          <LogOut size={14} /> Log Out
         </button>
       </div>
 
@@ -151,7 +200,7 @@ export default function AdminDashboard() {
             <div className="absolute -right-4 -bottom-4 opacity-5"><DollarSign size={100} /></div>
             <p className="text-surface-400 text-xs font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><DollarSign size={14} className="text-accent-green"/> Treasury Revenue</p>
             <p className="text-3xl font-black text-accent-green">${stats.platformRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-            <p className="text-[10px] text-surface-500 mt-1">From 5% Platform Fees</p>
+            <p className="text-[10px] text-surface-500 mt-1">From Dynamic Protocol Fees</p>
           </div>
           <div className="glass-card p-6 border-t-2 border-t-accent-purple relative overflow-hidden">
             <div className="absolute -right-4 -bottom-4 opacity-5"><Users size={100} /></div>

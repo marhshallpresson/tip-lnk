@@ -57,62 +57,70 @@ router.get('/profile', async (req, res) => {
   const wallet = req.query.wallet as string;
   if (!wallet) return res.status(400).json({ error: 'Wallet required' });
 
-  try {
-    // Advanced Query: Search by walletAddress first (most common), then googleSub, then solDomain, then id
-    let user = await db('user').where({ walletAddress: wallet }).first();
-    
-    if (!user) {
-        user = await db('user').where({ googleSub: wallet }).first();
-    }
+  let retryCount = 0;
+  const maxRetries = 3;
 
-    if (!user && wallet.includes('.sol')) {
-        user = await db('user').where({ solDomain: wallet }).first();
-    }
-    
-    // Check if it's a valid UUID before searching ID column
-    if (!user && wallet.length === 36 && wallet.includes('-')) {
-        user = await db('user').where({ id: wallet }).first();
-    }
-    
-    // Auto-provision user if missing from Supabase
-    if (!user) {
-        // Elite Hack: If it's a domain we don't know, we shouldn't insert it as a walletAddress
-        // unless it's a valid address string.
-        const isAddress = wallet.length >= 32 && wallet.length <= 44 && !wallet.includes('.');
+  while (retryCount < maxRetries) {
+    try {
+        // Advanced Query: Search by walletAddress first (most common), then googleSub, then solDomain, then id
+        let user = await db('user').where({ walletAddress: wallet }).first();
         
-        if (isAddress) {
-            const userId = randomUUID();
-            await db('user').insert({
-                id: userId,
-                email: `${wallet}@phantom.local`,
-                walletAddress: wallet,
-                profileData: JSON.stringify({ displayName: 'New Creator' }),
-                created_at: new Date()
-            });
-            user = await db('user').where({ id: userId }).first();
-        } else {
-            return res.status(404).json({ success: false, error: 'User profile not found. Please register this handle first.' });
+        if (!user) {
+            user = await db('user').where({ googleSub: wallet }).first();
         }
+
+        if (!user && wallet.includes('.sol')) {
+            user = await db('user').where({ solDomain: wallet }).first();
+        }
+        
+        // Check if it's a valid UUID before searching ID column
+        if (!user && wallet.length === 36 && wallet.includes('-')) {
+            user = await db('user').where({ id: wallet }).first();
+        }
+        
+        // Auto-provision user if missing from Supabase
+        if (!user) {
+            const isAddress = wallet.length >= 32 && wallet.length <= 44 && !wallet.includes('.');
+            
+            if (isAddress) {
+                const userId = randomUUID();
+                await db('user').insert({
+                    id: userId,
+                    email: `${wallet}@phantom.local`,
+                    walletAddress: wallet,
+                    profileData: JSON.stringify({ displayName: 'New Creator' }),
+                    created_at: new Date()
+                });
+                user = await db('user').where({ id: userId }).first();
+            } else {
+                return res.status(404).json({ success: false, error: 'User profile not found. Please register this handle first.' });
+            }
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User profile not found' });
+        }
+
+        const profile = JSON.parse(user.profileData || '{}');
+        
+        // Aggregate Elite Social Metrics (Followers across accounts)
+        const socialMetrics = await aggregateSocialMetrics(user.twitterHandle, user.discordHandle);
+        profile.socialMetrics = socialMetrics;
+        profile.walletAddress = user.walletAddress;
+        profile.twitterHandle = user.twitterHandle;
+        profile.discordHandle = user.discordHandle;
+        profile.solDomain = user.solDomain;
+
+        return res.json({ success: true, profile });
+    } catch (err) {
+        retryCount++;
+        console.error(`Profile Fetch Fault (Attempt ${retryCount}):`, err);
+        if (retryCount >= maxRetries) {
+            return res.status(500).json({ success: false, error: 'Failed to fetch or provision profile after retries' });
+        }
+        // Small delay before retry
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
-
-    if (!user) {
-        return res.status(404).json({ success: false, error: 'User profile not found' });
-    }
-
-    const profile = JSON.parse(user.profileData || '{}');
-    
-    // Aggregate Elite Social Metrics (Followers across accounts)
-    const socialMetrics = await aggregateSocialMetrics(user.twitterHandle, user.discordHandle);
-    profile.socialMetrics = socialMetrics;
-    profile.walletAddress = user.walletAddress;
-    profile.twitterHandle = user.twitterHandle;
-    profile.discordHandle = user.discordHandle;
-    profile.solDomain = user.solDomain;
-
-    res.json({ success: true, profile });
-  } catch (err) {
-    console.error('Profile Fetch Fault:', err);
-    res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' });
   }
 });
 
@@ -315,7 +323,7 @@ router.get('/diagnostic/check', async (req, res) => {
   }
 
   const results: any = { status: 'ok', checks: {} };
-  const TEST_WALLET = '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
+  const TEST_WALLET = process.env.TREASURY_WALLET || '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
 
   try {
     const HELIUS_API_KEY = process.env.HELIUS_API_KEY;

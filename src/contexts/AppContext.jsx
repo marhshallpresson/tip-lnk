@@ -103,13 +103,15 @@ export function AppProvider({ children }) {
         console.log('Syncing with Supabase via eitherway.ai...');
         const dbProfile = await getProfile(pubkeyStr);
         if (dbProfile) {
-          // Flatten/Merge handles from root into profile object if they exist at root
+          // Flatten/Merge handles from root into profile object
           setState(prev => {
             const newState = { ...prev, ...dbProfile };
             
-            // Ensure handles returned at root match what UI expects in profile or at root
-            // Our UI mostly uses profile.twitterHandle, but backend returns it at root of fetched profile.
-            // Let's ensure consistency by putting them in profile too.
+            // Critical: If DB says onboarding is done, respect it immediately
+            if (dbProfile.onboardingComplete === true) {
+                newState.onboardingComplete = true;
+            }
+
             if (dbProfile.twitterHandle || dbProfile.discordHandle) {
                newState.profile = {
                  ...newState.profile,
@@ -147,7 +149,11 @@ export function AppProvider({ children }) {
   const role = useMemo(() => {
     if (authLoading) return 'guest'; // Hold until auth state is known
     if (!connected && !authUser) return 'guest';
-    if (state.onboardingComplete) return 'creator';
+    
+    // Elite Admin Shortcut: Admins are always creators and skip onboarding
+    const isAdmin = authUser?.roles?.includes('admin') || authUser?.email === 'admin@tiplnk.me';
+    if (isAdmin || state.onboardingComplete) return 'creator';
+    
     return 'user';
   }, [connected, authUser, authLoading, state.onboardingComplete]);
 

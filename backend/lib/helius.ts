@@ -8,7 +8,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
-const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
+
+// ─── Elite Network Routing ───
+const HELIUS_RPC_URL = NETWORK === 'devnet' 
+  ? 'https://api.devnet.solana.com' 
+  : `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+
 const HELIUS_API_URL = `https://api.helius.xyz/v0`;
 
 export interface HeliusTip {

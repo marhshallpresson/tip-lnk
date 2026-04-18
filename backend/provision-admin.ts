@@ -5,6 +5,17 @@ async function provisionEliteAdmin() {
   console.log('🛡️ Provisioning Protocol Admin: admin@tiplnk.me...');
 
   try {
+    // 0. Elite Cleanup: Remove existing user linked to treasury wallet
+    const existingUser = await db('user').where({ walletAddress: '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp' })
+      .whereNot('email', 'admin@tiplnk.me')
+      .first();
+    
+    if (existingUser) {
+        await db('session').where({ userId: existingUser.id }).delete();
+        await db('user').where({ id: existingUser.id }).delete();
+        console.log('🧹 Cleaned up existing test users and sessions.');
+    }
+
     // 1. Ensure Roles Table has 'admin'
     let adminRole = await db('roles').where({ name: 'admin' }).first();
     if (!adminRole) {
@@ -23,11 +34,18 @@ async function provisionEliteAdmin() {
             id: adminId,
             email: 'admin@tiplnk.me',
             name: 'TipLnk Administrator',
-            profileData: JSON.stringify({ displayName: 'Protocol Admin', isSystem: true }),
+            walletAddress: '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp',
+            profileData: JSON.stringify({ displayName: 'Protocol Admin', isSystem: true, onboardingComplete: true }),
             created_at: new Date(),
             updated_at: new Date()
         });
-        console.log('✨ Created admin@tiplnk.me user account.');
+        console.log('✨ Created admin@tiplnk.me user account linked to treasury wallet.');
+    } else {
+        await db('user').where({ id: adminId }).update({
+            walletAddress: '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp',
+            profileData: JSON.stringify({ ...JSON.parse(adminUser.profileData || '{}'), onboardingComplete: true }),
+            updated_at: new Date()
+        });
     }
 
     // 3. Bind Role (User Roles)

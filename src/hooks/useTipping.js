@@ -4,7 +4,7 @@ import { VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 
 // ─── Elite Protocol Constants ───
-const TREASURY_WALLET = '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
+const TREASURY_WALLET = import.meta.env.VITE_TREASURY_WALLET || '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
 
 /**
  * Professional Tipping Engine (Sender-Pays Fee Standard)
