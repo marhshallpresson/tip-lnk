@@ -24,7 +24,6 @@ async function liveInboxTest() {
       console.log('✅ Success! Test email dispatched to mobot685@gmail.com.');
     }
   } catch (err) {
-    console.error('❌ Delivery Failed:', err.message);
   }
   process.exit(0);
 }

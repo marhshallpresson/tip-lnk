@@ -133,7 +133,7 @@ export default function TipWidget({ fixedRecipient = null }) {
 
   const handleSendTip = async () => {
     setTxStep('processing');
-    const result = await executeTip(profile.displayName || 'Anonymous Creator');
+    const result = await executeTip(profile?.displayName || 'Anonymous');
     if (result?.success) {
       addTip({
         recipient: recipientInput,
@@ -385,9 +385,8 @@ export default function TipWidget({ fixedRecipient = null }) {
             </button>
           )}
           <p className="text-center text-[9px] font-bold text-surface-600 uppercase tracking-widest mt-4">
-            Sender-Pays Fee Architecture • 100% Creator Payout
-          </p>
-        </div>
+              0% Fees on Direct Transfers • 100% Creator Payout
+          </p>        </div>
       </div>
     );
   }
@@ -488,6 +487,11 @@ function TokenListItem({ token, isSelected, onClick }) {
       <div className="flex items-center gap-2">
         {isSelected && <Check size={16} className="text-brand-500" />}
         <span className="bg-surface-800 text-surface-400 text-[8px] font-black px-2 py-1 rounded-md uppercase tracking-widest border border-surface-700">Solana</span>
+      </div>
+    </button>
+  );
+}
+Solana</span>
       </div>
     </button>
   );

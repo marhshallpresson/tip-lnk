@@ -4,12 +4,11 @@ import { VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 
 // ─── Elite Protocol Constants ───
-const PLATFORM_FEE_BPS = 500; // 5%
 const TREASURY_WALLET = '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
 
 /**
  * Professional Tipping Engine (Sender-Pays Fee Standard)
- * Implements real-time routing with a 5% platform fee added to the sender.
+ * Implements real-time routing with a dynamic near-zero platform fee added to the sender.
  */
 export function useTipping(creatorAddress) {
   const { publicKey, signTransaction } = useWallet();
@@ -78,9 +77,11 @@ export function useTipping(creatorAddress) {
 
         const order = await response.json();
 
-        // ─── Phase 2: Sender-Pays Fee Calculation ───
+        // ─── Phase 2: Dynamic Sender-Pays Fee Calculation ───
         const baseOutAmount = BigInt(order.outAmount);
-        const platformFee = (baseOutAmount * BigInt(PLATFORM_FEE_BPS)) / 10000n;
+        // 0% on direct stablecoin/sol donations, 1% on complex routes to cover infrastructure
+        const dynamicFeeBps = (tokenSymbol === 'USDC' || tokenSymbol === 'SOL') ? 0n : 100n;
+        const platformFee = (baseOutAmount * dynamicFeeBps) / 10000n;
         const totalAuthorization = baseOutAmount + platformFee;
 
         setTipAmountUSDC(fromLamports(baseOutAmount, 6));

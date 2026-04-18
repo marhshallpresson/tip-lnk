@@ -152,6 +152,37 @@ router.get('/tips/:address', async (req, res) => {
 });
 
 /**
+ * Secure Tip Logging (Audit Requirement)
+ * Stores the sender name and message for transparency.
+ */
+router.post('/tips', async (req, res) => {
+  const { walletAddress, tip, isSent } = req.body;
+  if (!tip || !tip.txSignature) return res.status(400).json({ error: 'Invalid tip data' });
+
+  try {
+    await db('tips').insert({
+      signature: tip.txSignature,
+      slot: 0, // Will be updated by chronological indexer
+      timestamp: new Date(tip.timestamp),
+      sender: walletAddress,
+      sender_name: tip.sender || 'Anonymous',
+      recipient: tip.recipientAddress,
+      message: tip.note || '',
+      amount: tip.amountUSDC,
+      tokenMint: tip.inputToken, // Simplified for logging
+      tokenSymbol: tip.inputToken,
+      status: 'confirmed',
+      type: isSent ? 'tip_sent' : 'tip_received'
+    }).onConflict('signature').merge();
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Tip Logging Fault:', err);
+    res.status(500).json({ success: false, error: 'Failed to log tip.' });
+  }
+});
+
+/**
  * Trigger an on-demand backfill for a wallet.
  * Uses gTFA for speed and efficiency.
  */

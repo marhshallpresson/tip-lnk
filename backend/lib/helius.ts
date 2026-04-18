@@ -77,7 +77,16 @@ export async function backfillTransactions(address: string, limit = 100) {
     if (!data.result) return [];
 
     const parsedTips: HeliusTip[] = data.result.map((tx: any) => {
-      const isIncoming = tx.nativeTransfers.some((t: any) => t.toUserAccount === address);
+      // ─── Professional History Isolation ───
+      // Only pull transactions made via TipLnk. 
+      // We check if the transaction contains our specific protocol identifier in the memo or instructions.
+      const isTipLnkTx = tx.instructions?.some((ix: any) => 
+        ix.programId === 'MemoSq4gqABAXDe96necyBDe9necyBDe9necyBDe9ne' || 
+        (ix.data && ix.data.includes('tiplnk'))
+      );
+
+      if (!isTipLnkTx) return null;
+
       const nativeTransfer = tx.nativeTransfers[0];
       const tokenTransfer = tx.tokenTransfers[0];
 

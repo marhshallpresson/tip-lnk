@@ -23,12 +23,18 @@ export default function WhiteLabelNav({ creatorName = 'Creator' }) {
     <nav className="fixed top-0 left-0 w-full z-[100] h-16 bg-main-bg/80 backdrop-blur-md border-b border-surface-800/50 flex items-center px-6">
       <div className="max-w-[1200px] w-full mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 group">
-            <img src="public/favicon.svg" className="w-8 h-8 " alt="Tip Lnk" />
-            <span className="font-black text-sm uppercase tracking-widest text-surface-400 group-hover:text-white transition-colors">
-              TipLnk
-            </span>
-          </Link>
+          <div className="w-5 h-5 rounded-full bg-surface-800 overflow-hidden flex items-center justify-center border border-surface-700">
+          {profile.avatarUrl || (profile.nftAvatar?.image && !profile.nftAvatar.image.includes('placeholder')) ? (
+            <img 
+              src={profile.avatarUrl || profile.nftAvatar.image} 
+              alt="" 
+              className="w-full h-full object-cover" 
+              onError={(e) => { e.target.style.display = 'none'; }} 
+            />
+          ) : (
+            <User size={12} className="text-surface-500" />
+          )}
+        </div>
           <div className="h-4 w-[1px] bg-surface-800 mx-2" />
           <span className="font-bold text-sm text-white">{creatorName}</span>
         </div>

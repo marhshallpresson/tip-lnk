@@ -66,6 +66,8 @@ export async function initSchema() {
         table.bigInteger('slot').notNullable();
         table.dateTime('timestamp').notNullable();
         table.string('sender').notNullable();
+        table.string('sender_name'); // Audit Requirement
+        table.text('message');      // Audit Requirement
         table.string('recipient').notNullable();
         table.decimal('amount', 20, 8).notNullable();
         table.string('tokenMint').notNullable();

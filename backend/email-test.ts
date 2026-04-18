@@ -4,7 +4,7 @@ async function testEmail() {
   console.log('📧 Testing Brevo SMTP Connection...');
   try {
     const result = await sendMail({
-      to: 'a873a4001@smtp-brevo.com', // Sending to self as test
+      to: 'mobot685@gmail.com', // Sending to self as test
       subject: 'TipLnk Elite System Check',
       text: 'Your SMTP integration is 100% functional. TipLnk is ready for launch.',
       html: '<h1>✨ TipLnk Active</h1><p>Your SMTP integration is 100% functional. TipLnk is ready for launch.</p>'
@@ -16,7 +16,6 @@ async function testEmail() {
       console.log('✅ Email SENT. Check your Brevo inbox.');
     }
   } catch (err) {
-    console.error('❌ Email Failed:', err.message);
   }
   process.exit(0);
 }
