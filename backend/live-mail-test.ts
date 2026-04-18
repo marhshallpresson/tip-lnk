@@ -13,11 +13,11 @@ async function liveInboxTest() {
           <p>This is a live test of your professional creator onboarding system.</p>
           <p>Your verification engine is now 100% functional.</p>
           <hr style="border: 0; border-top: 1px solid #30363d; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #8b949e;">Powered by Brevo x Helius x DFlow</p>
+          <p style="font-size: 12px; color: #8b949e;">Powered by Tip Lnk</p>
         </div>
       `
     });
-    
+
     if (result.skipped) {
       console.error('❌ Test SKIPPED. Check SMTP environment variables.');
     } else {
