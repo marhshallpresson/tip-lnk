@@ -15,8 +15,9 @@ const phantomSdk = new BrowserSDK({
   appId: PHANTOM_APP_ID,
   addressTypes: [AddressType.solana],
   autoConnect: true,
-  // Professional Normalization: Always redirect to the origin to match registered dev settings
-  authOptions: { redirectUrl: window.location.origin },
+  // Professional Hardening: Strip everything except the origin (protocol + domain)
+  // to ensure it matches the Phantom Developer Dashboard EXACTLY.
+  authOptions: { redirectUrl: window.location.origin.replace(/\/$/, "") },
 });
 
 /* Detect Solflare in-app browser */
