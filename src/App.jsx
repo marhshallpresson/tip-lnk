@@ -119,6 +119,12 @@ function AppContent() {
             </RequireAuth>
           } />
 
+          <Route path="/admin" element={
+            <div className="mt-20 min-h-screen">
+              <AdminDashboard />
+            </div>
+          } />
+
           <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
           <Route path="/:username" element={<CreatorPage />} />
 

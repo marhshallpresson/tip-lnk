@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { BrowserSDK, AddressType } from '@phantom/browser-sdk';
+import { getPhantomDeepLink, getSolflareDeepLink, isMobile, hasSolanaProvider } from '../utils/deepLinks';
 
 // --- Phantom SDK Setup ---
 const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID || "YOUR_APP_ID_HERE";
@@ -47,6 +48,7 @@ export default function WalletConnect({ onConnected }) {
   const { login, register, user: authUser, loginWithWallet } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
+  const mobileDevice = isMobile();
   const [view, setView] = useState('wallets'); // selection, wallets, email-login, email-register, email-verify, email-success
   const [advancing, setAdvancing] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
@@ -378,22 +380,27 @@ export default function WalletConnect({ onConnected }) {
         </div>
 
         <div className="space-y-6">
-          <button 
-            onClick={() => handleSocialSelect('google')} 
-            disabled={loadingProvider !== null} 
-            className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-brand-500 text-black font-bold transition-all shadow-lg shadow-white-500/20"
-          >
-            {loadingProvider === 'google' ? (
-              <Loader2 size={20} className="animate-spin" />
-            ) : (
-              <>
-                <svg width="20" height="20" viewBox="0 0 24 24" className="fill-current">
-                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="currentColor"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor"/>
-                </svg>
-                Continue with Google
-              </>
-            )}
-          </button>
+          <div className="space-y-2">
+            <button 
+                onClick={() => handleSocialSelect('google')} 
+                disabled={loadingProvider !== null} 
+                className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-brand-500 text-black font-bold transition-all shadow-lg shadow-white-500/20"
+            >
+                {loadingProvider === 'google' ? (
+                <Loader2 size={20} className="animate-spin" />
+                ) : (
+                <>
+                    <svg width="20" height="20" viewBox="0 0 24 24" className="fill-current">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="currentColor"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor"/>
+                    </svg>
+                    Continue with Google
+                </>
+                )}
+            </button>
+            <p className="text-[10px] text-surface-500 font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                Powered by <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-3 h-3" /> <span className="text-surface-400">Phantom</span>
+            </p>
+          </div>
           
           <div className="flex items-center gap-4 text-surface-600">
             <div className="h-px flex-1 bg-surface-800"></div>
@@ -425,7 +432,29 @@ export default function WalletConnect({ onConnected }) {
       <h2 className="text-3xl font-black mb-3 text-white">Connect & Earn</h2>
       <p className="text-surface-500 text-sm mb-8">Access the most powerful creator hub on Solana.</p>
 
-      {noWalletsInstalled && (
+      {mobileDevice && !hasSolanaProvider() && (
+        <div className="flex flex-col gap-3 mb-8">
+            <button
+                onClick={() => window.location.href = getPhantomDeepLink(window.location.href)}
+                className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-[#AB9FF2] text-white font-bold transition-all shadow-lg shadow-[#AB9FF2]/20 border-0"
+            >
+                <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-5 h-5 rounded-full" />
+                Open in Phantom
+            </button>
+            <button
+                onClick={() => window.location.href = getSolflareDeepLink(window.location.href)}
+                className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-[#E78E3A] text-white font-bold transition-all shadow-lg shadow-[#E78E3A]/20 border-0"
+            >
+                <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-5 h-5 rounded-full" />
+                Open in Solflare
+            </button>
+            <p className="text-center text-[10px] text-surface-500 font-bold uppercase tracking-widest mt-2">
+                In-app browser required for secure signing
+            </p>
+        </div>
+      )}
+
+      {noWalletsInstalled && !mobileDevice && (
         <div className="mb-8 text-left bg-surface-900/80 p-4 rounded-2xl border border-surface-800">
             <h3 className="font-bold text-white mb-2 flex items-center gap-2"><Chrome size={16} /> First, you need a wallet</h3>
             <p className="text-xs text-surface-400 mb-4 leading-relaxed">A wallet is your gateway to Web3. We recommend installing one of these browser extensions to get the full experience.</p>

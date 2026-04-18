@@ -105,6 +105,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/solana', solanaRoutes)
 app.use('/api/supabase', solanaRoutes) // Alias for frontend compatibility
 app.use('/api/deep-link', deepLinkRoutes) // Handle-to-wallet resolution
+app.use('/api/admin', adminRoutes) // Elite Protocol God-View
 
 /**
  * Professional RPC Proxy for Legacy Frontend Calls

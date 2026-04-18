@@ -65,13 +65,19 @@ export default function Dashboard() {
       />
 
       {/* --- MOBILE HEADER --- */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface-950/80 backdrop-blur-md border-b border-surface-900 flex items-center justify-between px-6 z-40">
-        
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface-950/80 backdrop-blur-md border-b border-surface-900 flex items-center justify-between px-6 z-[60]">
+        <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
+                <Zap size={18} className="text-black fill-black" />
+            </div>
+            <span className="font-black italic tracking-tighter text-lg">TipLnk</span>
+        </div>
+
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 rounded-xl bg-surface-900 border border-surface-800 text-surface-400"
+          className="p-2 rounded-xl bg-surface-900 border border-surface-800 text-surface-400 active:scale-95 transition-transform"
         >
-          {isSidebarOpen ? <XCircle size={20} /> : <MoreHorizontal size={20} />}
+          {isSidebarOpen ? <XCircle size={20} className="text-brand-400" /> : <MoreHorizontal size={20} />}
         </button>
       </div>
 
@@ -79,13 +85,13 @@ export default function Dashboard() {
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm "
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[45]"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       <aside className={`
-        fixed md:static inset-y-0 left-0 w-50 border-r border-surface-900 flex flex-col shrink-0 bg-surface-950 md:bg-surface-950/20 z-50 transition-transform duration-300 transform
+        fixed md:static inset-y-0 left-0 w-64 border-r border-surface-900 flex flex-col shrink-0 bg-surface-950 md:bg-surface-950/20 z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         
