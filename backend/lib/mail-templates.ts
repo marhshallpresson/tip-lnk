@@ -1,6 +1,6 @@
 const appName = 'TipLnk'
 const normalizeUrl = (value: string) => value.trim().replace(/\/+$/, '')
-const appUrl = normalizeUrl(process.env.APP_URL || 'http://localhost:3000')
+const appUrl = normalizeUrl(process.env.APP_URL || 'http://tip-link.vercel.app')
 const assetUrl = normalizeUrl(
   process.env.MAIL_ASSET_URL ||
   process.env.UPLOADS_BASE_URL ||

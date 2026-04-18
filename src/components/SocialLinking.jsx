@@ -97,12 +97,14 @@ export default function SocialLinking({ onComplete, onBack }) {
 
       if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.platform === platform) {
         // Update the parent window's profile state directly
-        const platformKey = platform === 'twitter' ? 'twitter' : 'discord';
+        const handleKey = platform === 'twitter' ? 'twitterHandle' : 'discordHandle';
+        const verifyKey = platform === 'twitter' ? 'isTwitterVerified' : 'isDiscordVerified';
+        
         updateProfile({
+          [handleKey]: event.data.username || 'verified_user',
           socials: {
             ...(profile.socials || {}),
-            [platformKey]: event.data.username || 'verified_user',
-            [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true,
+            [verifyKey]: true,
           }
         });
 

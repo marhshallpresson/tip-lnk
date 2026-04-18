@@ -4,7 +4,7 @@
  */
 
 const isProd = import.meta.env.PROD;
-const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
 async function safeFetch(url, options = {}) {
   try {

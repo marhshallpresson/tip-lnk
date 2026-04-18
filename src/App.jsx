@@ -14,8 +14,8 @@ import LandingPage from './components/LandingPage';
 import CreatorPage from './components/CreatorPage';
 import Dashboard from './components/Dashboard';
 import AppNavbar from './components/AppNavbar';
-import { useState, useEffect, useCallback, lazy, Suspense  } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation, useParams  } from 'react-router-dom';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 
 // Lazy load components for performance
 const OverviewTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.OverviewTab })));
@@ -70,7 +70,7 @@ function AppContent() {
       <ScrollToTop />
       {/* Standard App Navbar - Hidden on White-Label Creator Pages */}
       {!location.pathname.match(/^\/[^/]+$/) || ['/terms', '/privacy', '/onboarding', '/dashboard'].some(p => location.pathname.startsWith(p)) ? (
-        <AppNavbar 
+        <AppNavbar
           onGetStarted={handleGetStarted}
           onboardingComplete={role === 'creator'}
           connected={role !== 'guest'}
@@ -85,9 +85,9 @@ function AppContent() {
           <Route path="/" element={
             <>
               <LandingPage onGetStarted={handleGetStarted} />
-              <WalletModal 
-                isOpen={showWalletModal} 
-                onClose={() => setShowWalletModal(false)} 
+              <WalletModal
+                isOpen={showWalletModal}
+                onClose={() => setShowWalletModal(false)}
                 onConnected={(addr, isAuth) => {
                   if (addr || isAuth) navigate('/dashboard');
                 }}
@@ -121,13 +121,13 @@ function AppContent() {
 
           <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
           <Route path="/:username" element={<CreatorPage />} />
-          
+
           <Route path="/terms" element={
             <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
               <TermsOfService />
             </Suspense>
           } />
-          
+
           <Route path="/privacy" element={
             <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
               <PrivacyPolicy />
@@ -200,18 +200,18 @@ function AuthCallbackHandler() {
       const exchangeCode = async () => {
         try {
           const isProd = import.meta.env.PROD;
-          const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
-          
+          const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+
           // Phantom Google specifically might return the publicKey directly in the URL
           const publicKey = params.get('publicKey');
 
           const response = await fetch(`${API_BASE}/api/auth/${platform}/callback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                code, 
-                publicKey,
-                redirectUri: `${window.location.origin}/auth/callback/${platform}`
+            body: JSON.stringify({
+              code,
+              publicKey,
+              redirectUri: `${window.location.origin}/auth/callback/${platform}`
             })
           });
 
@@ -225,16 +225,16 @@ function AuthCallbackHandler() {
 
           // Update profile with verified social data
           if (platform === 'phantom-google') {
-              // This is a wallet connection success
-              if (window.opener) {
-                window.opener.postMessage({
-                  type: 'OAUTH_SUCCESS',
-                  platform: 'phantom-google',
-                  publicKey: data.walletAddress
-                }, window.location.origin);
-                setTimeout(() => window.close(), 500);
-              }
-              return;
+            // This is a wallet connection success
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'OAUTH_SUCCESS',
+                platform: 'phantom-google',
+                publicKey: data.walletAddress
+              }, window.location.origin);
+              setTimeout(() => window.close(), 500);
+            }
+            return;
           }
 
           updateProfile({

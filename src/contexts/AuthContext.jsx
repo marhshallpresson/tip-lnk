@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGoogle = () => {
     const isProd = import.meta.env.PROD;
-    const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+    const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
     const next = window.location.pathname + window.location.search;
     window.location.href = `${API_BASE}/api/auth/google/start?next=${encodeURIComponent(next)}`;
   };

@@ -135,92 +135,156 @@ export default function Dashboard() {
   );
 }
 
-/* ─── Overview Tab ─── */
+/* ─── Overview Tab (Elite Solflare Track Overhaul) ─── */
 export function OverviewTab() {
   const { totalTipsUSDC, tipsReceived, profile } = useApp();
   const portfolio = useWalletPortfolio();
 
   const stats = [
-    { label: 'Portfolio Value', value: portfolio.loading ? '...' : `$${portfolio.totalValueUSD.toFixed(0)}`, icon: Wallet, color: 'text-brand-400', bgColor: 'bg-brand-600/10' },
+    { label: 'Total Net Worth', value: portfolio.loading ? '...' : `$${portfolio.totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, icon: Wallet, color: 'text-brand-400', bgColor: 'bg-brand-600/10' },
     { label: 'Tips Earned', value: `$${totalTipsUSDC.toFixed(2)}`, icon: DollarSign, color: 'text-accent-green', bgColor: 'bg-accent-green/10' },
     { label: 'Tip Count', value: tipsReceived.length, icon: Gift, color: 'text-accent-purple', bgColor: 'bg-accent-purple/10' },
     { label: 'SOL Balance', value: portfolio.loading ? '...' : `${portfolio.solBalance.toFixed(3)} ◎`, icon: Zap, color: 'text-accent-cyan', bgColor: 'bg-accent-cyan/10' },
   ];
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Stats Grid */}
+    <div className="space-y-6 animate-fade-in">
+      {/* ─── Level 1: Wealth & Activity Intelligence ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="stat-card">
-            <div className={`w-9 h-9 rounded-xl ${stat.bgColor} flex items-center justify-center mb-3`}>
+          <div key={stat.label} className="stat-card group hover:border-brand-500/30 transition-all">
+            <div className={`w-9 h-9 rounded-xl ${stat.bgColor} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
               <stat.icon size={16} className={stat.color} />
             </div>
-            <p className="text-xl md:text-2xl font-bold">{stat.value}</p>
-            <p className="text-surface-500 text-xs mt-1">{stat.label}</p>
+            <p className="text-xl md:text-2xl font-black italic tracking-tighter">{stat.value}</p>
+            <p className="text-surface-500 text-[10px] font-black uppercase tracking-widest mt-1">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Recent Tips */}
-      <div className="glass-card p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Gift size={18} className="text-brand-400" /> Recent Tips
-        </h3>
-        {tipsReceived.length === 0 ? (
-          <div className="text-center py-10">
-            <Gift size={32} className="text-surface-700 mx-auto mb-3" />
-            <p className="text-surface-500 text-sm">No tips yet. Share your tip page to start receiving.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {tipsReceived.slice(0, 5).map((tip, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-surface-800/40 hover:bg-surface-800/60 transition-colors">
-                <div className="flex items-center gap-3">
-                  <ArrowDownLeft size={14} className="text-accent-green" />
-                  <div>
-                    <p className="font-medium text-sm">{tip.sender}</p>
-                    <p className="text-surface-500 text-xs">{tip.inputAmount} {tip.inputToken}</p>
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* ─── Level 2: Portfolio Visualizer (Solflare Track Core) ─── */}
+          <div className="lg:col-span-2 space-y-6">
+              <div className="glass-card p-6 border-brand-500/10">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-black italic uppercase tracking-tighter flex items-center gap-2">
+                    <ShieldCheck size={18} className="text-brand-400" /> On-Chain Assets
+                    </h3>
+                    <span className="text-[10px] font-black bg-brand-500/10 text-brand-400 px-2 py-1 rounded-md uppercase tracking-widest border border-brand-500/20">
+                        Live via Helius DAS
+                    </span>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-accent-green text-sm">+${tip.amountUSDC.toFixed(2)}</p>
-                  <p className="text-surface-600 text-xs">{new Date(tip.timestamp).toLocaleTimeString()}</p>
-                </div>
+
+                {portfolio.loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
+                        <Loader2 size={32} className="animate-spin text-brand-400" />
+                        <p className="text-[10px] font-black uppercase tracking-widest">Indexing wallet contents...</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                        {portfolio.tokens.slice(0, 5).map((token) => (
+                            <div key={token.mint} className="flex items-center justify-between p-3 rounded-xl bg-surface-900/40 hover:bg-surface-800/60 transition-all border border-transparent hover:border-surface-700 group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-surface-800 flex items-center justify-center overflow-hidden border border-surface-700 group-hover:border-brand-500/40 transition-colors">
+                                        {token.icon && token.icon.startsWith('http') ? (
+                                            <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-xs font-bold">{token.symbol[0]}</span>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-sm text-white">{token.name}</h4>
+                                        <p className="text-[10px] text-surface-500 font-bold uppercase tracking-widest">{token.symbol}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-black text-sm text-white italic">{token.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
+                                    <p className="text-[10px] text-accent-green font-black uppercase tracking-widest">${token.valueUSD.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="glass-card-hover p-5 cursor-pointer group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-600/10 flex items-center justify-center">
-              <Share2 size={16} className="text-brand-400" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">Share Tip Page</h4>
-              <p className="text-surface-500 text-xs">Copy your link</p>
-            </div>
+              {/* ─── Level 3: NFT Proof of Support ─── */}
+              {portfolio.nfts.length > 0 && (
+                <div className="glass-card p-6 border-accent-purple/10">
+                    <h3 className="text-lg font-black italic uppercase tracking-tighter flex items-center gap-2 mb-6">
+                        <ImageIcon size={18} className="text-accent-purple" /> Digital Collectibles
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {portfolio.nfts.slice(0, 4).map((nft) => (
+                            <div key={nft.id} className="group relative aspect-square rounded-2xl overflow-hidden border border-surface-800 bg-surface-900 shadow-xl hover:border-accent-purple/50 transition-all">
+                                <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                                    <p className="text-[10px] font-black text-white truncate">{nft.name}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+              )}
           </div>
-        </div>
-        <div className="glass-card-hover p-5 cursor-pointer group">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
-              <QrCode size={16} className="text-accent-cyan" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">QR Code</h4>
-              <p className="text-surface-500 text-xs">Scan-to-Reward</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="space-y-5 mt-6">
-        <ShareQRPanel />
+          <div className="space-y-6">
+              {/* ─── Recent Tips Ledger ─── */}
+              <div className="glass-card p-6 border-brand-500/10">
+                <h3 className="text-sm font-black italic uppercase tracking-widest flex items-center gap-2 mb-6 text-surface-400">
+                    <Clock size={16} /> Latest Earnings
+                </h3>
+                {tipsReceived.length === 0 ? (
+                    <div className="text-center py-10 opacity-30">
+                        <Gift size={32} className="mx-auto mb-3" />
+                        <p className="text-[10px] font-black uppercase tracking-widest">No activity found</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {tipsReceived.slice(0, 5).map((tip, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-surface-800/40 hover:bg-surface-800/60 transition-colors border border-surface-700/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-accent-green/10 flex items-center justify-center">
+                                    <ArrowDownLeft size={14} className="text-accent-green" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-xs italic">{tip.sender}</p>
+                                    <p className="text-[9px] text-surface-500 font-bold uppercase tracking-widest">{tip.inputAmount} {tip.inputToken}</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-black text-xs text-accent-green italic tracking-tighter">+${tip.amountUSDC.toFixed(2)}</p>
+                            </div>
+                        </div>
+                        ))}
+                        <button 
+                            onClick={() => window.location.hash = 'history'}
+                            className="w-full py-3 rounded-xl border border-surface-800 text-[10px] font-black uppercase tracking-widest text-surface-500 hover:text-white hover:border-surface-600 transition-all mt-2"
+                        >
+                            View All History
+                        </button>
+                    </div>
+                )}
+              </div>
+
+              {/* ─── Share Kit ─── */}
+              <div className="glass-card p-6 bg-brand-500/5 border-brand-500/20 group cursor-pointer hover:bg-brand-500/10 transition-all">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-black shadow-lg shadow-brand-500/20 group-hover:scale-110 transition-transform">
+                            <QrCode size={24} />
+                        </div>
+                        <div>
+                            <h4 className="font-black italic uppercase tracking-tighter text-lg">Creator Kit</h4>
+                            <p className="text-[10px] text-brand-400 font-black uppercase tracking-widest">Generate QR & Links</p>
+                        </div>
+                    </div>
+                    <p className="text-xs text-surface-400 leading-relaxed font-medium mb-4">
+                        Your professional Solflare-optimized tipping page is ready to accept tips.
+                    </p>
+                    <button className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+                        Open Kit <ArrowRight size={14} />
+                    </button>
+              </div>
+          </div>
       </div>
     </div>
   );

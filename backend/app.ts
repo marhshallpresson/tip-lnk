@@ -11,6 +11,7 @@ import deepLinkRoutes from './routes/deep-link.js'
 import { logError, logRequest, serializeError } from './lib/logger.js'
 import { csrfProtection } from './middleware/csrf.js'
 import { initSchema } from './lib/db.js'
+import axios from 'axios'
 
 // Load env
 dotenv.config()
@@ -30,9 +31,9 @@ const corsOptions: cors.CorsOptions = {
     const allowedOrigins = [
       process.env.APP_URL,
       process.env.VITE_APP_URL,
-      'https://tiplnk.vercel.app',
+      'https://tip-lnk.vercel.app',
       'http://localhost:5173',
-      'http://localhost:3000'
+      'https://tip-lnk.vercel.app'
     ].filter(Boolean).map(url => url!.trim().replace(/\/+$/, ''));
 
     if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ''))) {
@@ -55,10 +56,11 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https://*", "blob:"],
       connectSrc: [
-        "'self'", 
-        "https://*.solana.com", 
-        "https://*.helius-rpc.com", 
+        "'self'",
+        "https://*.solana.com",
+        "https://*.helius-rpc.com",
         "https://api.jup.ag",
+        "https://price.jup.ag",
         "https://api.eitherway.ai",
         "wss://*.solana.com"
       ],
@@ -71,7 +73,7 @@ app.use(helmet({
 app.use(compression())
 app.use(cors(corsOptions))
 
-const cookieSecret = process.env.SESSION_COOKIE_SECRET || 'tiplnk-elite-hardened-session-secret-2026';
+const cookieSecret = process.env.SESSION_COOKIE_SECRET;
 app.use(cookieParser(cookieSecret))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
@@ -81,7 +83,7 @@ app.use(csrfProtection)
 // Request logging
 app.use((req: Request, _res: Response, next: NextFunction) => {
   const requestId = randomUUID()
-  ;(req as any).requestId = requestId
+    ; (req as any).requestId = requestId
   _res.setHeader('x-request-id', requestId)
 
   const startedAt = Date.now()
@@ -110,16 +112,13 @@ app.use('/api/deep-link', deepLinkRoutes) // Handle-to-wallet resolution
  */
 app.post('/api/quicknode/rpc/solana', async (req, res) => {
   try {
-    const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY }`;
-    const response = await fetch(HELIUS_RPC_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body),
+    const { data } = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`, req.body, {
+      headers: { 'Content-Type': 'application/json' }
     });
-    const data = await response.json();
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'RPC Proxy Error' });
+  } catch (err: any) {
+    console.error('RPC Proxy Fault:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json(err.response?.data || { error: 'RPC Proxy Error' });
   }
 });
 

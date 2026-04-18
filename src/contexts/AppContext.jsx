@@ -103,7 +103,22 @@ export function AppProvider({ children }) {
         console.log('Syncing with Supabase via eitherway.ai...');
         const dbProfile = await getProfile(pubkeyStr);
         if (dbProfile) {
-          setState(prev => ({ ...prev, ...dbProfile }));
+          // Flatten/Merge handles from root into profile object if they exist at root
+          setState(prev => {
+            const newState = { ...prev, ...dbProfile };
+            
+            // Ensure handles returned at root match what UI expects in profile or at root
+            // Our UI mostly uses profile.twitterHandle, but backend returns it at root of fetched profile.
+            // Let's ensure consistency by putting them in profile too.
+            if (dbProfile.twitterHandle || dbProfile.discordHandle) {
+               newState.profile = {
+                 ...newState.profile,
+                 twitterHandle: dbProfile.twitterHandle || newState.profile.twitterHandle,
+                 discordHandle: dbProfile.discordHandle || newState.profile.discordHandle
+               };
+            }
+            return newState;
+          });
         }
         setDbSynced(true);
       }

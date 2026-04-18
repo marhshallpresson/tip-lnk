@@ -1,8 +1,8 @@
 const isProd = import.meta.env.PROD;
 // Ensure we always have a full URL for the Solana Connection constructor
-const API_BASE_URL = isProd 
-  ? window.location.origin 
-  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+const API_BASE_URL = isProd
+  ? window.location.origin
+  : (import.meta.env.VITE_API_BASE_URL);
 
 export const QUICKNODE_SOLANA_RPC = `${API_BASE_URL}/api/quicknode/rpc/solana`;
 

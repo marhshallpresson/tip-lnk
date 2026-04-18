@@ -4,15 +4,15 @@ import { db } from '../lib/db.js'
 import { sendMail } from '../lib/mailer.js'
 import { templates } from '../lib/mail-templates.js'
 import { hashPassword, randomCode, randomToken, sha256Hex, verifyPassword } from '../lib/password.js'
-import { randomUUID } from 'crypto'     
+import { randomUUID } from 'crypto'
 import { logError, serializeError, log } from '../lib/logger.js'
 import {
-    createSession,
-    destroySession,
-    getSessionUser,
-    getCookieOptions,
-    getUserRoles,
-    revokeAllUserSessions
+  createSession,
+  destroySession,
+  getSessionUser,
+  getCookieOptions,
+  getUserRoles,
+  revokeAllUserSessions
 } from '../lib/session.js'
 import { resolveSessionTokenSecret, signSessionToken } from '../lib/session-token.js'
 import { ensureCsrfToken } from '../lib/csrf.js'
@@ -71,7 +71,7 @@ const appUrl = (req?: Request) => {
   if (env) return normalizeBaseUrl(env)
   const fallback = inferredOrigin(req)
   if (fallback) return fallback
-  return 'http://localhost:3000'
+  return 'https://tip-lnk.vercel.app'
 }
 
 const apiUrl = (req?: Request) => {
@@ -238,9 +238,9 @@ const issueEmailVerification = async (userId: string, email: string, name: strin
   const code = randomCode(6)
   const tokenHash = sha256Hex(code)
   const expiresAt = new Date(Date.now() + emailVerifyTtlMs())
-  
+
   await db('emailverificationtoken').where({ userId }).delete()
-    
+
   await db('emailverificationtoken').insert({
     id: randomUUID(),
     userId,
@@ -248,7 +248,7 @@ const issueEmailVerification = async (userId: string, email: string, name: strin
     expiresAt,
     created_at: new Date(),
   })
-  
+
   console.log(`[Email Verification] Code for ${email}: ${code}`)
 
   await sendMail({
@@ -297,7 +297,7 @@ router.get('/google/start', async (req: Request, res: Response) => {
     const verifier = oidc.randomPKCECodeVerifier()
     const nonce = oidc.randomNonce()
     const code_challenge = await oidc.calculatePKCECodeChallenge(verifier)
-    
+
     const opts = getCookieOptions(req)
     const shortOpts = { ...opts, maxAge: 600000 }
 
@@ -314,7 +314,7 @@ router.get('/google/start', async (req: Request, res: Response) => {
       code_challenge,
       code_challenge_method: 'S256',
     })
-    
+
     res.redirect(url.href)
   } catch (e: any) {
     console.error('[auth/google/start]', e)
@@ -331,7 +331,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     const verifierCookie = req.signedCookies?.g_verifier
     const nonceCookie = req.signedCookies?.g_nonce
     const nextCookie = req.signedCookies?.g_next || '/'
-    
+
     const opts = getCookieOptions(req)
     const clearOpts = clearCookieOpts(opts as any)
     res.clearCookie('g_state', clearOpts as any)
@@ -386,7 +386,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
           updated_at: new Date(),
         })
         user = await db('user').where({ id: userId }).first()
-        
+
         // Default role
         const role = await db('roles').where({ name: 'user' }).first()
         if (role) await db('user_roles').insert({ userId, roleId: role.id })
@@ -397,7 +397,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     const session = await createSession(req, res, user.id)
     const roles = await getUserRoles(user.id)
     const { code } = await issueAuthExchangeCode(session.sessionId)
-    
+
     const redirect = new URL('/auth/callback', appUrl(req))
     redirect.searchParams.set('code', code)
     redirect.searchParams.set('next', nextCookie)
@@ -521,23 +521,23 @@ router.post('/wallet-login', async (req: Request, res: Response) => {
     // Auto-assign: If logging in directly via Phantom Google, create or fetch wallet-based account
     let user;
     try {
-        user = await db('user').where({ walletAddress }).first();
-        if (!user) {
-          const userId = randomUUID(); // Standard UUID string
-          await db('user').insert({
-            id: userId,
-            email: `${walletAddress}@phantom.local`,
-            name: 'Phantom User',
-            walletAddress,
-            profileData: JSON.stringify({ displayName: 'Phantom Creator' }),
-            created_at: new Date(),
-            updated_at: new Date(),
-          });
-          user = await db('user').where({ id: userId }).first();
-        }
+      user = await db('user').where({ walletAddress }).first();
+      if (!user) {
+        const userId = randomUUID(); // Standard UUID string
+        await db('user').insert({
+          id: userId,
+          email: `${walletAddress}@phantom.local`,
+          name: 'Phantom User',
+          walletAddress,
+          profileData: JSON.stringify({ displayName: 'Phantom Creator' }),
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+        user = await db('user').where({ id: userId }).first();
+      }
     } catch (dbErr) {
-        console.error('Elite DB Provisioning Error:', dbErr);
-        return res.status(500).json({ success: false, error: 'Database provisioning failed' });
+      console.error('Elite DB Provisioning Error:', dbErr);
+      return res.status(500).json({ success: false, error: 'Database provisioning failed' });
     }
 
     await db('user').where({ id: user.id }).update({ lastLoginAt: new Date() });
@@ -608,91 +608,91 @@ router.post('/exchange', async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       user: { id: user.id, email: user.email, name: user.name, roles, emailVerifiedAt: user.emailVerifiedAt },
-      auth: { accessToken, tokenType: 'Bearer', expiresAt: session.expiresAt }  
+      auth: { accessToken, tokenType: 'Bearer', expiresAt: session.expiresAt }
     })
-    } catch (e: any) {
+  } catch (e: any) {
     res.status(500).json({ success: false, error: 'Exchange failed' })
-    }
-    })
+  }
+})
 
-    /**
-    * Professional X (Twitter) OAuth2 Callback
-    * Handles code exchange for verified handles.
-    */
-    router.post('/twitter/callback', async (req: Request, res: Response) => {
-    const { code, redirectUri } = req.body;
-    try {
+/**
+* Professional X (Twitter) OAuth2 Callback
+* Handles code exchange for verified handles.
+*/
+router.post('/twitter/callback', async (req: Request, res: Response) => {
+  const { code, redirectUri } = req.body;
+  try {
     // In a professional implementation, exchange code for access_token
     // For now, we return a verified handle to finalize the onboarding UI.
     res.json({ success: true, username: `@creator_x` });
-    } catch (err) {
+  } catch (err) {
     res.status(500).json({ error: 'Twitter verification failed' });
-    }
-    });
+  }
+});
 
-    /**
-    * Professional Discord OAuth2 Callback
-    */
-    router.post('/discord/callback', async (req: Request, res: Response) => {
-    const { code, redirectUri } = req.body;
-    try {
+/**
+* Professional Discord OAuth2 Callback
+*/
+router.post('/discord/callback', async (req: Request, res: Response) => {
+  const { code, redirectUri } = req.body;
+  try {
     res.json({ success: true, username: 'creator#1234' });
-    } catch (err) {
+  } catch (err) {
     res.status(500).json({ error: 'Discord verification failed' });
+  }
+});
+
+/**
+ * Professional Phantom Google Callback
+ * Ensures the wallet (created or retrieved) is bonded to a TipLnk account.
+ */
+router.post('/phantom-google/callback', async (req: Request, res: Response) => {
+  const { code, publicKey } = req.body;
+
+  // Advanced provisioning: Even if we only have the publicKey (passed from the redirect)
+  // we treat this as a verified wallet login from the Phantom/Google bond.
+  const walletAddress = publicKey;
+
+  if (!walletAddress) {
+    return res.status(400).json({ success: false, error: 'No wallet address provided by Phantom.' });
+  }
+
+  try {
+    let user = await db('user').where({ walletAddress }).first();
+
+    // Auto-provision TipLnk Account for the retrieved/created wallet
+    if (!user) {
+      const userId = randomUUID();
+      await db('user').insert({
+        id: userId,
+        email: `${walletAddress}@phantom.local`,
+        name: 'Phantom Creator',
+        walletAddress,
+        profileData: JSON.stringify({ displayName: 'New Creator', provider: 'phantom-google' }),
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
+      user = await db('user').where({ id: userId }).first();
     }
+
+    await db('user').where({ id: user.id }).update({ lastLoginAt: new Date() });
+    const session = await createSession(req, res, user.id);
+    const roles = await getUserRoles(user.id);
+
+    res.json({
+      success: true,
+      walletAddress,
+      user: { id: user.id, email: user.email, name: user.name, roles },
+      auth: {
+        accessToken: session.accessToken,
+        tokenType: 'Bearer',
+        expiresAt: session.expiresAt.toISOString(),
+      },
     });
+  } catch (err) {
+    console.error('Phantom-Google Provisioning Fault:', err);
+    res.status(500).json({ success: false, error: 'Failed to sync wallet with account system.' });
+  }
+});
 
-    /**
-     * Professional Phantom Google Callback
-     * Ensures the wallet (created or retrieved) is bonded to a TipLnk account.
-     */
-    router.post('/phantom-google/callback', async (req: Request, res: Response) => {
-      const { code, publicKey } = req.body;
-
-      // Advanced provisioning: Even if we only have the publicKey (passed from the redirect)
-      // we treat this as a verified wallet login from the Phantom/Google bond.
-      const walletAddress = publicKey;
-
-      if (!walletAddress) {
-          return res.status(400).json({ success: false, error: 'No wallet address provided by Phantom.' });
-      }
-
-      try {
-        let user = await db('user').where({ walletAddress }).first();
-
-        // Auto-provision TipLnk Account for the retrieved/created wallet
-        if (!user) {
-          const userId = randomUUID();
-          await db('user').insert({
-            id: userId,
-            email: `${walletAddress}@phantom.local`,
-            name: 'Phantom Creator',
-            walletAddress,
-            profileData: JSON.stringify({ displayName: 'New Creator', provider: 'phantom-google' }),
-            created_at: new Date(),
-            updated_at: new Date(),
-          });
-          user = await db('user').where({ id: userId }).first();
-        }
-
-        await db('user').where({ id: user.id }).update({ lastLoginAt: new Date() });
-        const session = await createSession(req, res, user.id);
-        const roles = await getUserRoles(user.id);
-
-        res.json({
-          success: true,
-          walletAddress,
-          user: { id: user.id, email: user.email, name: user.name, roles },
-          auth: {
-            accessToken: session.accessToken,
-            tokenType: 'Bearer',
-            expiresAt: session.expiresAt.toISOString(),
-          },
-        });
-      } catch (err) {
-        console.error('Phantom-Google Provisioning Fault:', err);
-        res.status(500).json({ success: false, error: 'Failed to sync wallet with account system.' });
-      }
-    });
-
-    export default router;
+export default router;

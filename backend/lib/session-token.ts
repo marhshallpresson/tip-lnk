@@ -41,7 +41,7 @@ const timingSafeEqual = (a: string, b: string) => {
 }
 
 export const resolveSessionTokenSecret = () =>
-  String(process.env.SESSION_TOKEN_SECRET || process.env.SESSION_COOKIE_SECRET || 'dev-secret')
+  String(process.env.SESSION_TOKEN_SECRET || process.env.SESSION_COOKIE_SECRET )
 
 export const extractBearerToken = (req: Request) => {
   const raw = req.headers.authorization

@@ -7,7 +7,7 @@ import { db } from './db.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '9e4676f0-adc3-4640-bca0-7dd9420d4281';
+const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 const HELIUS_API_URL = `https://api.helius.xyz/v0`;
 

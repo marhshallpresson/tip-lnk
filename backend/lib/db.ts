@@ -49,6 +49,7 @@ export async function initSchema() {
         table.string('twitterHandle').unique();
         table.string('discordHandle').unique();
         table.string('walletAddress').unique();
+        table.string('solDomain').unique();
         table.dateTime('emailVerifiedAt');
         table.text('profileData');
         table.dateTime('lastLoginAt');
@@ -83,7 +84,7 @@ export async function initSchema() {
       await db.schema.createTable('indexer_state', (table) => {
         table.string('address').primary();
         table.bigInteger('lastIndexedSlot').defaultTo(0);
-        table.dateTime('updatedAt').defaultTo(db.fn.now());
+        table.dateTime('updated_at').defaultTo(db.fn.now());
       });
       console.log('✨ Indexer state table provisioned.');
     }

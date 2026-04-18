@@ -6,9 +6,9 @@
 const isProd = import.meta.env.PROD;
 // In production, we MUST use the current origin. 
 // Falling back to localhost in prod causes the ERR_CONNECTION_REFUSED
-const API_BASE_URL = (isProd 
-  ? window.location.origin 
-  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005')) + '/api';
+const API_BASE_URL = (isProd
+  ? window.location.origin
+  : (import.meta.env.VITE_API_BASE_URL)) + '/api';
 
 class ApiClient {
   constructor() {

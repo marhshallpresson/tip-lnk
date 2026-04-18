@@ -36,7 +36,7 @@ router.get('/dflow/quote', async (req: express.Request, res: express.Response) =
 router.post('/send', async (req: express.Request, res: express.Response) => {
   const { transaction } = req.body;
   try {
-    const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '9e4676f0-adc3-4640-bca0-7dd9420d4281';
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY ;
     const response = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
       jsonrpc: '2.0',
       id: 'send-tx',
@@ -58,11 +58,15 @@ router.get('/profile', async (req, res) => {
   if (!wallet) return res.status(400).json({ error: 'Wallet required' });
 
   try {
-    // Advanced Query: Search by walletAddress first (most common), then googleSub, then id
+    // Advanced Query: Search by walletAddress first (most common), then googleSub, then solDomain, then id
     let user = await db('user').where({ walletAddress: wallet }).first();
     
     if (!user) {
         user = await db('user').where({ googleSub: wallet }).first();
+    }
+
+    if (!user && wallet.includes('.sol')) {
+        user = await db('user').where({ solDomain: wallet }).first();
     }
     
     // Check if it's a valid UUID before searching ID column
@@ -72,15 +76,23 @@ router.get('/profile', async (req, res) => {
     
     // Auto-provision user if missing from Supabase
     if (!user) {
-        const userId = randomUUID();
-        await db('user').insert({
-            id: userId,
-            email: `${wallet}@phantom.local`,
-            walletAddress: wallet,
-            profileData: JSON.stringify({ displayName: 'New Creator' }),
-            created_at: new Date()
-        });
-        user = await db('user').where({ id: userId }).first();
+        // Elite Hack: If it's a domain we don't know, we shouldn't insert it as a walletAddress
+        // unless it's a valid address string.
+        const isAddress = wallet.length >= 32 && wallet.length <= 44 && !wallet.includes('.');
+        
+        if (isAddress) {
+            const userId = randomUUID();
+            await db('user').insert({
+                id: userId,
+                email: `${wallet}@phantom.local`,
+                walletAddress: wallet,
+                profileData: JSON.stringify({ displayName: 'New Creator' }),
+                created_at: new Date()
+            });
+            user = await db('user').where({ id: userId }).first();
+        } else {
+            return res.status(404).json({ success: false, error: 'User profile not found. Please register this handle first.' });
+        }
     }
 
     if (!user) {
@@ -95,6 +107,7 @@ router.get('/profile', async (req, res) => {
     profile.walletAddress = user.walletAddress;
     profile.twitterHandle = user.twitterHandle;
     profile.discordHandle = user.discordHandle;
+    profile.solDomain = user.solDomain;
 
     res.json({ success: true, profile });
   } catch (err) {
@@ -106,11 +119,15 @@ router.get('/profile', async (req, res) => {
 router.post('/profile', async (req, res) => {
   const { walletAddress, profile } = req.body;
   try {
+    // Sync solDomain to its own column for indexing if it exists in profile
+    const solDomain = profile.solDomain || (profile.profile && profile.profile.solDomain);
+
     await db('user')
       .where({ walletAddress })
       .orWhere({ id: walletAddress })
       .update({ 
         profileData: JSON.stringify(profile),
+        solDomain: solDomain || null,
         updated_at: new Date()
       });
     res.json({ success: true });
@@ -173,7 +190,7 @@ router.get('/priority-fee', async (req, res) => {
 router.post('/send-smart', async (req: express.Request, res: express.Response) => {
   const { transaction, sponsor = true } = req.body;
   try {
-    const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '9e4676f0-adc3-4640-bca0-7dd9420d4281';
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY ;
     
     // Elite sponsors logic: We use Helius 'Sender' with skipPreflight
     // In a professional production app, we would re-sign as the fee-payer here

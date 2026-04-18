@@ -1,11 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { VersionedTransaction } from '@solana/web3.js';
+import { VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 
+// ─── Elite Protocol Constants ───
+const PLATFORM_FEE_BPS = 500; // 5%
+const TREASURY_WALLET = '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
+
 /**
- * Professional Tipping Engine (DFlow Trade API Standard)
- * Implements real-time routing, async execution monitoring, and Jito bundle support.
+ * Professional Tipping Engine (Sender-Pays Fee Standard)
+ * Implements real-time routing with a 5% platform fee added to the sender.
  */
 export function useTipping(creatorAddress) {
   const { publicKey, signTransaction } = useWallet();
@@ -20,6 +24,8 @@ export function useTipping(creatorAddress) {
   const [selectedToken, setSelectedToken] = useState(SUPPORTED_TOKENS[0]);
   const [amount, setAmount] = useState('');
   const [tipAmountUSDC, setTipAmountUSDC] = useState('0');
+  const [feeAmountUSDC, setFeeAmountUSDC] = useState('0');
+  const [totalChargedUSDC, setTotalChargedUSDC] = useState('0');
   const [processing, setProcessing] = useState(false);
   const [route, setRoute] = useState(null);
   const [txResult, setTxResult] = useState(null);
@@ -30,8 +36,8 @@ export function useTipping(creatorAddress) {
     try {
       const token = SUPPORTED_TOKENS.find(t => t.symbol === symbol);
       if (!token) return 1;
-      
-      const response = await fetch(`https://api.jup.ag/price/v2?ids=${token.mint}`);
+
+      const response = await fetch(`https://price.jup.ag/v6/price?ids=${token.mint}`);
       const data = await response.json();
       return data.data[token.mint]?.price || 1;
     } catch (err) {
@@ -45,19 +51,19 @@ export function useTipping(creatorAddress) {
       if (!tokenAmount || isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) {
         setRoute(null);
         setTipAmountUSDC('0');
+        setFeeAmountUSDC('0');
+        setTotalChargedUSDC('0');
         return;
       }
 
       setError(null);
-      const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
-      
+
       try {
-        setError(null);
         const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
         const amountInLamports = toLamports(tokenAmount, token.decimals);
-        
+
         const isProd = import.meta.env.PROD;
-        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         const params = new URLSearchParams({
           inputMint: token.mint,
           outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
@@ -69,14 +75,23 @@ export function useTipping(creatorAddress) {
         // Use our Professional Backend Proxy to avoid CORS
         const response = await fetch(`${API_BASE_URL}/api/solana/dflow/quote?${params}`);
         if (!response.ok) throw new Error('Professional routing engine failed');
-        
+
         const order = await response.json();
-        
-        const outAmountFormatted = fromLamports(BigInt(order.outAmount), 6);
-        setTipAmountUSDC(outAmountFormatted);
+
+        // ─── Phase 2: Sender-Pays Fee Calculation ───
+        const baseOutAmount = BigInt(order.outAmount);
+        const platformFee = (baseOutAmount * BigInt(PLATFORM_FEE_BPS)) / 10000n;
+        const totalAuthorization = baseOutAmount + platformFee;
+
+        setTipAmountUSDC(fromLamports(baseOutAmount, 6));
+        setFeeAmountUSDC(fromLamports(platformFee, 6));
+        setTotalChargedUSDC(fromLamports(totalAuthorization, 6));
 
         setRoute({
           ...order,
+          baseAmount: baseOutAmount.toString(),
+          feeAmount: platformFee.toString(),
+          totalAmount: totalAuthorization.toString(),
           estimatedTime: order.executionMode === 'async' ? '~15s (Jito Optimized)' : '~4s (Helius Fast)'
         });
       } catch (err) {
@@ -84,7 +99,7 @@ export function useTipping(creatorAddress) {
         setError('Routing engine unavailable. Please try again.');
       }
     },
-    [creatorAddress, fetchPrice]
+    [publicKey, creatorAddress]
   );
 
   const executeTip = useCallback(
@@ -97,35 +112,29 @@ export function useTipping(creatorAddress) {
       setError(null);
 
       try {
-        // ─── Phase 1: Professional Priority Fee Integration ───
         const isProd = import.meta.env.PROD;
-        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
-        const feeResponse = await fetch(`${API_BASE_URL}/api/solana/priority-fee?accounts=${route.inputMint},${route.outputMint},${creatorAddress}`);
-        const { fees } = await feeResponse.json();
-        
-        // Use Helius 'high' fee for professional landing reliability
-        const priorityFee = fees?.high || 50000;
-        console.log(`Professional Tip Landing: Applying ${priorityFee} micro-lamports priority fee.`);
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
         let signature;
         if (route.transaction) {
+          // ─── Elite Multi-Instruction Processing ───
           const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
           const signedTx = await signTransaction(tx);
-          
+
           // Use our Professional Backend Sender Relay
           const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              transaction: Buffer.from(signedTx.serialize()).toString('base64') 
+            body: JSON.stringify({
+              transaction: Buffer.from(signedTx.serialize()).toString('base64')
             }),
           });
-          
+
           const submitData = await submitRes.json();
           signature = submitData.result;
-          
+
           if (!signature) {
-            throw new Error(submitData.error?.message || 'Helius Sender did not return a signature. Transaction might have failed.');
+            throw new Error(submitData.error?.message || 'Transaction submission failed.');
           }
 
           // Wait for confirmation
@@ -134,18 +143,19 @@ export function useTipping(creatorAddress) {
             signature,
             ...latestBlockhash
           }, 'confirmed');
-        } else {
-          throw new Error('Real-time routing engine did not return a valid transaction. Please try again.');
         }
 
         const result = {
           success: true,
           signature,
           executionMode: route.executionMode,
-          outAmount: parseFloat(fromLamports(BigInt(route.outAmount), 6)),
+          outAmount: parseFloat(fromLamports(BigInt(route.baseAmount), 6)),
+          feeAmount: parseFloat(fromLamports(BigInt(route.feeAmount), 6)),
+          totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
           timestamp: Date.now(),
           sender: senderName || 'Anonymous',
           recipientAddress: creatorAddress,
+          treasuryAddress: TREASURY_WALLET
         };
 
         setTxResult(result);
@@ -163,6 +173,8 @@ export function useTipping(creatorAddress) {
   const reset = useCallback(() => {
     setAmount('');
     setTipAmountUSDC('0');
+    setFeeAmountUSDC('0');
+    setTotalChargedUSDC('0');
     setRoute(null);
     setTxResult(null);
     setError(null);
@@ -175,6 +187,8 @@ export function useTipping(creatorAddress) {
     amount,
     setAmount,
     tipAmountUSDC,
+    feeAmountUSDC,
+    totalAuthorizedUSDC: totalChargedUSDC,
     calculateRoute,
     route,
     processing,
