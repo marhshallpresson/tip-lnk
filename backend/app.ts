@@ -17,10 +17,33 @@ import axios from 'axios'
 dotenv.config()
 
 // ─── Professional Serverless DB Boot ───
-// Ensures Supabase schema is synced on cold-start
-initSchema().catch(err => console.error('Serverless DB Init Failed:', err));
+let dbInitialized = false;
+const warmUpDb = async () => {
+    try {
+        await initSchema();
+        dbInitialized = true;
+        console.log('✨ Cloud Database Warm-up Successful.');
+    } catch (err) {
+        console.error('CRITICAL: Database Warm-up Failed:', err);
+    }
+};
+
+warmUpDb();
 
 const app: express.Application = express()
+
+// Global Protection: Ensure we never return HTML on /api routes
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/') && !dbInitialized && req.path !== '/api/health') {
+        // Allow a 10s grace period for cold-start initialization
+        setTimeout(() => {
+            if (dbInitialized) next();
+            else res.status(503).json({ success: false, error: 'Database initializing. Please refresh.' });
+        }, 2000);
+        return;
+    }
+    next();
+});
 
 app.set('trust proxy', 1)
 app.set('etag', false)
