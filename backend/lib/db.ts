@@ -114,9 +114,22 @@ export async function initSchema() {
         table.timestamps(true, true);
       });
       console.log('✨ Session table provisioned.');
-    }
+      }
 
-    // ─── ELITE SECURITY HARDENING: Enable RLS & Policies ───
+      // 6. Email Verification Tokens
+      if (!(await db.schema.hasTable('email_verification_token'))) {
+      await db.schema.createTable('email_verification_token', (table) => {
+        table.string('id').primary();
+        table.string('userId').references('id').inTable('user').onDelete('CASCADE');
+        table.string('email').notNullable();
+        table.string('tokenHash').notNullable();
+        table.dateTime('expiresAt').notNullable();
+        table.timestamps(true, true);
+      });
+      console.log('✨ Email verification table provisioned.');
+      }
+
+      // ─── ELITE SECURITY HARDENING: Enable RLS ───
     console.log('🛡️ Hardening database with Row Level Security Policies...');
     const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles'];
     for (const table of tables) {
