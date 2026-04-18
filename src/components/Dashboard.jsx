@@ -4,7 +4,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react
 import { useApp } from '../contexts/AppContext';
 import useWalletPortfolio from '../hooks/useWalletPortfolio';
 import useTransactionHistory from '../hooks/useTransactionHistory';
-import useTransactionSimulation from '../hooks/useTransactionSimulation';
+import { useTransactionSimulation } from '../hooks/useTransactionSimulation';
 import TipWidget from './TipWidget';
 import PayoutPanel from './PayoutPanel';
 import CreatorAnalyticsPanel from './CreatorAnalyticsPanel';
@@ -76,19 +76,19 @@ export default function Dashboard() {
       />
 
       {/* --- MOBILE HEADER --- */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface-950/80 backdrop-blur-md border-b border-surface-900 flex items-center justify-between px-6 z-[60]">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-[60]">
         <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
-                <Zap size={18} className="text-black fill-black" />
+            <div className="w-8 h-8 rounded bg-brand-500 flex items-center justify-center">
+                <Zap size={18} className="text-black" />
             </div>
-            <span className="font-black italic tracking-tighter text-lg">TipLnk</span>
+            <span className="font-bold text-lg tracking-tight">TipLnk</span>
         </div>
 
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 rounded-xl bg-surface-900 border border-surface-800 text-surface-400 active:scale-95 transition-transform"
+          className="p-2 rounded-lg bg-[#111111] border border-white/10 text-white/60 active:scale-95 transition-transform"
         >
-          {isSidebarOpen ? <XCircle size={20} className="text-brand-400" /> : <MoreHorizontal size={20} />}
+          {isSidebarOpen ? <XCircle size={20} /> : <MoreHorizontal size={20} />}
         </button>
       </div>
 
@@ -96,17 +96,25 @@ export default function Dashboard() {
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[45]"
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[45]"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       <aside className={`
-        fixed md:static inset-y-0 left-0 w-64 border-r border-surface-900 flex flex-col shrink-0 bg-surface-950 md:bg-surface-950/20 z-50 transition-transform duration-300 transform
+        fixed md:static inset-y-0 left-0 w-64 border-r border-white/5 flex flex-col shrink-0 bg-[#0a0a0a] z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
+        {/* Logo Section */}
+        <div className="hidden md:flex items-center gap-2 px-8 py-8">
+            <div className="w-8 h-8 rounded bg-brand-500 flex items-center justify-center">
+                <Zap size={18} className="text-black" />
+            </div>
+            <span className="font-bold text-xl tracking-tight text-white">TipLnk</span>
+        </div>
+
         {/* Navigation Menu */}
-        <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname.includes(item.id) || (item.id === 'overview' && location.pathname === '/dashboard');
             return (
@@ -116,10 +124,10 @@ export default function Dashboard() {
                   navigate(`/dashboard/${item.id === 'overview' ? '' : item.id}`);
                   setIsSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all font-medium text-sm ${
                   isActive 
-                    ? 'bg-surface-900 border border-surface-800 text-brand-500 shadow-sm' 
-                    : 'text-surface-500 hover:text-white hover:bg-surface-950/50'
+                    ? 'bg-white/5 text-brand-500' 
+                    : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
                 }`}
               >
                 <item.icon size={18} />
@@ -130,10 +138,10 @@ export default function Dashboard() {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-surface-900 mt-auto">
+        <div className="p-4 border-t border-white/5 mt-auto">
           <button
             onClick={handleDisconnect}
-            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-accent-red hover:bg-accent-red/5 transition-all font-bold text-sm"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-500 hover:bg-red-500/5 transition-all font-medium text-sm"
           >
             <LogOut size={18} />
             Log Out
@@ -142,8 +150,8 @@ export default function Dashboard() {
       </aside>
 
       {/* --- MAIN CONTENT --- */}
-      <main className="flex-1 overflow-y-auto bg-[#0a0d11] pt-16 md:pt-0">
-        <div className="p-4 md:p-6 lg:p-8 max-w-6xl mx-auto">
+      <main className="flex-1 overflow-y-auto bg-[#0a0a0a] pt-16 md:pt-0">
+        <div className="p-4 md:p-8 lg:p-12 max-w-6xl mx-auto">
           <Routes>
             <Route index element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
             <Route path="overview" element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
@@ -160,57 +168,59 @@ export default function Dashboard() {
   );
 }
 
-/* ─── Overview Tab (Elite Solflare Track Overhaul) ─── */
+/* ─── Overview Tab ─── */
 export function OverviewTab() {
   const { totalTipsUSDC, tipsReceived, profile } = useApp();
   const portfolio = useWalletPortfolio();
 
   const stats = [
-    { label: 'Total Net Worth', value: portfolio.loading ? '...' : `$${portfolio.totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, icon: Wallet, color: 'text-brand-400', bgColor: 'bg-brand-600/10' },
-    { label: 'Tips Earned', value: `$${totalTipsUSDC.toFixed(2)}`, icon: DollarSign, color: 'text-accent-green', bgColor: 'bg-accent-green/10' },
-    { label: 'Tip Count', value: tipsReceived.length, icon: Gift, color: 'text-accent-purple', bgColor: 'bg-accent-purple/10' },
-    { label: 'SOL Balance', value: portfolio.loading ? '...' : `${portfolio.solBalance.toFixed(3)} ◎`, icon: Zap, color: 'text-accent-cyan', bgColor: 'bg-accent-cyan/10' },
+    { label: 'Total Net Worth', value: portfolio.loading ? '...' : `$${portfolio.totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, icon: Wallet, color: 'text-brand-500', bgColor: 'bg-brand-500/10' },
+    { label: 'Tips Earned', value: `$${totalTipsUSDC.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+    { label: 'Tip Count', value: tipsReceived.length, icon: Gift, color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+    { label: 'SOL Balance', value: portfolio.loading ? '...' : `${portfolio.solBalance.toFixed(3)} SOL`, icon: Zap, color: 'text-sky-500', bgColor: 'bg-sky-500/10' },
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* ─── Level 1: Wealth & Activity Intelligence ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-8 animate-fade-in">
+      {/* ─── Level 1: Stats ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="stat-card group hover:border-brand-500/30 transition-all">
-            <div className={`w-9 h-9 rounded-xl ${stat.bgColor} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-              <stat.icon size={16} className={stat.color} />
+          <div key={stat.label} className="stat-card flex flex-col items-start gap-4">
+            <div className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+              <stat.icon size={20} className={stat.color} />
             </div>
-            <p className="text-xl md:text-2xl font-black italic tracking-tighter">{stat.value}</p>
-            <p className="text-surface-500 text-[10px] font-black uppercase tracking-widest mt-1">{stat.label}</p>
+            <div>
+              <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
+              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wider mt-1">{stat.label}</p>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ─── Level 2: Portfolio Visualizer (Solflare Track Core) ─── */}
-          <div className="lg:col-span-2 space-y-6">
-              <div className="glass-card p-6 border-brand-500/10">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-black italic uppercase tracking-tighter flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-brand-400" /> On-Chain Assets
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* ─── Level 2: Portfolio ─── */}
+          <div className="lg:col-span-2 space-y-8">
+              <div className="glass-card p-6">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2">
+                    <ShieldCheck size={16} /> On-Chain Assets
                     </h3>
-                    <span className="text-[10px] font-black bg-brand-500/10 text-brand-400 px-2 py-1 rounded-md uppercase tracking-widest border border-brand-500/20">
-                        Live via Helius DAS
+                    <span className="badge badge-brand">
+                        Live
                     </span>
                 </div>
 
                 {portfolio.loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
-                        <Loader2 size={32} className="animate-spin text-brand-400" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Indexing wallet contents...</p>
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <Loader2 size={24} className="animate-spin text-brand-500" />
+                        <p className="text-xs text-white/40">Syncing wallet...</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="space-y-1">
                         {portfolio.tokens.slice(0, 5).map((token) => (
-                            <div key={token.mint} className="flex items-center justify-between p-3 rounded-xl bg-surface-900/40 hover:bg-surface-800/60 transition-all border border-transparent hover:border-surface-700 group">
+                            <div key={token.mint} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/[0.02] transition-colors group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-surface-800 flex items-center justify-center overflow-hidden border border-surface-700 group-hover:border-brand-500/40 transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/5">
                                         {token.icon && token.icon.startsWith('http') ? (
                                             <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
                                         ) : (
@@ -218,13 +228,13 @@ export function OverviewTab() {
                                         )}
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-sm text-white">{token.name}</h4>
-                                        <p className="text-[10px] text-surface-500 font-bold uppercase tracking-widest">{token.symbol}</p>
+                                        <h4 className="font-medium text-sm text-white">{token.name}</h4>
+                                        <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">{token.symbol}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-black text-sm text-white italic">{token.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
-                                    <p className="text-[10px] text-accent-green font-black uppercase tracking-widest">${token.valueUSD.toFixed(2)}</p>
+                                    <p className="font-semibold text-sm text-white">{token.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
+                                    <p className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wider">${token.valueUSD.toFixed(2)}</p>
                                 </div>
                             </div>
                         ))}
@@ -232,18 +242,18 @@ export function OverviewTab() {
                 )}
               </div>
 
-              {/* ─── Level 3: NFT Proof of Support ─── */}
+              {/* ─── Level 3: NFTs ─── */}
               {portfolio.nfts.length > 0 && (
-                <div className="glass-card p-6 border-accent-purple/10">
-                    <h3 className="text-lg font-black italic uppercase tracking-tighter flex items-center gap-2 mb-6">
-                        <ImageIcon size={18} className="text-accent-purple" /> Digital Collectibles
+                <div className="glass-card p-6">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2 mb-8">
+                        <ImageIcon size={16} /> Digital Collectibles
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {portfolio.nfts.slice(0, 4).map((nft) => (
-                            <div key={nft.id} className="group relative aspect-square rounded-2xl overflow-hidden border border-surface-800 bg-surface-900 shadow-xl hover:border-accent-purple/50 transition-all">
-                                <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                                    <p className="text-[10px] font-black text-white truncate">{nft.name}</p>
+                            <div key={nft.id} className="group relative aspect-square rounded-xl overflow-hidden border border-white/5 bg-white/[0.02]">
+                                <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                                    <p className="text-[10px] font-semibold text-white truncate">{nft.name}</p>
                                 </div>
                             </div>
                         ))}
@@ -252,38 +262,38 @@ export function OverviewTab() {
               )}
           </div>
 
-          <div className="space-y-6">
-              {/* ─── Recent Tips Ledger ─── */}
-              <div className="glass-card p-6 border-brand-500/10">
-                <h3 className="text-sm font-black italic uppercase tracking-widest flex items-center gap-2 mb-6 text-surface-400">
+          <div className="space-y-8">
+              {/* ─── Recent Tips ─── */}
+              <div className="glass-card p-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2 mb-8">
                     <Clock size={16} /> Latest Earnings
                 </h3>
                 {tipsReceived.length === 0 ? (
                     <div className="text-center py-10 opacity-30">
-                        <Gift size={32} className="mx-auto mb-3" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">No activity found</p>
+                        <Gift size={24} className="mx-auto mb-3" />
+                        <p className="text-[10px] font-semibold uppercase tracking-wider">No activity</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {tipsReceived.slice(0, 5).map((tip, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-surface-800/40 hover:bg-surface-800/60 transition-colors border border-surface-700/50">
+                        <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/5">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-accent-green/10 flex items-center justify-center">
-                                    <ArrowDownLeft size={14} className="text-accent-green" />
+                                <div className="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                    <ArrowDownLeft size={14} />
                                 </div>
                                 <div>
-                                    <p className="font-black text-xs italic">{tip.sender}</p>
-                                    <p className="text-[9px] text-surface-500 font-bold uppercase tracking-widest">{tip.inputAmount} {tip.inputToken}</p>
+                                    <p className="font-semibold text-xs">{tip.sender}</p>
+                                    <p className="text-[9px] text-white/40 font-semibold uppercase tracking-wider">{tip.inputAmount} {tip.inputToken}</p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="font-black text-xs text-accent-green italic tracking-tighter">+${tip.amountUSDC.toFixed(2)}</p>
+                                <p className="font-semibold text-xs text-emerald-500">+${tip.amountUSDC.toFixed(2)}</p>
                             </div>
                         </div>
                         ))}
                         <button 
                             onClick={() => window.location.hash = 'history'}
-                            className="w-full py-3 rounded-xl border border-surface-800 text-[10px] font-black uppercase tracking-widest text-surface-500 hover:text-white hover:border-surface-600 transition-all mt-2"
+                            className="w-full py-2.5 rounded-lg border border-white/5 text-[10px] font-semibold uppercase tracking-wider text-white/40 hover:text-white hover:bg-white/5 transition-all mt-2"
                         >
                             View All History
                         </button>
@@ -292,20 +302,20 @@ export function OverviewTab() {
               </div>
 
               {/* ─── Share Kit ─── */}
-              <div className="glass-card p-6 bg-brand-500/5 border-brand-500/20 group cursor-pointer hover:bg-brand-500/10 transition-all">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-black shadow-lg shadow-brand-500/20 group-hover:scale-110 transition-transform">
-                            <QrCode size={24} />
+              <div className="glass-card p-6 border-brand-500/20 bg-brand-500/[0.02]">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black">
+                            <QrCode size={20} />
                         </div>
                         <div>
-                            <h4 className="font-black italic uppercase tracking-tighter text-lg">Creator Kit</h4>
-                            <p className="text-[10px] text-brand-400 font-black uppercase tracking-widest">Generate QR & Links</p>
+                            <h4 className="font-bold text-sm tracking-tight text-white">Creator Kit</h4>
+                            <p className="text-[10px] text-brand-500 font-semibold uppercase tracking-wider">QR & Links</p>
                         </div>
                     </div>
-                    <p className="text-xs text-surface-400 leading-relaxed font-medium mb-4">
-                        Your professional Solflare-optimized tipping page is ready to accept tips.
+                    <p className="text-xs text-white/40 leading-relaxed mb-6">
+                        Your professional tipping page is ready to accept payments on-chain.
                     </p>
-                    <button className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+                    <button className="btn-outline w-full !py-2 text-[10px] font-semibold uppercase tracking-wider">
                         Open Kit <ArrowRight size={14} />
                     </button>
               </div>

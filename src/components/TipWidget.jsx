@@ -164,44 +164,44 @@ export default function TipWidget({ fixedRecipient = null }) {
 
   if (txResult?.success) {
     return (
-      <div className="glass-card glow-brand p-8 max-w-lg mx-auto text-center animate-scale-in">
-        <div className="w-16 h-16 rounded-full bg-accent-green/20 flex items-center justify-center mx-auto mb-4">
-          <Check size={28} className="text-accent-green" />
+      <div className="glass-card p-8 max-w-lg mx-auto text-center animate-scale-in">
+        <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
+          <Check size={24} className="text-emerald-500" />
         </div>
-        <h3 className="text-2xl font-bold mb-2">Transaction Sent</h3>
-        <p className="text-surface-400 mb-6">
-          Successfully transferred {amount} {selectedToken.symbol} to {recipientInput}
+        <h3 className="text-2xl font-bold mb-2">Payment Sent</h3>
+        <p className="text-white/40 mb-8 text-sm">
+          Successfully sent {amount} {selectedToken.symbol} to {recipientInput}
         </p>
 
-        <div className="bg-surface-800/50 rounded-xl p-5 mb-6 text-left border border-surface-700">
-          <p className="text-xs text-surface-500 uppercase font-bold mb-3 tracking-widest">Transaction Invoice</p>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-surface-400">Status</span>
-              <span className="text-accent-green font-bold uppercase text-xs">Confirmed</span>
+        <div className="bg-white/[0.02] rounded-xl p-5 mb-8 text-left border border-white/5">
+          <p className="text-[10px] text-white/40 uppercase font-semibold mb-4 tracking-wider">Transaction Details</p>
+          <div className="space-y-3">
+            <div className="flex justify-between text-xs">
+              <span className="text-white/40">Status</span>
+              <span className="text-emerald-500 font-semibold uppercase text-[10px]">Confirmed</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-surface-400">Signature</span>
-              <span className="font-mono text-xs">{txResult.signature.slice(0, 12)}...</span>
+            <div className="flex justify-between text-xs">
+              <span className="text-white/40">Signature</span>
+              <span className="font-mono text-white/60">{txResult.signature.slice(0, 16)}...</span>
             </div>
-            <div className="flex justify-between text-sm pt-2 border-t border-surface-700/50 mt-2">
-              <span className="text-surface-400 font-bold text-white">Creator Received</span>
-              <span className="font-black text-brand-400">${Number(txResult.outAmount).toFixed(2)} USDC</span>
+            <div className="flex justify-between text-sm pt-4 border-t border-white/5 mt-4">
+              <span className="text-white font-medium">Total Paid</span>
+              <span className="font-bold text-brand-500">${Number(txResult.outAmount).toFixed(2)}</span>
             </div>
           </div>
           <a
             href={`https://solscan.io/tx/${txResult.signature}${import.meta.env.VITE_SOLANA_NETWORK === 'devnet' ? '?cluster=devnet' : ''}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-secondary w-full text-xs !py-2 flex items-center justify-center gap-2 mt-4"
+            className="btn-secondary w-full text-xs !py-2 flex items-center justify-center gap-2 mt-6"
           >
             View on Solscan <ExternalLink size={12} />
           </a>
         </div>
 
-        <button onClick={handleReset} className="btn-primary flex items-center gap-2 mx-auto">
+        <button onClick={handleReset} className="btn-primary w-full">
           <RefreshCw size={16} />
-          New Transaction
+          Send another tip
         </button>
       </div>
     );
@@ -210,19 +210,19 @@ export default function TipWidget({ fixedRecipient = null }) {
   if (txStep === 'select-currency') {
     return (
       <div className="glass-card p-6 min-h-[500px] flex flex-col animate-scale-in">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-black">Select Payment Currency</h3>
-          <button onClick={() => setTxStep('confirm')} className="p-2 hover:bg-surface-800 rounded-full transition-colors">
-            <AlertCircle size={20} className="rotate-45 text-surface-500" />
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-lg font-bold">Select Asset</h3>
+          <button onClick={() => setTxStep('confirm')} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+            <AlertCircle size={20} className="rotate-45 text-white/40" />
           </button>
         </div>
         <div className="relative mb-6">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" />
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
           <input
             type="text"
             autoFocus
-            className="input-field w-full pl-12 pr-4 !bg-surface-900 border-surface-800 focus:border-brand-500"
-            placeholder="Search currencies..."
+            className="input-field w-full pl-12 pr-4"
+            placeholder="Search assets..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -230,8 +230,8 @@ export default function TipWidget({ fixedRecipient = null }) {
         <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar">
           {!searchTerm && (
             <div>
-              <h4 className="text-[10px] font-black text-surface-600 uppercase tracking-[0.2em] mb-3">Popular</h4>
-              <div className="space-y-2">
+              <h4 className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-4">Popular</h4>
+              <div className="space-y-1">
                 {tokens.slice(0, 4).map(token => (
                   <TokenListItem
                     key={token.symbol}
@@ -244,10 +244,10 @@ export default function TipWidget({ fixedRecipient = null }) {
             </div>
           )}
           <div>
-            <h4 className="text-[10px] font-black text-surface-600 uppercase tracking-[0.2em] mb-3">
-              {searchTerm ? 'Search Results' : `All Currencies (${tokens.length})`}
+            <h4 className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-4">
+              {searchTerm ? 'Search Results' : `All Assets (${tokens.length})`}
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {filteredTokens.map(token => (
                 <TokenListItem
                   key={token.symbol}
@@ -265,91 +265,75 @@ export default function TipWidget({ fixedRecipient = null }) {
 
   if (txStep === 'confirm') {
     return (
-      <div className="glass-card p-8 animate-scale-in border-brand-500/20 shadow-2xl shadow-brand-500/5">
+      <div className="glass-card p-8 animate-scale-in max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <button onClick={() => setTxStep('configure')} className="text-surface-500 hover:text-white transition-colors flex items-center gap-2 font-bold text-xs uppercase tracking-widest">
+          <button onClick={() => setTxStep('configure')} className="text-white/40 hover:text-white transition-colors flex items-center gap-1.5 font-medium text-xs">
             <ChevronDown size={16} className="rotate-90" /> Back
           </button>
-          <h3 className="text-xl font-black">Confirm Tip</h3>
+          <h3 className="text-lg font-bold">Confirm Tip</h3>
           <div className="w-10" />
         </div>
 
-        <div className="bg-surface-900/40 border border-surface-800 rounded-[24px] p-6 mb-8">
+        <div className="bg-white/[0.02] border border-white/5 rounded-xl p-6 mb-8">
           <div className="flex justify-between items-start mb-1">
-            <h4 className="text-xl font-black">Confirm Tip Amount</h4>
-            <span className="text-2xl font-black">${parseFloat(amount).toFixed(2)}</span>
+            <h4 className="text-sm font-medium text-white/40">Amount</h4>
+            <span className="text-2xl font-bold tracking-tight">${parseFloat(amount).toFixed(2)}</span>
           </div>
-          <p className="text-surface-500 text-[10px] font-bold uppercase tracking-widest mb-6">One-time payment</p>
+          <p className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-8">Direct Transfer</p>
 
-          <label className="text-[10px] font-black text-surface-600 uppercase tracking-widest mb-3 block">Pay with</label>
+          <label className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-3 block">Pay with</label>
           <button
             onClick={() => setTxStep('select-currency')}
-            className="w-full h-14 bg-surface-900 border border-surface-800 hover:border-surface-600 rounded-[18px] px-5 flex items-center justify-between transition-all group"
+            className="w-full h-14 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-xl px-4 flex items-center justify-between transition-all group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-400 font-black text-[10px] border border-brand-500/20">
+              <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold text-[10px] border border-brand-500/10">
                 {selectedToken.symbol[0]}
               </div>
               <div className="text-left">
-                <span className="text-sm font-black block leading-none">{selectedToken.symbol}</span>
-                <span className="text-[9px] font-bold text-brand-500 uppercase tracking-tighter">SOLANA</span>
+                <span className="text-sm font-semibold block leading-none text-white">{selectedToken.symbol}</span>
+                <span className="text-[9px] font-medium text-white/20 uppercase tracking-tight">Solana</span>
               </div>
             </div>
-            <ChevronDown size={14} className="text-surface-600 group-hover:text-surface-400 rotate-[-90deg]" />
+            <ChevronDown size={14} className="text-white/20 group-hover:text-white/40 transition-colors" />
           </button>
         </div>
 
-        {/* ─── Elite Simulation Insight Panel ─── */}
         {simulating && (
-          <div className="mb-6 p-4 bg-brand-500/5 border border-brand-500/10 rounded-xl flex items-center gap-3">
-            <Loader2 size={16} className="animate-spin text-brand-400" />
-            <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Simulating On-Chain Impact...</span>
+          <div className="mb-6 p-4 bg-brand-500/5 border border-brand-500/10 rounded-lg flex items-center gap-3">
+            <Loader2 size={16} className="animate-spin text-brand-500" />
+            <span className="text-[10px] font-semibold text-brand-500 uppercase tracking-wider">Simulating...</span>
           </div>
         )}
 
         {simulation && !simError && (
-          <div className="mb-6 p-4 bg-accent-green/5 border border-accent-green/20 rounded-xl animate-fade-in">
+          <div className="mb-6 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-lg animate-fade-in">
             <div className="flex items-center gap-2 mb-2">
-              <ShieldCheck size={14} className="text-accent-green" />
-              <span className="text-[10px] font-black text-accent-green uppercase tracking-widest">Pre-Flight Simulation Success</span>
+              <ShieldCheck size={14} className="text-emerald-500" />
+              <span className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider">Simulation Success</span>
             </div>
-            <div className="flex justify-between text-[10px] font-bold text-surface-400">
+            <div className="flex justify-between text-[10px] font-medium text-white/40">
               <span>Expected Balance Change</span>
               <span className="text-white">-{parseFloat(totalAuthorizedUSDC).toFixed(2)} USDC</span>
             </div>
           </div>
         )}
 
-        {simError && (
-          <div className="mb-6 p-4 bg-accent-red/5 border border-accent-red/20 rounded-xl flex items-start gap-3">
-            <ShieldAlert size={16} className="text-accent-red shrink-0 mt-0.5" />
-            <div>
-              <span className="text-[10px] font-black text-accent-red uppercase tracking-widest block mb-1">Simulation Warning</span>
-              <p className="text-[10px] text-surface-400 leading-tight">{simError}</p>
-            </div>
-          </div>
-        )}
-
         <div className="space-y-4">
           {route && (
-            <div className="px-2 space-y-2 mb-6">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-surface-600">
-                <span>Swap Route</span>
-                <span className="text-brand-400">Optimized via DFlow</span>
-              </div>
-
-              <div className="pt-3 border-t border-surface-800 mt-3 space-y-2">
+            <div className="px-1 space-y-4 mb-8">
+              <div className="pt-4 border-t border-white/5 space-y-3">
                 <div className="flex justify-between text-xs">
-                  <span className="text-surface-500 font-bold uppercase tracking-tighter">Base Tip</span>
-                  <span className="text-white font-black">${parseFloat(tipAmountUSDC).toFixed(2)} USDC</span>
+                  <span className="text-white/40">Base Tip</span>
+                  <span className="text-white font-medium">${parseFloat(tipAmountUSDC).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-surface-500 font-bold uppercase tracking-tighter">Platform Fee (5%)</span>
-                  <span className="text-accent-cyan font-black">+${parseFloat(feeAmountUSDC).toFixed(2)} USDC</span>
+                  <span className="text-white/40">Platform Fee (5%)</span>
+                  <span className="text-sky-500 font-medium">+${parseFloat(feeAmountUSDC).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-lg pt-2 border-t border-surface-800 mt-1">
-                  <span className="text-white font-black">Total Authorized</span>
-                  <span className="text-brand-500 font-black">${parseFloat(totalAuthorizedUSDC).toFixed(2)} USDC</span>
+                <div className="flex justify-between text-lg pt-4 border-t border-white/10 mt-2">
+                  <span className="text-white font-bold">Total</span>
+                  <span className="text-brand-500 font-bold tracking-tight">${parseFloat(totalAuthorizedUSDC).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -359,16 +343,16 @@ export default function TipWidget({ fixedRecipient = null }) {
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => window.location.href = getPhantomDeepLink(window.location.href)}
-                className="btn-primary w-full !h-16 flex items-center justify-center gap-3 text-lg bg-[#AB9FF2] hover:bg-[#9081E6] !text-white shadow-2xl shadow-[#AB9FF2]/20 border-0"
+                className="btn-primary w-full !h-12 bg-[#AB9FF2] hover:bg-[#9081E6] !text-white border-none shadow-none"
               >
-                <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-6 h-6 rounded-full" />
+                <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-5 h-5 rounded-full" />
                 Open in Phantom
               </button>
               <button
                 onClick={() => window.location.href = getSolflareDeepLink(window.location.href)}
-                className="btn-primary w-full !h-16 flex items-center justify-center gap-3 text-lg bg-[#E78E3A] hover:bg-[#D67C28] !text-white shadow-2xl shadow-[#E78E3A]/20 border-0"
+                className="btn-primary w-full !h-12 bg-[#E78E3A] hover:bg-[#D67C28] !text-white border-none shadow-none"
               >
-                <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-6 h-6 rounded-full" />
+                <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-5 h-5 rounded-full" />
                 Open in Solflare
               </button>
             </div>
@@ -376,43 +360,41 @@ export default function TipWidget({ fixedRecipient = null }) {
             <button
               onClick={handleSendTip}
               disabled={processing || !route || simulating}
-              className="btn-primary w-full !h-16 flex items-center justify-center gap-3 text-lg !bg-brand-500 hover:!bg-brand-400 !text-black shadow-2xl shadow-brand-500/20 animate-pulse-slow disabled:opacity-50 disabled:animate-none border-0"
+              className="btn-primary w-full !h-14 text-lg disabled:opacity-50"
             >
-              {processing ? <Loader2 size={24} className="animate-spin" /> : <CreditCard size={24} />}
-              <span className="tracking-tighter font-black italic uppercase">
-                Pay ${parseFloat(totalAuthorizedUSDC).toFixed(2)}
-              </span>
+              {processing ? <Loader2 size={24} className="animate-spin" /> : <CreditCard size={20} />}
+              Confirm & Pay
             </button>
           )}
-          <p className="text-center text-[9px] font-bold text-surface-600 uppercase tracking-widest mt-4">
-              0% Fees on Direct Transfers • 100% Creator Payout
-          </p>        </div>
+          <p className="text-center text-[10px] font-semibold text-white/20 uppercase tracking-wider mt-6">
+              0% direct transfer fees • Instant creator payout
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div id="tip-widget" className="glass-card p-6 sm:p-10 max-w-lg mx-auto shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-brand-500/30">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-accent-cyan opacity-50" />
+    <div id="tip-widget" className="glass-card p-6 sm:p-10 max-w-lg mx-auto relative transition-all duration-300">
       <div className="text-center mb-10">
-        <h3 className="text-2xl font-black mb-1 flex items-center justify-center gap-3">
-          <Zap size={24} className="text-brand-500 fill-brand-500" />
-          {fixedRecipient ? `Tip ${fixedRecipient.username}` : 'Send Support'}
+        <h3 className="text-2xl font-bold mb-2 flex items-center justify-center gap-3">
+          <Zap size={24} className="text-brand-500" />
+          {fixedRecipient ? `Tip ${fixedRecipient.username}` : 'Send Tip'}
         </h3>
-        <p className="text-surface-500 text-xs font-bold uppercase tracking-widest opacity-80">Direct on-chain creator support</p>
+        <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">Direct on-chain support</p>
       </div>
 
       {!fixedRecipient && (
-        <div className="mb-6">
-          <label className="text-[10px] font-black text-surface-500 uppercase tracking-widest mb-3 block">Supporter Destination</label>
+        <div className="mb-8">
+          <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-3 block">Recipient</label>
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500">
-              {isResolving ? <Loader2 size={18} className="animate-spin text-brand-400" /> : <Search size={18} />}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+              {isResolving ? <Loader2 size={18} className="animate-spin text-brand-500" /> : <Search size={18} />}
             </div>
             <input
               type="text"
-              className="input-field w-full pl-12 pr-4 !bg-surface-900 border-surface-800"
-              placeholder="Username or wallet address"
+              className="input-field w-full pl-12 pr-4"
+              placeholder="Username or address"
               value={recipientInput}
               onChange={(e) => setRecipientInput(e.target.value)}
             />
@@ -420,25 +402,25 @@ export default function TipWidget({ fixedRecipient = null }) {
         </div>
       )}
 
-      <div className="bg-surface-900 border border-surface-800 rounded-[32px] p-6 sm:p-8 mb-8">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <span className="text-3xl sm:text-4xl font-black text-white">$</span>
+      <div className="bg-white/[0.02] border border-white/5 rounded-xl p-6 sm:p-8 mb-8">
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <span className="text-3xl sm:text-4xl font-bold text-white/20">$</span>
           <input
             type="number"
-            className="w-24 sm:w-32 bg-transparent text-4xl sm:text-5xl font-black outline-none placeholder-surface-800 caret-brand-500"
+            className="w-24 sm:w-32 bg-transparent text-4xl sm:text-5xl font-bold outline-none placeholder-white/5 caret-brand-500 text-center"
             placeholder="5"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
         <div className="flex gap-2 mb-8">
-          {[1, 3, 5, 10].map((val) => (
+          {[1, 5, 10, 20].map((val) => (
             <button
               key={val}
               onClick={() => setAmount(val.toString())}
-              className={`flex-1 py-3.5 rounded-2xl border text-sm font-black transition-all ${amount === val.toString()
-                  ? 'bg-brand-500 border-brand-500 text-black shadow-lg shadow-brand-500/20 scale-105'
-                  : 'bg-surface-950 border-surface-800 text-surface-500 hover:border-surface-600 hover:text-white'
+              className={`flex-1 py-3 rounded-lg border text-sm font-semibold transition-all ${amount === val.toString()
+                  ? 'bg-brand-500 border-brand-500 text-black'
+                  : 'bg-white/5 border-white/5 text-white/40 hover:border-white/10 hover:text-white'
                 }`}
             >
               {val}
@@ -446,8 +428,8 @@ export default function TipWidget({ fixedRecipient = null }) {
           ))}
         </div>
         <textarea
-          className="input-field w-full !bg-surface-950/50 border-surface-800/50 py-4 px-5 min-h-[100px] resize-none text-sm placeholder-surface-700"
-          placeholder="Say something nice... (optional)"
+          className="input-field w-full !h-24 py-3 px-4 resize-none text-sm"
+          placeholder="Include a message... (optional)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -456,9 +438,9 @@ export default function TipWidget({ fixedRecipient = null }) {
       <button
         onClick={() => setTxStep('confirm')}
         disabled={!resolvedAddress || !amount || parseFloat(amount) <= 0}
-        className="btn-primary w-full flex items-center justify-center gap-3 !h-16 !bg-brand-500 hover:!bg-brand-400 !text-black shadow-xl shadow-brand-500/10 group animate-fade-in border-0"
+        className="btn-primary w-full !h-14 group"
       >
-        <span className="text-lg font-black uppercase tracking-tight">Support ${amount || '5'}</span>
+        <span className="text-lg font-bold">Support ${amount || '5'}</span>
         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
     </div>
@@ -469,24 +451,24 @@ function TokenListItem({ token, isSelected, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between p-4 rounded-[18px] border transition-all ${isSelected
-          ? 'bg-brand-500/5 border-brand-500 shadow-sm shadow-brand-500/10'
-          : 'bg-surface-900 border-surface-800 hover:border-surface-700 hover:bg-surface-800/80'
+      className={`w-full flex items-center justify-between p-3.5 rounded-lg border transition-all ${isSelected
+          ? 'bg-brand-500/5 border-brand-500/50'
+          : 'bg-[#161616] border-white/5 hover:border-white/10 hover:bg-[#1a1a1a]'
         }`}
     >
       <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs border ${isSelected ? 'bg-brand-500 text-black border-brand-500' : 'bg-surface-800 text-surface-400 border-surface-700'
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] border ${isSelected ? 'bg-brand-500 text-black border-brand-500' : 'bg-white/5 text-white/40 border-white/5'
           }`}>
           {token.symbol[0]}
         </div>
         <div className="text-left">
-          <span className="font-black text-sm block leading-none mb-1 text-white">{token.symbol}</span>
-          <span className="text-[10px] font-bold text-surface-500 uppercase tracking-tighter">{token.name}</span>
+          <span className="font-semibold text-sm block leading-none text-white">{token.symbol}</span>
+          <span className="text-[10px] font-medium text-white/20 uppercase tracking-tight">{token.name}</span>
         </div>
       </div>
       <div className="flex items-center gap-2">
         {isSelected && <Check size={16} className="text-brand-500" />}
-        <span className="bg-surface-800 text-surface-400 text-[8px] font-black px-2 py-1 rounded-md uppercase tracking-widest border border-surface-700">Solana</span>
+        <span className="badge">SOLANA</span>
       </div>
     </button>
   );

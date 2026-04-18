@@ -91,76 +91,75 @@ export default function CreatorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-main-bg text-white font-sans">
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
       {!isEmbed && <WhiteLabelNav creatorName={solDomain || displayName} />}
       
       {/* Banner */}
-      <div className={`h-48 w-full relative bg-busha-green overflow-hidden ${!isEmbed ? 'mt-16' : ''}`}>
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,rgba(0,210,101,0.3)_0%,transparent_100%)]" />
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-main-bg/80" />
+      <div className={`h-40 w-full relative bg-[#111111] border-b border-white/5 ${!isEmbed ? 'mt-16' : ''}`}>
+        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle at center, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-6 relative mt-[-80px]">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="max-w-[1100px] mx-auto px-6 relative mt-[-60px]">
+        <div className="flex flex-col lg:flex-row gap-12">
 
           {/* Main Content */}
-          <div className="flex-1 space-y-8 pb-20">
+          <div className="flex-1 space-y-10 pb-24">
             <div className="flex flex-col md:flex-row gap-6 items-end">
-              <div className="w-32 h-32 rounded-[32px] bg-surface-900 border-4 border-main-bg overflow-hidden shadow-2xl shrink-0">
+              <div className="w-28 h-28 rounded-2xl bg-[#111111] border-4 border-[#0a0a0a] overflow-hidden shadow-2xl shrink-0">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-surface-800 flex items-center justify-center">
-                    <Users size={40} className="text-surface-700" />
+                  <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+                    <Users size={32} className="text-white/10" />
                   </div>
                 )}
               </div>
-              <div className="flex-1 pb-2">
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-3xl font-black text-white">{solDomain || displayName}</h1>
-                  {solDomain && <span className="badge-brand">SNS</span>}
+              <div className="flex-1 pb-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl font-bold tracking-tight text-white">{solDomain || displayName}</h1>
+                  {solDomain && <span className="badge badge-brand">SNS Verified</span>}
                   {socials.isTwitterVerified && <ShieldCheck size={20} className="text-brand-500" />}
                 </div>
                 {roleTitle && (
-                  <p className="text-surface-400 font-bold">{roleTitle}</p>
+                  <p className="text-white/40 font-medium text-sm">{roleTitle}</p>
                 )}
               </div>
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-4">
               <MetricCard label="Supporters" value={supporterCount} />
-              <MetricCard label="Total Tips" value={tipsReceived.length} />
+              <MetricCard label="Tips" value={tipsReceived.length} />
               <MetricCard label="Goal" value={`${progress.toFixed(0)}%`} color="text-brand-500" />
             </div>
 
             {/* Bio / About */}
             {bio && (
-              <div className="glass-card p-6">
-                <h2 className="text-xl font-black mb-4">About</h2>
-                <p className="text-surface-400 leading-relaxed text-base">{bio}</p>
+              <div className="space-y-4">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-white/20">About</h2>
+                <p className="text-white/60 leading-relaxed text-base">{bio}</p>
               </div>
             )}
 
             {/* Social Links */}
             {(socials.twitter || socials.discord) && (
-              <div className="glass-card p-6">
-                <h2 className="text-xl font-black mb-4">Socials</h2>
-                <div className="flex gap-4">
+              <div className="space-y-4">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-white/20">Socials</h2>
+                <div className="flex flex-wrap gap-3">
                   {socials.twitter && (
                     <a
                       href={`https://x.com/${socials.twitter}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1DA1F2]/10 text-[#1DA1F2] hover:bg-[#1DA1F2]/20 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/5 text-white/80 hover:bg-white/10 transition-colors text-sm font-medium"
                     >
-                      <Twitter size={16} />
+                      <Twitter size={16} className="text-[#1DA1F2]" />
                       @{socials.twitter}
                     </a>
                   )}
                   {socials.discord && (
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5865F2]/10 text-[#5865F2]">
-                      <MessageCircle size={16} />
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/5 text-white/80 text-sm font-medium">
+                      <MessageCircle size={16} className="text-[#5865F2]" />
                       {socials.discord}
                     </div>
                   )}
@@ -169,29 +168,29 @@ export default function CreatorPage() {
             )}
 
             {/* Wall of Love */}
-            <div>
-              <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
-                <Heart size={24} className="text-accent-red" /> Wall of Love
+            <div className="space-y-8">
+              <h2 className="text-xl font-bold tracking-tight flex items-center gap-3">
+                <Heart size={20} className="text-red-500" /> Wall of Love
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {tipsReceived.length === 0 ? (
-                  <div className="md:col-span-2 py-16 bg-surface-900 border border-surface-800 rounded-[24px] text-center">
-                    <Heart size={40} className="text-surface-800 mx-auto mb-4" />
-                    <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Be the first to tip</p>
+                  <div className="md:col-span-2 py-16 bg-[#111111] border border-white/5 rounded-xl text-center">
+                    <Heart size={32} className="text-white/5 mx-auto mb-4" />
+                    <p className="text-white/20 font-semibold uppercase tracking-wider text-[10px]">Be the first to support</p>
                   </div>
                 ) : (
                   tipsReceived.map((tip, i) => (
-                    <div key={i} className="bg-surface-900 border border-surface-800 p-6 rounded-[24px] hover:border-surface-700 transition-all group">
+                    <div key={i} className="bg-[#111111] border border-white/5 p-6 rounded-xl hover:border-white/10 transition-all group">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-surface-800 flex items-center justify-center font-black text-xs text-surface-500">
+                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center font-bold text-[10px] text-white/40">
                             {tip.sender[0]}
                           </div>
-                          <p className="font-bold text-white">{tip.sender}</p>
+                          <p className="font-semibold text-white text-sm">{tip.sender}</p>
                         </div>
-                        <span className="text-brand-500 font-black text-sm">+${tip.amountUSDC.toFixed(2)}</span>
+                        <span className="text-brand-500 font-bold text-sm">+${tip.amountUSDC.toFixed(2)}</span>
                       </div>
-                      <p className="text-surface-500 text-sm italic font-medium">Verified Tip via {tip.inputToken}</p>
+                      <p className="text-white/40 text-[10px] uppercase font-semibold tracking-wider">Verified Transfer • {tip.inputToken}</p>
                     </div>
                   ))
                 )}
@@ -200,8 +199,8 @@ export default function CreatorPage() {
           </div>
 
           {/* Sticky Side Widget */}
-          <div className="w-full lg:w-[420px] shrink-0">
-            <div className="sticky top-24">
+          <div className="w-full lg:w-[400px] shrink-0">
+            <div className="sticky top-28">
               <TipWidget fixedRecipient={{
                 username: solDomain || displayName,
                 address: walletAddress
@@ -216,9 +215,9 @@ export default function CreatorPage() {
 
 function MetricCard({ label, value, color = "text-white" }) {
   return (
-    <div className="bg-surface-900 border border-surface-800 p-4 rounded-[24px] text-center">
-      <p className={`font-bold text-xl mb-1 ${color}`}>{value}</p>
-      <p className="text-[10px] font-black text-surface-500 uppercase tracking-widest">{label}</p>
+    <div className="stat-card flex flex-col items-center justify-center text-center p-4">
+      <p className={`font-bold text-xl mb-1 tracking-tight ${color}`}>{value}</p>
+      <p className="text-[10px] font-semibold text-white/20 uppercase tracking-wider">{label}</p>
     </div>
   );
 }

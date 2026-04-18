@@ -4,78 +4,77 @@
 
 @layer base {
   * {
-    @apply border-surface-800;
+    @apply border-white/5;
   }
 
   body {
-    @apply bg-surface-950 text-white;
+    @apply bg-[#0a0a0a] text-white font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-surface-900/60 backdrop-blur-xl border border-surface-700/50 rounded-2xl;
+    @apply bg-[#111111] border border-white/10 rounded-xl overflow-hidden;
   }
 
   .glass-card-hover {
-    @apply glass-card hover:border-brand-500/40 hover:bg-surface-900/80 transition-all duration-300;
+    @apply glass-card hover:border-white/20 hover:bg-[#161616] transition-all duration-200;
   }
 
-  /* Premium home card style like SNS.id */
+  /* Professional card style */
   .home-card {
-    @apply bg-surface-900/40 backdrop-blur-md border border-surface-700/30 rounded-2xl;
-    background: linear-gradient(135deg, rgba(13, 17, 23, 0.6) 0%, rgba(10, 15, 20, 0.8) 100%);
+    @apply bg-[#111111] border border-white/10 rounded-xl transition-all duration-200;
   }
 
   .home-card:hover {
-    border-color: rgba(16, 185, 129, 0.3);
-    box-shadow: 0 4px 24px rgba(16, 185, 129, 0.08);
+    @apply border-brand-500/30 bg-[#141414];
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   }
 
   /* Buttons */
   .btn-primary {
-    @apply bg-brand-500 text-black font-extrabold px-8 py-3 rounded-2xl transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
-    min-height: 50px;
-    box-shadow: 0 8px 32px #00d26533;
+    @apply bg-brand-500 text-black font-semibold px-6 py-2.5 rounded-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+    min-height: 44px;
   }
 
   .btn-primary:hover {
-    @apply bg-brand-400;
-    box-shadow: 0 12px 48px oklch(75.54% 0.20524 150.591 / 0.3);
-    transform: translateY(-2px);
+    @apply bg-brand-400 -translate-y-0.5 shadow-lg shadow-brand-500/10;
   }
 
   .btn-secondary {
-    @apply bg-surface-900 hover:bg-surface-800 text-white font-bold px-8 py-3 rounded-2xl border border-surface-800 transition-all duration-300;
-    min-height: 50px;
+    @apply bg-[#1a1a1a] hover:bg-[#222222] text-white font-medium px-6 py-2.5 rounded-lg border border-white/10 transition-all duration-200 flex items-center justify-center gap-2;
+    min-height: 44px;
   }
 
   .btn-outline {
-    @apply border-2 border-brand-500 text-brand-500 hover:bg-brand-500/10 font-black px-8 py-3 rounded-2xl transition-all duration-300;
-    min-height: 50px;
-  }
-
-  .btn-solflare {
-    @apply bg-brand-500 hover:bg-brand-400 text-black font-extrabold px-8 py-3 rounded-2xl transition-all duration-300 active:scale-[0.98];
-    box-shadow: 0 8px 32px rgba(0, 210, 101, 0.2);
+    @apply border border-white/10 text-white hover:bg-white/5 font-medium px-6 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2;
+    min-height: 44px;
   }
 
   /* Input fields */
   .input-field {
-    @apply bg-surface-950 border border-surface-800 rounded-2xl px-6 py-3 text-white placeholder-surface-500 focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium;
-    min-height: 50px;
+    @apply bg-[#0f0f0f] border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all font-normal;
+    min-height: 44px;
   }
 
-  .glow-brand {
-    box-shadow: 0 0 60px rgba(0, 210, 101, 0.1), 0 0 120px rgba(0, 210, 101, 0.05);
+  .stat-card {
+    @apply bg-[#111111] border border-white/5 p-5 rounded-xl transition-all duration-200;
+  }
+
+  .stat-card:hover {
+    @apply border-white/10 bg-[#141414];
   }
 
   .step-dot {
-    @apply w-3 h-3 rounded-full transition-all duration-300;
+    @apply w-2 h-2 rounded-full transition-all duration-200;
   }
 
   .step-dot-active {
-    @apply bg-brand-500 ring-4 ring-brand-500/20;
+    @apply bg-brand-500 ring-4 ring-brand-500/10;
   }
 
   .step-dot-done {
@@ -83,34 +82,34 @@
   }
 
   .step-dot-pending {
-    @apply bg-surface-800;
+    @apply bg-white/10;
   }
 
   /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border;
+  }
+
+  .badge-brand {
+    @apply bg-brand-500/10 text-brand-500 border-brand-500/20;
+  }
+
   .badge-solflare {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-solflare;
-    background-color: rgba(255, 140, 0, 0.1);
-    border: 1px solid #FF8C00;
+    @apply bg-[#FF8C00]/10 text-[#FF8C00] border-[#FF8C00]/20;
   }
 
   .badge-phantom {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ;
-    background-color: rgba(140, 78, 255, 0.1);
-    border: 1px solid #8C4EFF;
+    @apply bg-[#8C4EFF]/10 text-[#8C4EFF] border-[#8C4EFF]/20;
   }
 
   /* Mobile UI Overrides */
   @media (max-width: 640px) {
     .btn-primary, .btn-secondary, .btn-outline {
-      @apply w-full px-4 py-4 text-base;
+      @apply w-full px-4 py-3 text-base;
     }
     
-    .glass-card {
-      @apply rounded-xl p-4;
-    }
-
-    .home-card {
-      @apply rounded-xl p-5;
+    .glass-card, .home-card {
+      @apply rounded-lg p-4;
     }
 
     h1 {
@@ -118,7 +117,7 @@
     }
     
     .input-field {
-      @apply text-base px-4 py-4;
+      @apply text-base px-4 py-3;
     }
   }
 }
@@ -126,35 +125,33 @@
 /* Wallet adapter overrides */
 .wallet-adapter-button {
   background-color: #00D265 !important;
-  color: #001100 !important;
-  border-radius: 16px !important;
-  height: 50px !important;
+  color: #000000 !important;
+  border-radius: 8px !important;
+  height: 44px !important;
   font-family: inherit !important;
-  font-weight: 800 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
   text-transform: none !important;
-  box-shadow: 0 8px 24px rgba(0, 210, 101, 0.2) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.2s ease !important;
 }
 
 .wallet-adapter-button:hover {
   background-color: #00F075 !important;
-  box-shadow: 0 12px 32px rgba(0, 210, 101, 0.3) !important;
-  transform: translateY(-2px);
-  border-color: transparent !important;
+  transform: translateY(-1px);
 }
 
 .wallet-adapter-modal-wrapper {
-  background-color: #0d1117 !important;
-  border: 1px solid #1e252e !important;
-  border-radius: 32px !important;
-  padding: 12px !important;
+  background-color: #111111 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 8px !important;
 }
 
 .wallet-adapter-modal-title {
   font-family: inherit !important;
   color: white !important;
-  font-weight: 800 !important;
-  font-size: 24px !important;
+  font-weight: 600 !important;
+  font-size: 20px !important;
 }
 
 ::-webkit-scrollbar {
@@ -166,10 +163,9 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #495057;
-  border-radius: 3px;
+  @apply bg-white/10 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #868e96;
+  @apply bg-white/20;
 }

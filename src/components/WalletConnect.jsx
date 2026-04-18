@@ -198,17 +198,17 @@ export default function WalletConnect({ onConnected }) {
   
   if (view === 'email-verify') {
     return (
-        <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up relative overflow-hidden">
-            <div className="w-16 h-16 rounded-full bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
-                <Mail size={32} className="text-brand-400" />
+        <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
+            <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
+                <Mail size={24} className="text-brand-500" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-2">Check your email</h2>
-            <p className="text-surface-400 text-sm mb-8 leading-relaxed">
-                We've sent a 6-digit verification code to <span className="text-white font-bold">{formData.email}</span>.
+            <h2 className="text-2xl font-bold text-white mb-2">Check your email</h2>
+            <p className="text-white/40 text-sm mb-8 leading-relaxed">
+                We've sent a 6-digit verification code to <span className="text-white font-semibold">{formData.email}</span>.
             </p>
             
             {authError && (
-                <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-xl text-accent-red text-xs text-left">
+                <div className="mb-6 p-4 bg-red-500/5 border border-red-500/10 rounded-lg text-red-500 text-xs text-left">
                     {authError}
                 </div>
             )}
@@ -223,18 +223,18 @@ export default function WalletConnect({ onConnected }) {
                         autoFocus
                         value={formData.code}
                         onChange={handleInputChange}
-                        className="w-full max-w-[240px] h-16 bg-surface-900 border-2 border-surface-800 rounded-2xl text-center text-3xl tracking-[0.3em] font-black text-white focus:border-brand-500 transition-all outline-none" 
+                        className="w-full max-w-[240px] h-14 bg-[#0f0f0f] border border-white/10 rounded-lg text-center text-2xl tracking-[0.3em] font-bold text-white focus:border-brand-500 transition-all outline-none" 
                         placeholder="000000" 
                     />
                 </div>
-                <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-lg">
+                <button type="submit" className="btn-primary w-full">
                     Verify & Continue
                 </button>
             </form>
             
             <button 
                 onClick={() => setView('email-register')} 
-                className="mt-8 text-surface-500 hover:text-white text-xs font-bold transition-colors uppercase tracking-widest"
+                className="mt-8 text-white/40 hover:text-white text-xs font-semibold transition-colors uppercase tracking-wider"
             >
                 Change Email Address
             </button>
@@ -244,19 +244,19 @@ export default function WalletConnect({ onConnected }) {
 
   if (view === 'email-success') {
     return (
-        <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up relative overflow-hidden">
-            <div className="w-16 h-16 rounded-full bg-accent-green/20 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle size={32} className="text-accent-green" />
+        <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
+            <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle size={24} className="text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-2">Account Created!</h2>
-            <p className="text-surface-400 text-sm mb-8 leading-relaxed">
-                Your profile is ready. To start receiving tips and earning rewards, you must **connect a Solana wallet**.
+            <h2 className="text-2xl font-bold text-white mb-2">Account Created!</h2>
+            <p className="text-white/40 text-sm mb-8 leading-relaxed">
+                Your profile is ready. To start receiving tips and earning rewards, you must connect a Solana wallet.
             </p>
             <div className="space-y-4">
-                <button onClick={() => setView('wallets')} className="btn-primary w-full flex items-center justify-center gap-2">
+                <button onClick={() => setView('wallets')} className="btn-primary w-full">
                     <Wallet size={18} /> Connect My Wallet Now
                 </button>
-                <button onClick={() => setView('email')} className="text-surface-500 hover:text-white text-xs font-bold transition-colors">
+                <button onClick={() => setView('email')} className="text-white/40 hover:text-white text-xs font-semibold transition-colors">
                     Back to options
                 </button>
             </div>
@@ -267,17 +267,17 @@ export default function WalletConnect({ onConnected }) {
   if (view === 'email-login' || view === 'email-register') {
     const isLogin = view === 'email-login';
     return (
-        <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up relative overflow-hidden">
+        <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
         <div className="flex items-center justify-between mb-8">
-            <button onClick={() => setView('email')} className="p-2 rounded-xl bg-surface-900 border border-surface-800 text-surface-400 hover:text-white transition-all">
+            <button onClick={() => setView('email')} className="p-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-white/40 hover:text-white transition-all">
                 <ChevronLeft size={20} />
             </button>
-            <h2 className="text-2xl font-black text-white text-center flex-1">{isLogin ? 'Sign In' : 'Create Account'}</h2>
+            <h2 className="text-xl font-bold text-white text-center flex-1">{isLogin ? 'Sign In' : 'Create Account'}</h2>
             <div className="w-8"></div>
         </div>
         
         {authError && (
-            <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-xl text-accent-red text-xs text-left">
+            <div className="mb-6 p-4 bg-red-500/5 border border-red-500/10 rounded-lg text-red-500 text-xs text-left">
                 {authError}
             </div>
         )}
@@ -285,9 +285,9 @@ export default function WalletConnect({ onConnected }) {
         <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
             {!isLogin && (
                 <div>
-                    <label className="text-xs font-bold text-surface-400 uppercase ml-1">Full Name</label>
+                    <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider ml-1">Full Name</label>
                     <div className="relative mt-1">
-                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" />
+                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
                         <input 
                             type="text" 
                             name="name" 
@@ -301,9 +301,9 @@ export default function WalletConnect({ onConnected }) {
                 </div>
             )}
             <div>
-                <label className="text-xs font-bold text-surface-400 uppercase ml-1">Email Address</label>
+                <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider ml-1">Email Address</label>
                 <div className="relative mt-1">
-                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" />
+                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
                     <input 
                         type="email" 
                         name="email" 
@@ -316,9 +316,9 @@ export default function WalletConnect({ onConnected }) {
                 </div>
             </div>
             <div>
-                <label className="text-xs font-bold text-surface-400 uppercase ml-1">Password</label>
+                <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider ml-1">Password</label>
                 <div className="relative mt-1">
-                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" />
+                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
                     <input 
                         type={showPassword ? "text" : "password"} 
                         name="password" 
@@ -331,7 +331,7 @@ export default function WalletConnect({ onConnected }) {
                     <button 
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-surface-500 hover:text-surface-300 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -340,18 +340,18 @@ export default function WalletConnect({ onConnected }) {
             <button 
                 type="submit" 
                 disabled={loadingProvider === 'email'}
-                className="btn-primary w-full !mt-6 flex items-center justify-center gap-2"
+                className="btn-primary w-full !mt-6"
             >
                 {loadingProvider === 'email' && <Loader2 size={18} className="animate-spin" />}
                 {isLogin ? 'Sign In' : 'Create Account'}
             </button>
         </form>
 
-        <p className="mt-8 text-sm text-surface-400">
+        <p className="mt-8 text-sm text-white/40">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
             <button 
                 onClick={() => setView(isLogin ? 'email-register' : 'email-login')}
-                className="text-brand-400 font-bold hover:text-brand-300 underline underline-offset-4"
+                className="text-brand-500 font-semibold hover:text-brand-400"
             >
                 {isLogin ? 'Sign Up' : 'Sign In'}
             </button>
@@ -362,25 +362,25 @@ export default function WalletConnect({ onConnected }) {
 
   if (view === 'selection') {
     return (
-      <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up relative overflow-hidden bg-white/5 backdrop-blur-xl">
+      <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
         <div className="flex items-center justify-between mb-8">
-          <button onClick={() => setView('wallets')} className="p-2 rounded-xl bg-surface-900 border border-surface-800 text-surface-400 hover:text-white transition-all">
+          <button onClick={() => setView('wallets')} className="p-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-white/40 hover:text-white transition-all">
             <ChevronLeft size={20} />
           </button>
           <div className="w-8"></div>
         </div>
         
         <div className="mb-8">
-          <h2 className="text-2xl font-black text-white mb-2">You're one step away</h2>
-          <p className="text-surface-400 text-sm">From earning in global standards</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Almost there</h2>
+          <p className="text-white/40 text-sm">Choose your preferred sign-in method</p>
         </div>
 
         <div className="space-y-6">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <button 
                 onClick={() => handleSocialSelect('google')} 
                 disabled={loadingProvider !== null} 
-                className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-brand-500 text-black font-bold transition-all shadow-lg shadow-white-500/20"
+                className="btn-primary w-full !h-14 bg-white text-black hover:bg-white/90 border-none shadow-none"
             >
                 {loadingProvider === 'google' ? (
                 <Loader2 size={20} className="animate-spin" />
@@ -393,73 +393,75 @@ export default function WalletConnect({ onConnected }) {
                 </>
                 )}
             </button>
-            <p className="text-[10px] text-surface-500 font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                Powered by <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-3 h-3" /> <span className="text-surface-400">Phantom</span>
+            <p className="text-[10px] text-white/20 font-semibold uppercase tracking-wider flex items-center justify-center gap-1">
+                Securely powered by <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-3 h-3 grayscale opacity-50" /> <span className="text-white/40">Phantom</span>
             </p>
           </div>
           
-          <div className="flex items-center gap-4 text-surface-600">
-            <div className="h-px flex-1 bg-surface-800"></div>
-            <span className="text-[10px] font-black uppercase tracking-widest">OR</span>
-            <div className="h-px flex-1 bg-surface-800"></div>
+          <div className="flex items-center gap-4 text-white/5">
+            <div className="h-px flex-1 bg-white/5"></div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/10">OR</span>
+            <div className="h-px flex-1 bg-white/5"></div>
           </div>
 
           <button 
             onClick={() => setView('email-login')} 
-            className="w-full flex items-center justify-center gap-3 py-4 rounded-xl border border-surface-700 bg-transparent text-surface-200 font-bold hover:bg-surface-800 hover:border-surface-600 transition-all"
+            className="btn-outline w-full !h-14"
           >
-            <Mail size={20} />
+            <Mail size={20} className="text-white/40" />
             Continue with Email
           </button>
         </div>
         
-        <p className="mt-8 text-[11px] text-surface-500 leading-relaxed px-4">
-          By using this website, you agree to our <a href="/terms" className="text-surface-300 hover:text-white underline">Terms of Use</a> and our <a href="/privacy" className="text-surface-300 hover:text-white underline">Privacy Policy</a>.
+        <p className="mt-8 text-[11px] text-white/20 leading-relaxed px-4">
+          By continuing, you agree to our <a href="/terms" className="text-white/40 hover:text-white">Terms</a> and <a href="/privacy" className="text-white/40 hover:text-white">Privacy Policy</a>.
         </p>
 
-        {authError && <div className="mt-6 text-red-400 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">{authError}</div>}
+        {authError && <div className="mt-6 text-red-500 text-xs bg-red-500/5 p-3 rounded-lg border border-red-500/10">{authError}</div>}
       </div>
     );
   }
 
   return (
-    <div className="glass-card glow-brand p-8 sm:p-10 text-center animate-slide-up relative overflow-hidden bg-white/5 backdrop-blur-xl">
-      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-600/30 to-brand-800/20 flex items-center justify-center mx-auto mb-6"><Wallet size={36} className="text-brand-400" /></div>
-      <h2 className="text-3xl font-black mb-3 text-white">Connect & Earn</h2>
-      <p className="text-surface-500 text-sm mb-8">Access the most powerful creator hub on Solana.</p>
+    <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
+      <div className="w-16 h-16 rounded-xl bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
+        <Wallet size={32} className="text-brand-500" />
+      </div>
+      <h2 className="text-2xl font-bold mb-2 text-white">Connect Wallet</h2>
+      <p className="text-white/40 text-sm mb-10">Access the most powerful creator hub on Solana.</p>
 
       {mobileDevice && !hasSolanaProvider() && (
         <div className="flex flex-col gap-3 mb-8">
             <button
                 onClick={() => window.location.href = getPhantomDeepLink(window.location.href)}
-                className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-[#AB9FF2] text-white font-bold transition-all shadow-lg shadow-[#AB9FF2]/20 border-0"
+                className="btn-primary w-full !h-14 bg-[#AB9FF2] hover:bg-[#9081E6] !text-white border-none shadow-none"
             >
                 <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-5 h-5 rounded-full" />
                 Open in Phantom
             </button>
             <button
                 onClick={() => window.location.href = getSolflareDeepLink(window.location.href)}
-                className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-[#E78E3A] text-white font-bold transition-all shadow-lg shadow-[#E78E3A]/20 border-0"
+                className="btn-primary w-full !h-14 bg-[#E78E3A] hover:bg-[#D67C28] !text-white border-none shadow-none"
             >
                 <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-5 h-5 rounded-full" />
                 Open in Solflare
             </button>
-            <p className="text-center text-[10px] text-surface-500 font-bold uppercase tracking-widest mt-2">
+            <p className="text-center text-[10px] text-white/20 font-semibold uppercase tracking-wider mt-4">
                 In-app browser required for secure signing
             </p>
         </div>
       )}
 
       {noWalletsInstalled && !mobileDevice && (
-        <div className="mb-8 text-left bg-surface-900/80 p-4 rounded-2xl border border-surface-800">
-            <h3 className="font-bold text-white mb-2 flex items-center gap-2"><Chrome size={16} /> First, you need a wallet</h3>
-            <p className="text-xs text-surface-400 mb-4 leading-relaxed">A wallet is your gateway to Web3. We recommend installing one of these browser extensions to get the full experience.</p>
+        <div className="mb-8 text-left bg-white/[0.02] p-5 rounded-xl border border-white/5">
+            <h3 className="font-semibold text-white mb-2 flex items-center gap-2 text-sm"><Chrome size={16} className="text-white/40" /> Install a wallet</h3>
+            <p className="text-xs text-white/40 mb-6 leading-relaxed">A wallet is your gateway to the on-chain world. We recommend installing one of these extensions.</p>
             <div className="grid grid-cols-2 gap-3">
-                <a href="https://phantom.app/download" target="_blank" rel="noopener noreferrer" className="btn-secondary !py-2.5 !px-3 text-[11px] flex items-center justify-center gap-2 border-phantom-purple/30 hover:border-phantom-purple transition-all">
-                    <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-4 h-4" /> Install Phantom
+                <a href="https://phantom.app/download" target="_blank" rel="noopener noreferrer" className="btn-secondary !py-2.5 !px-3 text-[11px] border-white/5">
+                    <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-4 h-4" /> Phantom
                 </a>
-                 <a href="https://solflare.com/download" target="_blank" rel="noopener noreferrer" className="btn-secondary !py-2.5 !px-3 text-[11px] flex items-center justify-center gap-2 border-solflare/30 hover:border-solflare transition-all">
-                    <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-4 h-4" /> Install Solflare
+                 <a href="https://solflare.com/download" target="_blank" rel="noopener noreferrer" className="btn-secondary !py-2.5 !px-3 text-[11px] border-white/5">
+                    <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-4 h-4" /> Solflare
                 </a>
             </div>
         </div>
@@ -467,17 +469,17 @@ export default function WalletConnect({ onConnected }) {
 
       {(!connected || !publicKey) && (
         <>
-          <div className="flex justify-center mb-6"><WalletMultiButton /></div>
+          <div className="flex justify-center mb-8"><WalletMultiButton /></div>
           <div className="grid grid-cols-1 gap-4">
-            <button onClick={() => setView('selection')} className="w-full flex items-center justify-between p-5 rounded-[24px] bg-surface-900 border border-surface-800 hover:border-brand-500 transition-all group">
+            <button onClick={() => setView('selection')} className="w-full flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-brand-500/50 transition-all group">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-500 group-hover:scale-110 transition-transform"><User size={20} /></div>
+                <div className="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500"><User size={20} /></div>
                 <div className="text-left">
-                  <p className="font-bold text-sm text-white">Google / Email Login</p>
-                  <p className="text-[10px] text-surface-500 text-left">No wallet? Start here to auto-create one.</p>
+                  <p className="font-semibold text-sm text-white">Social / Email Login</p>
+                  <p className="text-[10px] text-white/20">No wallet? Create one instantly.</p>
                 </div>
               </div>
-              <ArrowRight size={16} className="text-surface-700 group-hover:text-brand-500 transition-colors" />
+              <ArrowRight size={16} className="text-white/10 group-hover:text-brand-500 transition-colors" />
             </button>
           </div>
 
@@ -486,34 +488,34 @@ export default function WalletConnect({ onConnected }) {
 
       {connected && publicKey && (
         <div className="mt-8 animate-scale-in">
-          <div className="bg-accent-green/10 border border-accent-green/30 rounded-2xl p-6 mb-6">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-accent-green/20 flex items-center justify-center">
-                <CheckCircle size={24} className="text-accent-green" />
+          <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-8 mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                <CheckCircle size={24} className="text-emerald-500" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-white mb-1">Successfully Connected</h3>
-            <p className="text-accent-green font-medium text-xs font-mono">
-              {publicKey.toBase58().slice(0, 8)}...{publicKey.toBase58().slice(-8)}
+            <h3 className="text-xl font-bold text-white mb-2">Connected</h3>
+            <p className="text-emerald-500/80 font-medium text-xs font-mono">
+              {publicKey.toBase58().slice(0, 12)}...{publicKey.toBase58().slice(-12)}
             </p>
             
-            <div className="flex justify-center gap-2 mt-3">
-              {isSolflareWallet && <span className="badge-solflare text-[10px] px-3 py-1">Solflare Wallet ✓</span>}
-              {isPhantomWallet && <span className="badge-phantom text-[10px] px-3 py-1">Phantom Wallet ✓</span>}
+            <div className="flex justify-center gap-2 mt-6">
+              {isSolflareWallet && <span className="badge badge-solflare">Solflare Connected</span>}
+              {isPhantomWallet && <span className="badge badge-phantom">Phantom Connected</span>}
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <button 
               onClick={() => navigate('/dashboard')}
-              className="btn-primary w-full py-4 flex items-center justify-center gap-2 text-lg"
+              className="btn-primary w-full !h-14"
             >
               <LayoutDashboard size={20} />
-              Go to Dashboard
+              Continue to Dashboard
             </button>
             
-            <p className="text-surface-500 text-sm">
-              Redirecting in <span className="text-brand-400 font-bold font-mono">{countdown}s</span>...
+            <p className="text-white/20 text-xs font-medium uppercase tracking-wider">
+              Redirecting in <span className="text-brand-500 font-bold">{countdown}s</span>...
             </p>
           </div>
         </div>
@@ -521,3 +523,4 @@ export default function WalletConnect({ onConnected }) {
     </div>
   );
 }
+
