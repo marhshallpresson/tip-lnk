@@ -70,6 +70,8 @@ export async function initSchema() {
         table.text('message');      // Audit Requirement
         table.string('recipient').notNullable();
         table.decimal('amount', 20, 8).notNullable();
+        table.decimal('fee_amount', 20, 8).defaultTo(0);
+        table.string('treasury_address');
         table.string('tokenMint').notNullable();
         table.string('tokenSymbol').notNullable();
         table.string('status').defaultTo('confirmed');

@@ -491,8 +491,3 @@ function TokenListItem({ token, isSelected, onClick }) {
     </button>
   );
 }
-Solana</span>
-      </div>
-    </button>
-  );
-}

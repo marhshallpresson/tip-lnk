@@ -169,6 +169,8 @@ router.post('/tips', async (req, res) => {
       recipient: tip.recipientAddress,
       message: tip.note || '',
       amount: tip.amountUSDC,
+      fee_amount: tip.feeAmount || 0,
+      treasury_address: tip.treasuryAddress || null,
       tokenMint: tip.inputToken, // Simplified for logging
       tokenSymbol: tip.inputToken,
       status: 'confirmed',
