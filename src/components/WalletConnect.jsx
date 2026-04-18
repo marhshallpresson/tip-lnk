@@ -9,13 +9,14 @@ import { BrowserSDK, AddressType } from '@phantom/browser-sdk';
 import { getPhantomDeepLink, getSolflareDeepLink, isMobile, hasSolanaProvider } from '../utils/deepLinks';
 
 // --- Phantom SDK Setup ---
-const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID || "YOUR_APP_ID_HERE";
+const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID || "319f5dec-a0a2-4c5e-9ae8-04408426f62b";
 const phantomSdk = new BrowserSDK({
   providers: ["google", "injected"],
   appId: PHANTOM_APP_ID,
   addressTypes: [AddressType.solana],
-  autoConnect: true, // Handles redirect result on page load!
-  authOptions: { redirectUrl: window.location.origin + window.location.pathname },
+  autoConnect: true,
+  // Professional Normalization: Always redirect to the origin to match registered dev settings
+  authOptions: { redirectUrl: window.location.origin },
 });
 
 /* Detect Solflare in-app browser */
