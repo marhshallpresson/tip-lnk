@@ -190,12 +190,12 @@ export default function TipWidget({ fixedRecipient = null }) {
             </div>
           </div>
           <a
-            href={`https://orbmarkets.io/tx/${txResult.signature}`}
+            href={`https://solscan.io/tx/${txResult.signature}${import.meta.env.VITE_SOLANA_NETWORK === 'devnet' ? '?cluster=devnet' : ''}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary w-full text-xs !py-2 flex items-center justify-center gap-2 mt-4"
           >
-            View on Orb <ExternalLink size={12} />
+            View on Solscan <ExternalLink size={12} />
           </a>
         </div>
 

@@ -24,8 +24,7 @@ export function SolanaWalletProvider({ children }) {
         cluster: 'mainnet-beta',
         onWalletNotFound: createDefaultWalletNotFoundHandler(),
     }),
-    new SolflareWalletAdapter(),
-    new PhantomWalletAdapter(),
+    // Redundant adapters removed to silence 'Standard Wallet' warnings
   ], []);
 
   return (

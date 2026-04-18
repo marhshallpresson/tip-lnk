@@ -13,6 +13,7 @@ import WalletModal from './components/WalletModal';
 import LandingPage from './components/LandingPage';
 import CreatorPage from './components/CreatorPage';
 import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/AdminDashboard';
 import AppNavbar from './components/AppNavbar';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
