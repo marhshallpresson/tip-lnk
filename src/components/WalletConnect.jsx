@@ -140,7 +140,7 @@ export default function WalletConnect({ onConnected }) {
 
     try {
       console.log(`Initiating Phantom injected connection...`);
-      const result = await phantomSdk.connect({ provider: 'injected' });
+      const result = await phantomSdk.connect('injected');
       if (result && result.publicKey) {
         onConnected(result.publicKey.toBase58());
       }

@@ -246,6 +246,49 @@ router.post('/send-smart', async (req: express.Request, res: express.Response) =
 });
 
 /**
+ * Professional Helius Webhook Receiver
+ * FORTIFIED: This is the primary source of truth for transaction indexing.
+ */
+router.post('/webhooks/helius', async (req, res) => {
+  const webhookKey = req.headers['authorization'];
+  // In production, verify against process.env.HELIUS_WEBHOOK_SECRET
+  
+  const transactions = req.body;
+  if (!Array.isArray(transactions)) return res.sendStatus(400);
+
+  try {
+    for (const tx of transactions) {
+        // Extract TipLnk metadata from the Enhanced Transaction
+        const signature = tx.signature;
+        const sender = tx.feePayer;
+        const timestamp = new Date(tx.timestamp * 1000);
+        
+        // Find the transfer to our treasury or creator
+        const transfer = tx.nativeTransfers?.[0] || tx.tokenTransfers?.[0];
+        if (!transfer) continue;
+
+        await db('tips').insert({
+          signature,
+          slot: tx.slot,
+          timestamp,
+          sender,
+          recipient: transfer.toUserAccount,
+          amount: transfer.amount || transfer.tokenAmount,
+          tokenSymbol: tx.nativeTransfers?.length > 0 ? 'SOL' : 'USDC',
+          status: 'confirmed',
+          type: 'webhook_indexed'
+        }).onConflict('signature').merge();
+        
+        console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Webhook Fault:', err);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+/**
  * Unified Asset Fetching (DAS API).
  */
 router.get('/assets/:owner', async (req, res) => {

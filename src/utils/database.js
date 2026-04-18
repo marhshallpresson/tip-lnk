@@ -4,12 +4,17 @@
  */
 
 const isProd = import.meta.env.PROD;
-const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+const API_BASE_URL = isProd 
+  ? window.location.origin 
+  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
 
 async function safeFetch(url, options = {}) {
   try {
     const response = await fetch(url, options);
-    if (!response.ok) throw new Error(`Backend Error: ${response.status}`);
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Backend Error ${response.status}: ${errorText.slice(0, 100)}`);
+    }
     return await response.json();
   } catch (error) {
     console.warn(`Infrastructure Error at ${url}:`, error.message);

@@ -695,4 +695,86 @@ router.post('/phantom-google/callback', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Elite Email Linking: Phase 1 (Send Code)
+ * Generates a 6-digit code and dispatches via Brevo.
+ */
+router.post('/link-email/start', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: 'Session required' });
+
+  try {
+    const code = randomCode(6);
+    const codeHash = sha256Hex(code);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    // Store verification intent
+    await db('email_verification_token').insert({
+        id: randomUUID(),
+        userId: user.id,
+        email,
+        tokenHash: codeHash,
+        expiresAt,
+        created_at: new Date()
+    });
+
+    await sendMail({
+      to: email,
+      subject: `Verification Code: ${code} - TipLnk`,
+      text: `Your TipLnk verification code is: ${code}`,
+      html: `
+        <div style="font-family: sans-serif; background: #0d1117; color: white; padding: 40px; border-radius: 20px;">
+          <h2 style="color: #00d265;">Verify your Email</h2>
+          <p style="font-size: 16px;">Enter the code below to link this email to your TipLnk profile:</p>
+          <div style="background: #161b22; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;">
+            <span style="font-size: 32px; font-weight: 900; letter-spacing: 10px; color: #00d265;">${code}</span>
+          </div>
+          <p style="color: #8b949e; font-size: 12px;">This code expires in 15 minutes.</p>
+        </div>
+      `
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Email Link Start Fault:', err);
+    res.status(500).json({ error: 'Failed to send verification email.' });
+  }
+});
+
+/**
+ * Elite Email Linking: Phase 2 (Verify & Bond)
+ */
+router.post('/link-email/verify', async (req: Request, res: Response) => {
+  const { code, email } = req.body;
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: 'Session required' });
+
+  try {
+    const codeHash = sha256Hex(code);
+    const record = await db('email_verification_token')
+      .where({ userId: user.id, email, tokenHash: codeHash })
+      .andWhere('expiresAt', '>', new Date())
+      .first();
+
+    if (!record) {
+      return res.status(400).json({ error: 'Invalid or expired verification code.' });
+    }
+
+    // Success: Update User Profile in Supabase
+    await db('user').where({ id: user.id }).update({
+      email,
+      emailVerifiedAt: new Date(),
+      updated_at: new Date()
+    });
+
+    // Cleanup
+    await db('email_verification_token').where({ userId: user.id }).delete();
+
+    res.json({ success: true, message: 'Email successfully verified and linked.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Verification failed.' });
+  }
+});
+
 export default router;
