@@ -116,20 +116,68 @@ export default function WalletConnect({ onConnected }) {
     // ─── Professional Popup Flow for Google Phantom ───
     if (provider === 'google') {
         try {
-            console.log(`Initiating Phantom Google popup connection...`);
             
-            // Standardize the connect call - Must be an options object
-            const result = await phantomSdk.connect({ provider: 'google' });
             
-            if (result && result.publicKey) {
-              const addr = result.publicKey.toBase58();
-              await loginWithWallet(addr);
-              onConnected(addr);
+            // 1. Define Popup Dimensions
+            const width = 500;
+            const height = 700;
+            const left = Math.floor(window.screen.width / 2 - width / 2);
+            const top = Math.floor(window.screen.height / 2 - height / 2);
+
+            // 2. Resolve Authorization URL via Backend
+            const isProd = import.meta.env.PROD;
+            const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+            const authUrl = `${API_BASE}/api/auth/google/start?phantom=true&next=${encodeURIComponent(window.location.origin)}`;
+
+            // 3. Open Managed Popup
+            const popup = window.open(
+                authUrl,
+                'TipLnkPhantomGoogle',
+                `width=${width},height=${height},left=${left},top=${top},status=no,location=no,toolbar=no,menubar=no`
+            );
+
+            if (!popup) {
+                alert('Popup blocked! Please allow popups to continue with Google.');
+                setLoadingProvider(null);
+                return;
             }
+
+            // 4. Listen for Cross-Window Success Message
+            const messageListener = async (event) => {
+                // Security Check: Ensure message is from our origin
+                if (event.origin !== window.location.origin) return;
+
+                if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.platform === 'phantom-google') {
+                    const addr = event.data.publicKey;
+                    console.log('✅ Popup confirmed wallet:', addr);
+                    
+                    // Finalize backend session link
+                    await loginWithWallet(addr);
+                    
+                    // Cleanup & Advance
+                    window.removeEventListener('message', messageListener);
+                    onConnected(addr);
+                }
+
+                if (event.data?.type === 'OAUTH_ERROR') {
+                    setAuthError(event.data.error || 'Connection failed.');
+                    window.removeEventListener('message', messageListener);
+                }
+            };
+
+            window.addEventListener('message', messageListener);
+
+            // 5. Detect manual close
+            const timer = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(timer);
+                    setLoadingProvider(null);
+                }
+            }, 1000);
+
         } catch (err) {
             console.error(`Phantom Google Login Error:`, err);
             setAuthError(err.message || 'Google wallet connection failed.');
-        } finally {
             setLoadingProvider(null);
         }
         return;
