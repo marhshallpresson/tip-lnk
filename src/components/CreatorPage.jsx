@@ -93,7 +93,6 @@ const CreatorHeader = ({ profile, supporterCount }) => {
           <div className="flex-1 pb-2">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">{profile.solDomain || displayName}</h1>
-              {profile.twitterHandle && <ShieldCheck size={20} className="text-brand-500" />}
             </div>
             <p className="text-white/40 font-medium text-sm mt-1">{supporterCount} Supporters</p>
           </div>

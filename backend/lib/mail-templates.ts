@@ -86,9 +86,10 @@ export const templates = {
   },
 
   resetPassword: (name: string, link: string) => {
+    const safeName = escapeHtml(name);
     const content = `
       <h1 style="${styles.h1}">Reset Password</h1>
-      <p style="${styles.p}">Hi ${name},</p>
+      <p style="${styles.p}">Hi ${safeName},</p>
       <p style="${styles.p}">We received a request to reset your password. Click the button below to choose a new one:</p>
       
       <div style="${styles.buttonContainer}">
@@ -100,3 +101,13 @@ export const templates = {
     return renderLayout(content, 'Reset your TipLnk password')
   },
 }
+
+function escapeHtml(unsafe: string) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+

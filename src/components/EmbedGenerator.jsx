@@ -108,7 +108,10 @@ const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
               <h3 className="text-xs font-black text-surface-500 uppercase tracking-widest mb-6">Action Button</h3>
               
               <div className="flex-1 flex items-center justify-center bg-main-bg/50 rounded-[24px] border border-dashed border-surface-800 mb-6 p-10 min-h-[160px]">
-                <div dangerouslySetInnerHTML={{ __html: buttonHtml }} />
+                <a href={profileUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', background: accentColor, color: '#000', padding: '12px 24px', borderRadius: '12px', fontWeight: '800', textDecoration: 'none', fontFamily: 'sans-serif', gap: '8px', boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  Tip me on TipLnk
+                </a>
               </div>
 
               <div className="relative group">

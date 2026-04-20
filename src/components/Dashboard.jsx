@@ -2,6 +2,7 @@ import { useState, useCallback, Suspense, lazy } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import useWalletPortfolio from '../hooks/useWalletPortfolio';
 import useTransactionHistory from '../hooks/useTransactionHistory';
 import { useTransactionSimulation } from '../hooks/useTransactionSimulation';
@@ -489,3 +490,4 @@ export function TransactionHistoryTab() {
     </div>
   );
 }
+

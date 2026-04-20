@@ -7,6 +7,7 @@ import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { phantomSdk } from '../lib/phantom';
 import { getPhantomDeepLink, getSolflareDeepLink, isMobile, hasSolanaProvider } from '../utils/deepLinks';
+import api from '../lib/api';
 import bs58 from 'bs58';
 
 /* Detect Solflare in-app browser */
@@ -40,7 +41,7 @@ export default function WalletConnect({ onConnected }) {
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   const mobileDevice = isMobile();
-  const [view, setView] = useState('wallets'); // selection, wallets, email-login, email-register, email-verify, email-success
+  const [view, setView] = useState('wallets'); // selection, wallets, email-login, email-register, email-verify, email-success, email-prompt
   const [advancing, setAdvancing] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
   const [authError, setAuthError] = useState(null);
@@ -67,8 +68,14 @@ export default function WalletConnect({ onConnected }) {
         signatureStr = bs58.encode(signatureBytes);
       }
 
-      await loginWithWallet(addr, signatureStr, message);
-      onConnected(addr);
+      const res = await loginWithWallet(addr, signatureStr, message);
+      if (res.success) {
+        if (!res.user?.email) {
+          setView('email-prompt');
+          return;
+        }
+        onConnected(addr);
+      }
     } catch (err) {
       console.error("SIWS error:", err);
       setAuthError(err.message || 'Signature failed. Please try again.');
@@ -113,15 +120,15 @@ export default function WalletConnect({ onConnected }) {
 
   // Countdown and Auto-redirection logic
   useEffect(() => {
-    if (connected && countdown > 0) {
+    if (connected && countdown > 0 && view !== 'email-prompt' && view !== 'email-verify') {
       const timer = setInterval(() => {
         setCountdown(prev => prev - 1);
       }, 1000);
       return () => clearInterval(timer);
-    } else if (connected && countdown === 0) {
+    } else if (connected && countdown === 0 && view !== 'email-prompt' && view !== 'email-verify') {
       navigate('/dashboard');
     }
-  }, [connected, countdown, navigate]);
+  }, [connected, countdown, navigate, view]);
 
   const handleSocialSelect = async (provider) => {
     if (!provider) return;
@@ -171,13 +178,24 @@ export default function WalletConnect({ onConnected }) {
         result = await login(formData.email, formData.password);
       } else if (view === 'email-register') {
         result = await register(formData.name, formData.email, formData.password);
+      } else if (view === 'email-prompt') {
+          // Send linking code
+          const res = await api.post('/auth/link-email/start', { email: formData.email });
+          if (res.ok && res.data.success) {
+              setView('email-verify');
+              return;
+          } else {
+              setAuthError(res.data.error || 'Failed to send verification email.');
+              return;
+          }
       } else if (view === 'email-verify') {
-          // Verify code (simulated for flow)
-          if (formData.code.length === 6) {
+          // Verify code
+          const res = await api.post('/auth/link-email/verify', { email: formData.email, code: formData.code });
+          if (res.ok && res.data.success) {
               setView('email-success');
               return;
           } else {
-              setAuthError('Please enter a valid 6-digit verification code.');
+              setAuthError(res.data.error || 'Invalid or expired verification code.');
               return;
           }
       }
@@ -208,6 +226,62 @@ export default function WalletConnect({ onConnected }) {
   const isSolflareWallet = wallet?.adapter?.name?.toLowerCase().includes('solflare');
   const isPhantomWallet = wallet?.adapter?.name?.toLowerCase().includes('phantom');
   
+  if (view === 'email-prompt') {
+    return (
+        <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
+            <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
+                <User size={24} className="text-brand-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Finalize your Profile</h2>
+            <p className="text-white/40 text-sm mb-8 leading-relaxed">
+                To secure your account and receive notifications, please provide a valid email.
+            </p>
+            
+            {authError && (
+                <div className="mb-6 p-4 bg-red-500/5 border border-red-500/10 rounded-lg text-red-500 text-xs text-left">
+                    {authError}
+                </div>
+            )}
+
+            <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
+                <div>
+                    <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider ml-1">Full Name</label>
+                    <div className="relative mt-1">
+                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                        <input 
+                            type="text" 
+                            name="name" 
+                            required 
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            className="input-field w-full !pl-12" 
+                            placeholder="John Doe" 
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider ml-1">Email Address</label>
+                    <div className="relative mt-1">
+                        <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                        <input 
+                            type="email" 
+                            name="email" 
+                            required 
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="input-field w-full !pl-12" 
+                            placeholder="your@email.com" 
+                        />
+                    </div>
+                </div>
+                <button type="submit" disabled={loadingProvider !== null} className="btn-primary w-full !mt-6">
+                    {loadingProvider === 'email' ? <Loader2 size={18} className="animate-spin" /> : 'Continue'}
+                </button>
+            </form>
+        </div>
+    );
+  }
+
   if (view === 'email-verify') {
     return (
         <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
@@ -239,13 +313,13 @@ export default function WalletConnect({ onConnected }) {
                         placeholder="000000" 
                     />
                 </div>
-                <button type="submit" className="btn-primary w-full">
-                    Verify & Continue
+                <button type="submit" disabled={loadingProvider !== null} className="btn-primary w-full">
+                    {loadingProvider === 'email' ? <Loader2 size={18} className="animate-spin" /> : 'Verify & Continue'}
                 </button>
             </form>
             
             <button 
-                onClick={() => setView('email-register')} 
+                onClick={() => setView('email-prompt')} 
                 className="mt-8 text-white/40 hover:text-white text-xs font-semibold transition-colors uppercase tracking-wider"
             >
                 Change Email Address
@@ -260,16 +334,13 @@ export default function WalletConnect({ onConnected }) {
             <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
                 <CheckCircle size={24} className="text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Account Created!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Account Verified!</h2>
             <p className="text-white/40 text-sm mb-8 leading-relaxed">
-                Your profile is ready. To start receiving tips and earning rewards, you must connect a Solana wallet.
+                Your profile is now verified. You can start receiving tips and earning rewards.
             </p>
             <div className="space-y-4">
-                <button onClick={() => setView('wallets')} className="btn-primary w-full">
-                    <Wallet size={18} /> Connect My Wallet Now
-                </button>
-                <button onClick={() => setView('email')} className="text-white/40 hover:text-white text-xs font-semibold transition-colors">
-                    Back to options
+                <button onClick={() => navigate('/dashboard')} className="btn-primary w-full">
+                    Continue to Dashboard
                 </button>
             </div>
         </div>

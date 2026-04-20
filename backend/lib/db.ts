@@ -158,6 +158,15 @@ export async function initSchema() {
     }
 
     console.log('✅ Supabase Schema Sync & Hardening Complete.');
+
+    // ─── ELITE DATA CLEANUP ───
+    // Remove legacy dummy emails and prompt users for real addresses.
+    const cleanupCount = await db('user')
+      .where('email', 'like', '%@phantom.local')
+      .update({ email: null });
+    if (cleanupCount > 0) {
+      console.log(`🧹 Cleaned up ${cleanupCount} legacy dummy emails.`);
+    }
   } catch (err) {
     console.error('❌ Supabase Sync Failed:', err);
   }

@@ -45,12 +45,6 @@ export const csrfProtection = async (req: Request, res: Response, next: NextFunc
     return
   }
 
-  // 3. Skip for profile loads (Public data)
-  if (req.path.startsWith('/api/solana/profile')) {
-    next()
-    return
-  }
-
   // 4. Skip for Auth endpoints except state-changing ones that need CSRF protection
   if (req.path.startsWith('/api/auth') && !req.path.startsWith('/api/auth/link-email')) {
     next()

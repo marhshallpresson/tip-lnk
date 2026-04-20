@@ -24,7 +24,7 @@ router.use(requireAdmin);
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     // 1. Total Volume & Platform Revenue
-    const tipStats = await db('tips')
+    const tipStats: any = await db('tips')
       .select(
         db.raw('COUNT(signature) as total_tips'),
         db.raw('COALESCE(SUM(amount), 0) as total_volume_usdc'),
@@ -35,7 +35,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       .first();
 
     // 2. Creator Growth
-    const userStats = await db('user')
+    const userStats: any = await db('user')
       .select(db.raw('COUNT(id) as total_creators'))
       .first();
 

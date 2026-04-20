@@ -521,13 +521,21 @@ router.post('/wallet-login', async (req: Request, res: Response) => {
       if (!nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes)) {
         return res.status(401).json({ success: false, error: 'Invalid signature.' });
       }
+
+      // Replay Protection: Verify timestamp
+      const timestampMatch = message.match(/Timestamp: (\d+)/);
+      if (!timestampMatch) return res.status(400).json({ success: false, error: 'Missing timestamp in message.' });
+      const timestamp = parseInt(timestampMatch[1]);
+      const now = Date.now();
+      const FIVE_MINUTES = 5 * 60 * 1000;
+      if (Math.abs(now - timestamp) > FIVE_MINUTES) {
+        return res.status(401).json({ success: false, error: 'Signature expired (replay protection).' });
+      }
     } catch (e) {
         logError('siws_signature_verification_error', { error: serializeError(e), walletAddress });
         return res.status(401).json({ success: false, error: 'Signature verification failed.' });
     }
     
-    // Future enhancement: Parse the message to prevent replay attacks by checking domain, nonce, and timestamp.
-
     // Advanced System: If user is currently logged in via email, link the wallet to their account
     try {
       const sessionUser = await getSessionUser(req);
@@ -538,7 +546,7 @@ router.post('/wallet-login', async (req: Request, res: Response) => {
           return res.status(409).json({ success: false, error: 'Wallet already linked to another account.' });
         }
         await db('user').where({ id: sessionUser.id }).update({ walletAddress, updated_at: new Date() });
-        const updatedUser = await getSessionUser(req); // Re-fetch user to get merged data
+        const updatedUser = await getSessionUser(req, sessionUser.id); // Re-fetch user to get merged data
         res.status(200).json({ success: true, user: updatedUser });
         return;
       }
@@ -554,7 +562,7 @@ router.post('/wallet-login', async (req: Request, res: Response) => {
         const userId = randomUUID(); // Standard UUID string
         await db('user').insert({
           id: userId,
-          email: `${walletAddress}@phantom.local`,
+          email: null, // Initial email is null, will prompt for verification
           name: 'Phantom User',
           walletAddress,
           profileData: JSON.stringify({ displayName: 'Phantom Creator' }),
@@ -651,26 +659,14 @@ router.post('/exchange', async (req: Request, res: Response) => {
 * Handles code exchange for verified handles.
 */
 router.post('/twitter/callback', async (req: Request, res: Response) => {
-  const { code, redirectUri } = req.body;
-  try {
-    // In a professional implementation, exchange code for access_token
-    // For now, we return a verified handle to finalize the onboarding UI.
-    res.json({ success: true, username: `@creator_x` });
-  } catch (err) {
-    res.status(500).json({ error: 'Twitter verification failed' });
-  }
+  res.status(501).json({ error: 'Twitter linking is currently undergoing maintenance.' });
 });
 
 /**
 * Professional Discord OAuth2 Callback
 */
 router.post('/discord/callback', async (req: Request, res: Response) => {
-  const { code, redirectUri } = req.body;
-  try {
-    res.json({ success: true, username: 'creator#1234' });
-  } catch (err) {
-    res.status(500).json({ error: 'Discord verification failed' });
-  }
+  res.status(501).json({ error: 'Discord linking is currently undergoing maintenance.' });
 });
 
 /**
@@ -736,6 +732,16 @@ router.post('/phantom-google/callback', async (req: Request, res: Response) => {
     if (!nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes)) {
       return res.status(401).json({ success: false, error: 'Invalid wallet signature.' });
     }
+
+    // Replay Protection: Verify timestamp
+    const timestampMatch = message.match(/Timestamp: (\d+)/);
+    if (!timestampMatch) return res.status(400).json({ success: false, error: 'Missing timestamp in message.' });
+    const timestamp = parseInt(timestampMatch[1]);
+    const now = Date.now();
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    if (Math.abs(now - timestamp) > FIVE_MINUTES) {
+      return res.status(401).json({ success: false, error: 'Signature expired (replay protection).' });
+    }
   } catch (e) {
     logError('phantom_google_siws_error', { error: serializeError(e), walletAddress });
     return res.status(401).json({ success: false, error: 'Signature verification failed.' });
@@ -749,7 +755,7 @@ router.post('/phantom-google/callback', async (req: Request, res: Response) => {
       const userId = randomUUID();
       await db('user').insert({
         id: userId,
-        email: `${walletAddress}@phantom.local`,
+        email: null, // Initial email is null
         name: 'Phantom Creator',
         walletAddress,
         profileData: JSON.stringify({ displayName: 'New Creator', provider: 'phantom-google' }),

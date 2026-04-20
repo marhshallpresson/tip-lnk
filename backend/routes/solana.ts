@@ -3,8 +3,28 @@ import express from 'express';
 import { backfillTransactions, getPriorityFeeEstimate, getAssetsByOwner, aggregateSocialMetrics } from '../lib/helius.js';
 import { db } from '../lib/db.js';
 import { randomUUID } from 'crypto';
+import { getSessionUser } from '../lib/session.js';
+import nacl from 'tweetnacl';
+import bs58 from 'bs58';
 
 const router = express.Router();
+
+/**
+ * Elite Auth Guard
+ * Ensures only authenticated users can access state-changing routes.
+ */
+const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    (req as any).user = user;
+    next();
+  } catch (err) {
+    res.status(401).json({ success: false, error: 'Session invalid' });
+  }
+};
 
 /**
  * Professional DFlow Order Proxy
@@ -124,24 +144,50 @@ router.get('/profile', async (req, res) => {
   }
 });
 
-router.post('/profile', async (req, res) => {
-  const { walletAddress, profile } = req.body;
+router.post('/profile', requireAuth, async (req, res) => {
+  const { walletAddress, profile, signature, message } = req.body;
+  const authUser = (req as any).user;
+
+  // Elite Hardening: Ensure users can only update their OWN profile
+  if (walletAddress !== authUser.walletAddress && walletAddress !== authUser.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Profile ownership mismatch' });
+  }
+
   try {
     const solDomain = profile.solDomain || (profile.profile && profile.profile.solDomain);
 
+    // ─── ELITE SECURITY GUARD: Handle Ownership Verification ───
+    // If a handle is being claimed or updated, verify the cryptographic signature.
+    if (solDomain && signature && message) {
+        try {
+          const decodedMessage = new TextEncoder().encode(message);
+          const decodedSignature = bs58.decode(signature);
+          const decodedPublicKey = bs58.decode(authUser.walletAddress);
+  
+          const isValid = nacl.sign.detached.verify(
+            decodedMessage,
+            decodedSignature,
+            decodedPublicKey
+          );
+  
+          if (!isValid || !message.includes(solDomain)) {
+            return res.status(403).json({ success: false, error: 'Cryptographic identity theft detected. Invalid handle signature.' });
+          }
+          console.log(`🛡️ Verified identity for handle claim: ${solDomain}`);
+        } catch (sigErr) {
+          return res.status(400).json({ success: false, error: 'Malformed identity signature.' });
+        }
+    }
+
     // ─── Elite Profile Sync ───
-    // Deconstruct and save core fields to root columns for indexing and search
     await db('user')
-      .where({ walletAddress })
-      .orWhere({ id: walletAddress })
+      .where({ id: authUser.id })
       .update({ 
         profileData: JSON.stringify(profile),
         solDomain: solDomain || null,
         twitterHandle: profile.twitterHandle || null,
         discordHandle: profile.discordHandle || null,
         name: profile.displayName || profile.name,
-        // The URLs are stored within the profileData JSON blob.
-        // No separate root columns needed unless we want to query them directly.
         updated_at: new Date()
       });
     res.json({ success: true });
@@ -169,8 +215,15 @@ router.get('/tips/:address', async (req, res) => {
  * Secure Tip Logging (Audit Requirement)
  * Stores the sender name and message for transparency.
  */
-router.post('/tips', async (req, res) => {
+router.post('/tips', requireAuth, async (req, res) => {
   const { walletAddress, tip, isSent } = req.body;
+  const authUser = (req as any).user;
+
+  // Elite Hardening: Ensure users can only log tips for THEIR wallet
+  if (walletAddress !== authUser.walletAddress) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Wallet mismatch' });
+  }
+
   if (!tip || !tip.txSignature) return res.status(400).json({ error: 'Invalid tip data' });
 
   try {
@@ -202,8 +255,15 @@ router.post('/tips', async (req, res) => {
  * Trigger an on-demand backfill for a wallet.
  * Uses gTFA for speed and efficiency.
  */
-router.post('/backfill', async (req, res) => {
+router.post('/backfill', requireAuth, async (req, res) => {
   const { address } = req.body;
+  const authUser = (req as any).user;
+
+  // Elite Hardening: Ensure users can only backfill THEIR OWN wallet
+  if (address !== authUser.walletAddress) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Backfill restricted to owned wallet' });
+  }
+
   if (!address) return res.status(400).json({ error: 'Address required' });
 
   try {
@@ -267,7 +327,13 @@ router.post('/send-smart', async (req: express.Request, res: express.Response) =
  */
 router.post('/webhooks/helius', async (req, res) => {
   const webhookKey = req.headers['authorization'];
-  // In production, verify against process.env.HELIUS_WEBHOOK_SECRET
+  const SECRET = process.env.HELIUS_WEBHOOK_SECRET;
+
+  // Elite Hardening: Verify Helius Secret
+  if (SECRET && webhookKey !== SECRET) {
+      console.warn('⚠️ Webhook blocked: Invalid authorization key');
+      return res.status(401).json({ error: 'Unauthorized' });
+  }
   
   const transactions = req.body;
   if (!Array.isArray(transactions)) return res.sendStatus(400);

@@ -77,9 +77,9 @@ pub mod tiplnk {
 pub struct SendSolTip<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
-    /// CHECK: The recipient can be any valid Solana address
+    /// CHECK: The recipient should be a valid SystemAccount
     #[account(mut)]
-    pub creator: AccountInfo<'info>,
+    pub creator: SystemAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -106,7 +106,7 @@ pub struct SendTokenTip<'info> {
     pub creator_token_account: Account<'info, TokenAccount>,
 
     /// CHECK: The recipient owner
-    pub creator: AccountInfo<'info>,
+    pub creator: SystemAccount<'info>,
     
     pub token_program: Program<'info, Token>,
 }

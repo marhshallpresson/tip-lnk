@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }) => {
           api.setAccessToken(data.auth.accessToken);
         }
         setUser(data.user);
-        return { success: true };
+        return { success: true, user: data.user };
       } else {
         setError(data.error || 'Wallet login failed');
         return { success: false, error: data.error };

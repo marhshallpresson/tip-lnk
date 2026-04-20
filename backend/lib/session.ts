@@ -111,7 +111,7 @@ export const getUserRoles = async (userId: string) => {
   return roles
 }
 
-export const getSessionUser = async (req: Request): Promise<SessionUser | null> => {
+export const getSessionUser = async (req: Request, id?: string): Promise<SessionUser | null> => {
   const cookieSid = (req.signedCookies || {})[SESSION_COOKIE_NAME] as string | undefined
   let sid = cookieSid
 
