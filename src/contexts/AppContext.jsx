@@ -53,7 +53,7 @@ const defaultState = {
 };
 
 export function AppProvider({ children }) {
-  const { publicKey, connected, wallet } = useWallet();
+  const { publicKey, connected, wallet, signMessage } = useWallet();
   const { user: authUser, loading: authLoading } = useAuth();
   const pubkeyStr = publicKey?.toBase58() || (authUser ? `auth_${authUser.id}` : null);
 
