@@ -323,7 +323,7 @@ router.get('/diagnostic/check', async (req, res) => {
   }
 
   const results: any = { status: 'ok', checks: {} };
-  const TEST_WALLET = process.env.TREASURY_WALLET || '5yZArHwv64pVrSyDhXvEQtVhweHv7RzeGHhwbMkbgmYp';
+  const TEST_WALLET = process.env.TREASURY_WALLET;
 
   try {
     const HELIUS_API_KEY = process.env.HELIUS_API_KEY;

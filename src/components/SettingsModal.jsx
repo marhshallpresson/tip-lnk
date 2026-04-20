@@ -60,7 +60,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   const handleConnectSocial = (platformId) => {
     // Currently only Google is implemented in backend, others are placeholders for now
     if (platformId === 'google') {
-      window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'https://api.eitherway.ai'}/api/auth/google/start?next=${window.location.pathname}`;
+      window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google/start?next=${window.location.pathname}`;
     } else {
       alert(`${platformId.charAt(0).toUpperCase() + platformId.slice(1)} integration coming soon!`);
     }

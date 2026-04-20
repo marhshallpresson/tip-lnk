@@ -47,7 +47,7 @@ export const sendMail = async (args: {
   }
 
   try {
-    const hostname = new URL(env('APP_URL') || 'https://tip-lnk.vercel.app').hostname
+    const hostname = new URL(env('APP_URL') ).hostname
     const fromAddress = env('SMTP_FROM') || env('SMTP_USER') || `no-reply@${hostname}`
     const fromName = env('SMTP_FROM_NAME') || env('APP_NAME') || 'TipLnk Support'
     
@@ -67,7 +67,6 @@ export const sendMail = async (args: {
     
     return { skipped: false as const }
   } catch (err) {
-    console.error('📧 Mailer Fault:', err.message);
     throw err;
   }
 }
