@@ -245,7 +245,7 @@ function AuthCallbackHandler() {
 
           // Update profile with verified social data
           if (platform === 'phantom-google') {
-            // This is a wallet connection success
+            // ─── Elite Invisible Wallet Logic ───
             if (window.opener) {
               window.opener.postMessage({
                 type: 'OAUTH_SUCCESS',
@@ -253,6 +253,9 @@ function AuthCallbackHandler() {
                 publicKey: data.walletAddress
               }, window.location.origin);
               setTimeout(() => window.close(), 500);
+            } else {
+              // Direct browser fallback: Force login state and jump to dashboard
+              navigate('/dashboard');
             }
             return;
           }
