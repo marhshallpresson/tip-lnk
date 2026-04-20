@@ -111,7 +111,7 @@ export const getUserRoles = async (userId: string) => {
   return roles
 }
 
-export const getSessionUser = async (req: Request, id?: string): Promise<SessionUser | null> => {
+export const getSessionUser = async (req: Request): Promise<SessionUser | null> => {
   const cookieSid = (req.signedCookies || {})[SESSION_COOKIE_NAME] as string | undefined
   let sid = cookieSid
 
@@ -119,8 +119,12 @@ export const getSessionUser = async (req: Request, id?: string): Promise<Session
     const bearer = extractBearerToken(req)
     if (bearer) {
       const secret = resolveSessionTokenSecret()
-      const payload = verifySessionToken(bearer, secret)
-      if (payload?.sid) sid = payload.sid
+      try {
+        const payload = verifySessionToken(bearer, secret)
+        if (payload?.sid) sid = payload.sid
+      } catch (tokenErr) {
+        console.warn('🛡️ Auth: Invalid Bearer token detected.');
+      }
     }
   }
 
@@ -128,11 +132,32 @@ export const getSessionUser = async (req: Request, id?: string): Promise<Session
 
   try {
     const session = await db('session').where({ id: sid }).first()
-    if (!session || session.revokedAt || new Date(session.expiresAt).getTime() < Date.now()) return null
+    if (!session) {
+        console.warn(`🛡️ Auth: Session ${sid} not found in database.`);
+        return null;
+    }
+    
+    if (session.revokedAt) return null;
+    if (new Date(session.expiresAt).getTime() < Date.now()) {
+        console.warn(`🛡️ Auth: Session ${sid} has expired.`);
+        return null;
+    }
+
     const user = await db('user').where({ id: session.userId }).first()
-    if (!user || user.deletedAt) return null
+    if (!user || user.deletedAt) {
+        console.warn(`🛡️ Auth: User linked to session ${sid} not found or deleted.`);
+        return null;
+    }
 
     const roles = await getUserRoles(user.id)
+    
+    let profileData = {};
+    try {
+        profileData = typeof user.profileData === 'string' ? JSON.parse(user.profileData) : (user.profileData || {});
+    } catch (parseErr) {
+        console.error('🛡️ Auth: Profile data corruption detected for user', user.id);
+    }
+
     return {
         id: user.id,
         email: user.email,
@@ -140,9 +165,10 @@ export const getSessionUser = async (req: Request, id?: string): Promise<Session
         roles,
         emailVerifiedAt: user.emailVerifiedAt,
         sessionId: sid,
-        profileData: typeof user.profileData === 'string' ? JSON.parse(user.profileData) : user.profileData
+        profileData
     }
-  } catch (e) {
+  } catch (e: any) {
+      console.error('🛡️ Auth CRITICAL: getSessionUser crashed:', e.message);
       return null
   }
 }

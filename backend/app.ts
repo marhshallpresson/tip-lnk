@@ -20,12 +20,15 @@ dotenv.config()
 
 // ─── Professional Serverless DB Boot ───
 let dbInitialized = false;
+let dbError: string | null = null;
+
 const warmUpDb = async () => {
     try {
         await initSchema();
         dbInitialized = true;
         console.log('✨ Cloud Database Warm-up Successful.');
-    } catch (err) {
+    } catch (err: any) {
+        dbError = err.message;
         console.error('CRITICAL: Database Warm-up Failed:', err);
     }
 };
@@ -37,12 +40,18 @@ const app: express.Application = express()
 // Global Protection: Ensure we never return HTML on /api routes
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/') && !dbInitialized && req.path !== '/api/health') {
-        // Allow a 10s grace period for cold-start initialization
-        setTimeout(() => {
-            if (dbInitialized) next();
-            else res.status(503).json({ success: false, error: 'Database initializing. Please refresh.' });
-        }, 2000);
-        return;
+        if (dbError) {
+            return res.status(500).json({ 
+                success: false, 
+                code: 'DB_INIT_ERROR',
+                error: 'Database failed to initialize. Check server logs.' 
+            });
+        }
+        return res.status(503).json({ 
+            success: false, 
+            code: 'DB_INITIALIZING',
+            error: 'Database is warming up. Please refresh in a moment.' 
+        });
     }
     next();
 });
