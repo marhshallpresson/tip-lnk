@@ -100,7 +100,8 @@ pub struct SendTokenTip<'info> {
 
     #[account(
         mut,
-        constraint = creator_token_account.mint == token_mint.key()
+        constraint = creator_token_account.mint == token_mint.key(),
+        constraint = creator_token_account.owner == creator.key()
     )]
     pub creator_token_account: Account<'info, TokenAccount>,
 

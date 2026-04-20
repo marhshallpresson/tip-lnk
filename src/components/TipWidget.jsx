@@ -132,6 +132,15 @@ export default function TipWidget({ fixedRecipient = null }) {
   }, [route?.transaction, txStep, simulate]);
 
   const handleSendTip = async () => {
+    // ─── Professional MWA / Deep Link Trigger ───
+    if (isMobile() && !hasSolanaProvider()) {
+        setTxStep('processing');
+        // Choose best link for the device
+        const deepLink = getPhantomDeepLink(window.location.href);
+        window.location.href = deepLink;
+        return;
+    }
+
     setTxStep('processing');
     const result = await executeTip(profile?.displayName || 'Anonymous');
     if (result?.success) {
@@ -265,7 +274,7 @@ export default function TipWidget({ fixedRecipient = null }) {
 
   if (txStep === 'confirm') {
     return (
-      <div className="glass-card p-8 animate-scale-in max-w-lg mx-auto">
+      <div className="glass-card p-8 animate-scale-in max-w-lg mx-auto relative overflow-hidden">
         <div className="flex items-center justify-between mb-8">
           <button onClick={() => setTxStep('configure')} className="text-white/40 hover:text-white transition-colors flex items-center gap-1.5 font-medium text-xs">
             <ChevronDown size={16} className="rotate-90" /> Back
@@ -273,6 +282,49 @@ export default function TipWidget({ fixedRecipient = null }) {
           <h3 className="text-lg font-bold">Confirm Tip</h3>
           <div className="w-10" />
         </div>
+
+        {/* --- QR Handover (Desktop Only) --- */}
+        {!isMobile() && (
+          <div className="hidden md:flex flex-col items-center mb-8 p-6 bg-white/[0.03] rounded-2xl border border-white/5">
+            <div className="bg-white p-2 rounded-xl mb-3 shadow-2xl shadow-brand-500/10">
+              <QRCodeSVG 
+                value={window.location.href} 
+                size={140} 
+                fgColor="#000000"
+                imageSettings={{
+                    src: "/favicon.svg",
+                    height: 24,
+                    width: 24,
+                    excavate: true,
+                }}
+              />
+            </div>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest text-center">
+              Scan with Phantom or Solflare
+            </p>
+          </div>
+        )}
+
+        {/* --- DFlow Execution Metrics --- */}
+        {route && (
+          <div className="mb-6 p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3">
+             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/40">
+                <div className="flex items-center gap-1.5">
+                    <Zap size={12} className="text-brand-500" />
+                    Optimal Route Found
+                </div>
+                <span className="text-brand-500">DFlow Protocol</span>
+             </div>
+             <div className="flex items-center justify-between text-xs">
+                <span className="text-white/60">Execution Speed</span>
+                <span className="text-white font-medium">{route.estimatedTime}</span>
+             </div>
+             <div className="flex items-center justify-between text-xs">
+                <span className="text-white/60">MEV Protection</span>
+                <span className="text-emerald-500 font-bold italic uppercase text-[9px]">Enabled</span>
+             </div>
+          </div>
+        )}
 
         <div className="bg-white/[0.02] border border-white/5 rounded-xl p-6 mb-8">
           <div className="flex justify-between items-start mb-1">

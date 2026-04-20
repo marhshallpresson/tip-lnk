@@ -57,9 +57,8 @@ router.get('/resolve/:handle', async (req: Request, res: Response) => {
 router.post('/link-social', async (req: Request, res: Response) => {
   const { walletAddress, handle, platform, signature, message } = req.body
   
-  // Elite Hardening: Signature Proof Required if signature is provided
-  // In a professional environment, signature is mandatory.
-  if (signature && !verifySolanaSignature(walletAddress, signature, message)) {
+  // Elite Hardening: Signature Proof Required
+  if (!signature || !message || !verifySolanaSignature(walletAddress, signature, message)) {
       return res.status(401).json({ success: false, error: 'Cryptographic proof failed. Verification denied.' });
   }
 

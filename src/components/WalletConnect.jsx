@@ -7,6 +7,7 @@ import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { phantomSdk } from '../lib/phantom';
 import { getPhantomDeepLink, getSolflareDeepLink, isMobile, hasSolanaProvider } from '../utils/deepLinks';
+import bs58 from 'bs58';
 
 /* Detect Solflare in-app browser */
 function useIsSolflare() {
@@ -34,7 +35,7 @@ function useIsPhantom() {
 }
 
 export default function WalletConnect({ onConnected }) {
-  const { connected, publicKey, wallet } = useWallet();
+  const { connected, publicKey, wallet, signMessage } = useWallet();
   const { login, register, user: authUser, loginWithWallet } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
@@ -50,6 +51,33 @@ export default function WalletConnect({ onConnected }) {
 
   const noWalletsInstalled = !isPhantom && !isSolflare;
 
+  const performSiwsLogin = useCallback(async (addr, providerType = 'adapter') => {
+    try {
+      const message = `Welcome to TipLnk!\n\nClick to sign in and accept the TipLnk Terms of Service. This request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
+      const messageBytes = new TextEncoder().encode(message);
+      let signatureStr;
+
+      if (providerType === 'google' || providerType === 'injected_sdk') {
+        const p = providerType === 'google' ? 'google' : 'injected';
+        const result = await phantomSdk.signMessage({ provider: p, message: messageBytes });
+        signatureStr = bs58.encode(result.signature);
+      } else {
+        if (!signMessage) throw new Error("Wallet does not support message signing");
+        const signatureBytes = await signMessage(messageBytes);
+        signatureStr = bs58.encode(signatureBytes);
+      }
+
+      await loginWithWallet(addr, signatureStr, message);
+      onConnected(addr);
+    } catch (err) {
+      console.error("SIWS error:", err);
+      setAuthError(err.message || 'Signature failed. Please try again.');
+    } finally {
+      setLoadingProvider(null);
+      setAdvancing(false);
+    }
+  }, [loginWithWallet, onConnected, signMessage]);
+
   // Handle connection events from Phantom SDK (crucial for social login callback)
   useEffect(() => {
     const handleConnect = async (connectEvent) => {
@@ -57,32 +85,31 @@ export default function WalletConnect({ onConnected }) {
       if (connectEvent.publicKey) {
         const addr = connectEvent.publicKey.toBase58();
         setLoadingProvider('phantom_link');
-        await loginWithWallet(addr);
-        setLoadingProvider(null);
-        onConnected(addr);
+        await performSiwsLogin(addr, 'injected_sdk');
       }
     };
 
     phantomSdk.on('connect', handleConnect);
     
     // Check if autoConnect already resolved a connection
-    if (phantomSdk.isConnected && phantomSdk.publicKey) {
+    if (phantomSdk.isConnected && phantomSdk.publicKey && !advancing) {
         const addr = phantomSdk.publicKey.toBase58();
-        loginWithWallet(addr).then(() => onConnected(addr));
+        setAdvancing(true);
+        performSiwsLogin(addr, 'injected_sdk');
     }
 
     return () => {
       phantomSdk.off('connect', handleConnect);
     };
-  }, [onConnected, loginWithWallet]);
+  }, [performSiwsLogin, advancing]);
 
   useEffect(() => {
     if (connected && publicKey && !advancing) {
       const addr = publicKey.toBase58();
       setAdvancing(true);
-      loginWithWallet(addr).then(() => onConnected(addr));
+      performSiwsLogin(addr, 'adapter');
     }
-  }, [connected, publicKey, onConnected, advancing, loginWithWallet]);
+  }, [connected, publicKey, advancing, performSiwsLogin]);
 
   // Countdown and Auto-redirection logic
   useEffect(() => {
@@ -110,13 +137,11 @@ export default function WalletConnect({ onConnected }) {
             
             if (result && result.publicKey) {
               const addr = result.publicKey.toBase58();
-              await loginWithWallet(addr);
-              onConnected(addr);
+              await performSiwsLogin(addr, 'google');
             }
         } catch (err) {
             console.error(`Phantom Google Login Error:`, err);
             setAuthError(err.message || 'Google wallet connection failed.');
-        } finally {
             setLoadingProvider(null);
         }
         return;
@@ -126,12 +151,11 @@ export default function WalletConnect({ onConnected }) {
       console.log(`Initiating Phantom injected connection...`);
       const result = await phantomSdk.connect({ provider: 'injected' });
       if (result && result.publicKey) {
-        onConnected(result.publicKey.toBase58());
+        await performSiwsLogin(result.publicKey.toBase58(), 'injected_sdk');
       }
     } catch (err) {
       console.error(`Phantom injected Login Error:`, err);
       setAuthError(err.message || 'Browser wallet connection failed.');
-    } finally {
       setLoadingProvider(null);
     }
   };

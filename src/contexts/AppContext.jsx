@@ -151,7 +151,7 @@ export function AppProvider({ children }) {
     if (!connected && !authUser) return 'guest';
 
     // Elite Admin Shortcut: Admins are always creators and skip onboarding
-    const isAdmin = authUser?.roles?.includes('admin') || authUser?.email === 'admin@tiplnk.me';
+    const isAdmin = authUser?.roles?.includes('admin');
     if (isAdmin || state.onboardingComplete) return 'creator';
 
     return 'user';

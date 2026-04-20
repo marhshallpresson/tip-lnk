@@ -40,16 +40,7 @@ export async function initSchema() {
 
   try {
     // ─── ELITE SAFETY GUARD ───
-    if (process.env.DANGEROUS_RESET_DB_FOR_MIGRATION === 'true') {
-        console.log('⚠️ DANGER: Brutal Reset active. Dropping production tables...');
-        await db.raw('DROP TABLE IF EXISTS "session" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "user" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "tips" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "indexer_state" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "user_roles" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "roles" CASCADE');
-        await db.raw('DROP TABLE IF EXISTS "email_verification_token" CASCADE');
-    }
+    // DANGEROUS_RESET_DB_FOR_MIGRATION logic removed for production safety.
 
     // 1. User Table
     if (!(await db.schema.hasTable('user'))) {
@@ -63,6 +54,7 @@ export async function initSchema() {
         table.string('discordHandle').unique();
         table.string('walletAddress').unique();
         table.string('solDomain').unique();
+        table.boolean('auto_convert_usdc').defaultTo(true); // Elite Default: Settle in Stables
         table.dateTime('emailVerifiedAt');
         table.text('profileData');
         table.dateTime('lastLoginAt');

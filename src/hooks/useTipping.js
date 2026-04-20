@@ -20,7 +20,45 @@ export function useTipping(creatorAddress) {
     { symbol: 'BONK', name: 'Bonk', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5 },
   ];
 
+  const [tokens, setTokens] = useState(SUPPORTED_TOKENS);
   const [selectedToken, setSelectedToken] = useState(SUPPORTED_TOKENS[0]);
+
+  // ─── Elite Balance Detection ───
+  useEffect(() => {
+    const detectBalances = async () => {
+        if (!publicKey || !connection) return;
+        try {
+            const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+                programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+            });
+
+            const balances = {};
+            tokenAccounts.value.forEach(acc => {
+                const info = acc.account.data.parsed.info;
+                balances[info.mint] = info.tokenAmount.uiAmount;
+            });
+
+            // Add SOL balance
+            const solBalance = await connection.getBalance(publicKey);
+            balances[SUPPORTED_TOKENS[1].mint] = solBalance / 1e9;
+
+            const updatedTokens = SUPPORTED_TOKENS.map(t => ({
+                ...t,
+                balance: balances[t.mint] || 0
+            })).sort((a, b) => (b.balance > 0 ? 1 : -1));
+
+            setTokens(updatedTokens);
+            // Auto-select first token with balance
+            const withBalance = updatedTokens.find(t => t.balance > 0);
+            if (withBalance) setSelectedToken(withBalance);
+            
+        } catch (e) {
+            console.warn('Balance detection failed:', e);
+        }
+    };
+    detectBalances();
+  }, [publicKey, connection]);
+
   const [amount, setAmount] = useState('');
   const [tipAmountUSDC, setTipAmountUSDC] = useState('0');
   const [feeAmountUSDC, setFeeAmountUSDC] = useState('0');

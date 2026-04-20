@@ -1,91 +1,46 @@
-import { ArrowLeft, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 
 export default function TermsOfService() {
-  const navigate = useNavigate();
-
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white pt-32 pb-20 px-4">
-      <div className="max-w-3xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-surface-400 hover:text-[#00d265] transition-colors mb-8 group"
-        >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          Back
-        </button>
+    <div className="max-w-4xl mx-auto px-6 py-24 text-surface-300 space-y-8 font-sans">
+      <h1 className="text-4xl font-black text-white mb-12">Terms of Service</h1>
+      
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-white uppercase tracking-widest text-brand-500">1. Acceptance of Terms</h2>
+        <p className="leading-relaxed">
+          By accessing or using TipLnk ("the Protocol"), you agree to be bound by these Terms of Service. If you do not agree, you must immediately cease all use of the Protocol.
+        </p>
+      </section>
 
-        <div className="glass-card p-8 md:p-12 border-[#00d265]/10">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-[#00d265]/10 flex items-center justify-center border border-[#00d265]/20">
-              <Shield size={24} className="text-[#00d265]" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-black">Terms of Service</h1>
-          </div>
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-white uppercase tracking-widest text-brand-500">2. Description of Service</h2>
+        <p className="leading-relaxed">
+          TipLnk is a decentralized tipping and content platform on the Solana blockchain. We provide infrastructure for creators to receive digital asset contributions from supporters.
+        </p>
+      </section>
 
-          <div className="space-y-8 text-surface-300 leading-relaxed font-light">
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">1. Acceptance of Terms</h2>
-              <p>
-                By accessing or using the TipLnk platform ("Service"), you agree to be bound by these Terms of Service. If you do not agree to all of these terms, do not use the Service.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">2. Description of Service</h2>
-              <p>
-                TipLnk provides a decentralized, non-custodial interface on the Solana blockchain that enables users to create creator profiles, register SNS subdomains, and facilitate payment tipping using third-party routing protocols (e.g., DFlow, Jupiter).
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">3. Non-Custodial Nature</h2>
-              <p>
-                TipLnk does not take custody of your digital assets. You are solely responsible for managing your private keys and securing your wallet. TipLnk never has access to your funds and cannot reverse or recover transactions.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">4. SNS Subdomains</h2>
-              <p>
-                The registration and use of SNS subdomains (e.g., name.tiplnk.sol) are subject to the rules and fees established by the Solana Name Service (SNS) and Bonfida. TipLnk facilitates the interface for registration but does not own or control the SNS infrastructure.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">5. Risks and Disclaimers</h2>
-              <p>
-                Blockchain transactions are irreversible. You acknowledge the inherent risks of using decentralized finance (DeFi) protocols, including but not limited to smart contract vulnerabilities, network congestion, and volatile asset prices. The Service is provided "AS IS" without warranties of any kind.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">6. Third-Party Integrations</h2>
-              <p>
-                TipLnk integrates with third-party services such as wallet providers, RPC nodes, and trading aggregators. Your use of these services is subject to their respective terms and conditions.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">7. Limitation of Liability</h2>
-              <p>
-                To the maximum extent permitted by law, TipLnk and its developers shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-bold text-white mb-4">8. Governing Law</h2>
-              <p>
-                These terms shall be governed by the laws of the jurisdiction in which the core development team operates, without regard to its conflict of law provisions.
-              </p>
-            </section>
-          </div>
-
-          <div className="mt-12 pt-8 border-t border-surface-800/50 text-center">
-            <p className="text-surface-500 text-sm">Last Updated: April 15, 2026</p>
-          </div>
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-white uppercase tracking-widest text-brand-500">3. Protocol Fees & Automation</h2>
+        <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-4">
+            <p className="font-bold text-white italic underline">3.1 Sender-Pays Platform Fee</p>
+            <p className="leading-relaxed">
+              TipLnk charges a platform fee on complex transactions (swaps) to cover routing and infrastructure costs. This fee is currently set at 100 BPS (1%) and is added to the sender's total authorization. Direct transfers of SOL or USDC incur a 0% platform fee.
+            </p>
+            <p className="font-bold text-white italic underline">3.2 Automated Stablecoin Settlement</p>
+            <p className="leading-relaxed">
+              Creators may enable "Auto-Settle to USDC." When enabled, the Protocol will automatically route any non-USDC contributions through decentralized exchanges (via DFlow/Jupiter) to convert them into stable USDC before final delivery to the creator's wallet.
+            </p>
         </div>
-      </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-white uppercase tracking-widest text-brand-500">4. Risk Disclosure</h2>
+        <p className="leading-relaxed">
+          Blockchain transactions are irreversible. TipLnk is not responsible for lost funds due to user error, wallet compromise, or smart contract vulnerabilities. You acknowledge that crypto-assets are volatile.
+        </p>
+      </section>
+
+      <p className="text-xs text-surface-500 pt-12">Last Updated: April 20, 2026</p>
     </div>
   );
 }

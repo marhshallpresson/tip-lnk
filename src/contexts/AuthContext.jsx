@@ -89,10 +89,10 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `${API_BASE}/api/auth/google/start?next=${encodeURIComponent(next)}`;
   };
 
-  const loginWithWallet = async (walletAddress) => {
+  const loginWithWallet = async (walletAddress, signature, message) => {
     try {
       setError(null);
-      const { data, ok } = await api.post('/auth/wallet-login', { walletAddress });
+      const { data, ok } = await api.post('/auth/wallet-login', { walletAddress, signature, message });
       if (ok && data.success) {
         if (data.auth?.accessToken) {
           api.setAccessToken(data.auth.accessToken);

@@ -23,9 +23,8 @@ const smtpTransport = () =>
         }
       : undefined,
     tls: {
-      // Professional Hardening: Allow connection to private servers 
-      // with self-signed or older certificates.
-      rejectUnauthorized: false
+      // Professional Hardening: Enforce certificate validation in production
+      rejectUnauthorized: process.env.NODE_ENV === 'production'
     }
   })
 

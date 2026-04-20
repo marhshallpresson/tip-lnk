@@ -17,6 +17,8 @@ import {
 import { resolveSessionTokenSecret, signSessionToken } from '../lib/session-token.js'
 import { ensureCsrfToken } from '../lib/csrf.js'
 import { rateLimit } from 'express-rate-limit'
+import nacl from 'tweetnacl'
+import bs58 from 'bs58'
 
 const router = Router()
 
@@ -500,25 +502,51 @@ router.post('/login', async (req: Request, res: Response) => {
 
 router.post('/wallet-login', async (req: Request, res: Response) => {
   try {
-    const walletAddress = req.body?.walletAddress;
-    if (!walletAddress) {
-      res.status(400).json({ success: false, error: 'Wallet address required' });
-      return;
+    const { walletAddress, signature, message } = req.body;
+
+    if (!walletAddress || !signature || !message) {
+      return res.status(400).json({ success: false, error: 'Wallet address, signature, and message are required.' });
     }
+
+    // Verify signature (SIWS - Sign-In With Solana)
+    try {
+      const signatureBytes = bs58.decode(signature);
+      const messageBytes = new TextEncoder().encode(message);
+      const publicKeyBytes = bs58.decode(walletAddress);
+
+      if (publicKeyBytes.length !== 32) {
+        return res.status(400).json({ success: false, error: 'Invalid public key format.' });
+      }
+
+      if (!nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes)) {
+        return res.status(401).json({ success: false, error: 'Invalid signature.' });
+      }
+    } catch (e) {
+        logError('siws_signature_verification_error', { error: serializeError(e), walletAddress });
+        return res.status(401).json({ success: false, error: 'Signature verification failed.' });
+    }
+    
+    // Future enhancement: Parse the message to prevent replay attacks by checking domain, nonce, and timestamp.
 
     // Advanced System: If user is currently logged in via email, link the wallet to their account
     try {
       const sessionUser = await getSessionUser(req);
       if (sessionUser) {
+        // Ensure another user doesn't already have this wallet
+        const existingWalletUser = await db('user').where({ walletAddress }).whereNot({ id: sessionUser.id }).first();
+        if (existingWalletUser) {
+          return res.status(409).json({ success: false, error: 'Wallet already linked to another account.' });
+        }
         await db('user').where({ id: sessionUser.id }).update({ walletAddress, updated_at: new Date() });
-        res.status(200).json({ success: true, user: { ...sessionUser, walletAddress } });
+        const updatedUser = await getSessionUser(req); // Re-fetch user to get merged data
+        res.status(200).json({ success: true, user: updatedUser });
         return;
       }
     } catch (sessionErr) {
       // Ignore session errors and proceed to auto-assign/login
     }
 
-    // Auto-assign: If logging in directly via Phantom Google, create or fetch wallet-based account
+    // Auto-assign: If logging in directly, create or fetch wallet-based account
     let user;
     try {
       user = await db('user').where({ walletAddress }).first();
@@ -534,6 +562,9 @@ router.post('/wallet-login', async (req: Request, res: Response) => {
           updated_at: new Date(),
         });
         user = await db('user').where({ id: userId }).first();
+        // Assign default 'user' role
+        const role = await db('roles').where({ name: 'user' }).first();
+        if (role) await db('user_roles').insert({ userId, roleId: role.id });
       }
     } catch (dbErr) {
       console.error('Elite DB Provisioning Error:', dbErr);
@@ -648,7 +679,8 @@ router.post('/discord/callback', async (req: Request, res: Response) => {
  */
 router.post('/admin/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  if (email !== 'admin@tiplnk.me') {
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL ;
+  if (email !== ADMIN_EMAIL) {
       return res.status(403).json({ success: false, error: 'Unauthorized administrative access.' });
   }
 
@@ -685,20 +717,34 @@ router.post('/admin/login', async (req: Request, res: Response) => {
  * Ensures the wallet (created or retrieved) is bonded to a TipLnk account.
  */
 router.post('/phantom-google/callback', async (req: Request, res: Response) => {
-  const { code, publicKey } = req.body;
+  const { walletAddress, signature, message } = req.body;
 
-  // Advanced provisioning: Even if we only have the publicKey (passed from the redirect)
-  // we treat this as a verified wallet login from the Phantom/Google bond.
-  const walletAddress = publicKey;
+  if (!walletAddress || !signature || !message) {
+    return res.status(400).json({ success: false, error: 'Wallet address, signature, and message are required for this action.' });
+  }
 
-  if (!walletAddress) {
-    return res.status(400).json({ success: false, error: 'No wallet address provided by Phantom.' });
+  // Elite Security: Verify wallet ownership using SIWS
+  try {
+    const signatureBytes = bs58.decode(signature);
+    const messageBytes = new TextEncoder().encode(message);
+    const publicKeyBytes = bs58.decode(walletAddress);
+
+    if (publicKeyBytes.length !== 32) {
+      return res.status(400).json({ success: false, error: 'Invalid wallet public key format.' });
+    }
+
+    if (!nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes)) {
+      return res.status(401).json({ success: false, error: 'Invalid wallet signature.' });
+    }
+  } catch (e) {
+    logError('phantom_google_siws_error', { error: serializeError(e), walletAddress });
+    return res.status(401).json({ success: false, error: 'Signature verification failed.' });
   }
 
   try {
     let user = await db('user').where({ walletAddress }).first();
 
-    // Auto-provision TipLnk Account for the retrieved/created wallet
+    // Auto-provision TipLnk Account for the verified wallet
     if (!user) {
       const userId = randomUUID();
       await db('user').insert({
@@ -711,6 +757,9 @@ router.post('/phantom-google/callback', async (req: Request, res: Response) => {
         updated_at: new Date(),
       });
       user = await db('user').where({ id: userId }).first();
+      // Assign default 'user' role
+      const role = await db('roles').where({ name: 'user' }).first();
+      if (role) await db('user_roles').insert({ userId, roleId: role.id });
     }
 
     await db('user').where({ id: user.id }).update({ lastLoginAt: new Date() });

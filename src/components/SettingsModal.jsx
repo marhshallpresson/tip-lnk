@@ -124,10 +124,41 @@ export default function SettingsModal({ isOpen, onClose }) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar">
           
-          {/* Avatar Section */}
+          {/* --- Cover & Avatar Section --- */}
           <section className="space-y-4">
-             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-surface-600">Your Avatar</h3>
-             <div className="p-6 bg-surface-900/40 border border-surface-800/60 rounded-2xl flex items-center gap-6">
+             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-surface-600">Brand Identity</h3>
+             
+             {/* Cover Image */}
+             <div className="p-1 bg-surface-900/40 border border-surface-800/60 rounded-2xl">
+                <label className="relative aspect-[16/5] w-full block rounded-xl overflow-hidden group cursor-pointer">
+                  {profile.coverImageUrl ? (
+                    <img src={profile.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-surface-900/50 flex items-center justify-center">
+                       <p className="text-xs text-surface-500 font-semibold">Click to upload cover image</p>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <p className="font-bold text-white">Change Cover</p>
+                  </div>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => updateProfile({ coverImageUrl: reader.result });
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+             </div>
+
+             {/* Avatar */}
+             <div className="p-6 bg-surface-900/20 border border-surface-800/60 rounded-2xl flex items-center gap-6">
                 <div className="relative group">
                   <div className="w-20 h-20 rounded-2xl bg-surface-800 flex items-center justify-center text-white text-2xl font-black shadow-lg border border-surface-700 overflow-hidden">
                     {profile.avatarUrl ? (
@@ -136,29 +167,27 @@ export default function SettingsModal({ isOpen, onClose }) {
                       getInitials(formData.displayName)
                     )}
                   </div>
+                   <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-2xl cursor-pointer">
+                      <p className="font-bold text-white text-xs">Change</p>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => updateProfile({ avatarUrl: reader.result });
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                  </label>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-surface-400 leading-relaxed mb-4">
-                    Set a custom picture or NFT as your profile avatar.
+                  <p className="text-sm text-surface-400 leading-relaxed">
+                    Set a custom picture or NFT as your profile avatar. Recommended: 256x256px.
                   </p>
-                  <label className="btn-secondary !px-4 !py-2 text-xs font-bold cursor-pointer inline-block">
-                    Change Avatar
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            updateProfile({ avatarUrl: reader.result, avatarType: 'uploaded' });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
                 </div>
              </div>
           </section>
@@ -222,6 +251,21 @@ export default function SettingsModal({ isOpen, onClose }) {
                 </div>
 
                 <div className="text-[10px] text-surface-600 italic px-2">Where you're based and adding a link to your personal website or portfolio.</div>
+
+                <div className="p-4 bg-surface-900/40 border border-surface-800/60 rounded-2xl flex items-center justify-between mt-4">
+                  <div>
+                    <h4 className="font-bold text-white text-sm">Auto-Settle to USDC</h4>
+                    <p className="text-xs text-surface-500 mt-1 leading-relaxed">
+                      Automatically convert any non-USDC tips (like SOL, BONK) into stable USDC to protect against volatility.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => updateProfile({ auto_convert_usdc: profile.auto_convert_usdc === false ? true : false })}
+                    className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${profile.auto_convert_usdc !== false ? 'bg-brand-500' : 'bg-surface-700'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform ${profile.auto_convert_usdc !== false ? 'translate-x-5' : 'translate-x-1'}`} />
+                  </button>
+                </div>
 
                 <button 
                   onClick={handleSave}

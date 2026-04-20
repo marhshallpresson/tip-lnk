@@ -127,15 +127,21 @@ router.get('/profile', async (req, res) => {
 router.post('/profile', async (req, res) => {
   const { walletAddress, profile } = req.body;
   try {
-    // Sync solDomain to its own column for indexing if it exists in profile
     const solDomain = profile.solDomain || (profile.profile && profile.profile.solDomain);
 
+    // ─── Elite Profile Sync ───
+    // Deconstruct and save core fields to root columns for indexing and search
     await db('user')
       .where({ walletAddress })
       .orWhere({ id: walletAddress })
       .update({ 
         profileData: JSON.stringify(profile),
         solDomain: solDomain || null,
+        twitterHandle: profile.twitterHandle || null,
+        discordHandle: profile.discordHandle || null,
+        name: profile.displayName || profile.name,
+        // The URLs are stored within the profileData JSON blob.
+        // No separate root columns needed unless we want to query them directly.
         updated_at: new Date()
       });
     res.json({ success: true });

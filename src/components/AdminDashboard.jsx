@@ -19,7 +19,7 @@ import {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@tiplnk.me');
+  const [email, setEmail] = useState();
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const isProd = import.meta.env.PROD;
-      const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+      const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
       
       // The dashboard stats still require the backend secret for data aggregation
       const adminSecret = 'tiplnk-elite-admin-2026-god-mode'; 
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
                     <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
                     <input 
                     type="email" 
-                    placeholder="admin@tiplnk.me" 
+                    placeholder="" 
                     className="input-field w-full !pl-12"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
