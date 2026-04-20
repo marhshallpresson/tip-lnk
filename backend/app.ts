@@ -87,7 +87,8 @@ app.use(helmet({
         "https://api.jup.ag",
         "https://price.jup.ag",
         "https://api.eitherway.ai",
-        "wss://*.solana.com"
+        "wss://*.solana.com",
+        "wss://*.phantom.app"
       ],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
