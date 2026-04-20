@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bonfida/spl-name-service": "^3.0.21",
     "@phantom/browser-sdk": "^2.0.1",
     "@solana-mobile/wallet-adapter-mobile": "^2.2.8",
     "@solana/wallet-adapter-base": "^0.9.27",

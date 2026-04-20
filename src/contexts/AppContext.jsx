@@ -199,6 +199,28 @@ export function AppProvider({ children }) {
     }
   }, [pubkeyStr]);
 
+  const claimHandle = useCallback(async (handle) => {
+    if (!publicKey || !signMessage) throw new Error('Wallet connection required for handle verification.');
+    
+    const message = `Claiming TipLnk handle: ${handle}`;
+    const encodedMessage = new TextEncoder().encode(message);
+    const signature = await signMessage(encodedMessage);
+    
+    // Dynamically import bs58 for efficiency
+    const bs58 = (await import('bs58')).default;
+    const signatureBase58 = bs58.encode(signature);
+
+    // Explicit sync for handle claim with verification
+    const result = await saveProfile(pubkeyStr, { ...state.profile, solDomain: handle }, signatureBase58, message);
+    
+    if (result.success) {
+        updateProfile({ solDomain: handle });
+        return { success: true };
+    } else {
+        throw new Error(result.error || 'Failed to verify handle claim.');
+    }
+  }, [publicKey, signMessage, pubkeyStr, state.profile, updateProfile]);
+
   const resetOnboarding = useCallback(() => {
     setState(defaultState);
     if (pubkeyStr) {
@@ -207,7 +229,7 @@ export function AppProvider({ children }) {
   }, [pubkeyStr]);
 
   return (
-    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, addTip, resetOnboarding, publicKey, connected }}>
+    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, claimHandle, addTip, resetOnboarding, publicKey, connected }}>
       {children}
     </AppContext.Provider>
   );

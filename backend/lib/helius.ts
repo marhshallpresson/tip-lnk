@@ -3,6 +3,11 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { db } from './db.js';
+import { 
+  getDomainKeySync, 
+  NameRegistryState, 
+} from '@bonfida/spl-name-service';
+import { Connection, PublicKey } from '@solana/web3.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
@@ -15,6 +20,22 @@ const getRpcUrl = () => {
     if (NETWORK === 'devnet') return 'https://api.devnet.solana.com';
     return `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 };
+
+/**
+ * Professional SNS Resolver
+ * Resolves a .sol domain to its owner public key on-chain.
+ */
+export async function resolveSnsDomain(domain: string) {
+  try {
+    const rpcUrl = getRpcUrl();
+    const connection = new Connection(rpcUrl, 'confirmed');
+    const { pubkey } = getDomainKeySync(domain.replace('.sol', ''));
+    const { registry } = await NameRegistryState.retrieve(connection, pubkey);
+    return registry.owner.toBase58();
+  } catch (err) {
+    return null;
+  }
+}
 
 const HELIUS_API_URL = `https://api.helius.xyz/v0`;
 

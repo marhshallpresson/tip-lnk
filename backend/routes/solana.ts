@@ -1,6 +1,6 @@
 import axios from 'axios';
 import express from 'express';
-import { backfillTransactions, getPriorityFeeEstimate, getAssetsByOwner, aggregateSocialMetrics } from '../lib/helius.js';
+import { backfillTransactions, getPriorityFeeEstimate, getAssetsByOwner, aggregateSocialMetrics, resolveSnsDomain } from '../lib/helius.js';
 import { db } from '../lib/db.js';
 import { randomUUID } from 'crypto';
 import { getSessionUser } from '../lib/session.js';
@@ -8,6 +8,33 @@ import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 
 const router = express.Router();
+
+/**
+ * Professional SNS Availability Check
+ * Verifies if a handle is already taken on TipLnk or on-chain via Bonfida.
+ */
+router.get('/sns/check/:domain', async (req, res) => {
+  const { domain } = req.params;
+  const fullDomain = domain.includes('.sol') ? domain : `${domain}.tiplnk.sol`;
+
+  try {
+    // 1. Check TipLnk Registry
+    const existing = await db('user').where({ solDomain: fullDomain }).first();
+    if (existing) {
+        return res.json({ available: false, reason: 'Already registered on TipLnk.' });
+    }
+
+    // 2. Check On-Chain SNS (via Bonfida)
+    const onChainOwner = await resolveSnsDomain(fullDomain);
+    if (onChainOwner) {
+        return res.json({ available: false, reason: 'Already registered on-chain.' });
+    }
+
+    res.json({ available: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to check domain availability.' });
+  }
+});
 
 /**
  * Elite Auth Guard
@@ -30,7 +57,7 @@ const requireAuth = async (req: express.Request, res: express.Response, next: ex
  * Professional DFlow Order Proxy
  * Bypasses CORS and allows for backend-side fee injection.
  */
-router.get('/dflow/quote', async (req: express.Request, res: express.Response) => {
+router.get('/dflow/quote', proxyLimiter, async (req: express.Request, res: express.Response) => {
   try {
     const params = new URLSearchParams(req.query as any);
     const DFLOW_API_KEY = process.env.VITE_DFLOW_API_KEY;
@@ -420,6 +447,18 @@ router.get('/diagnostic/check', async (req, res) => {
       jsonrpc: '2.0', id: 1, method: 'getHealth'
     });
     results.checks.helius = helius.data.result === 'ok' ? 'PASS' : 'FAIL';      
+  } catch (e) { results.checks.helius = 'FAIL'; }
+  try {
+    // 3. Check DB
+    const dbCheck = await db('user').first();
+    results.checks.database = 'PASS';
+  } catch (e) { results.checks.database = 'FAIL'; }
+
+  res.json(results);
+});
+
+export default router;
+ult === 'ok' ? 'PASS' : 'FAIL';      
   } catch (e) { results.checks.helius = 'FAIL'; }
   try {
     // 3. Check DB

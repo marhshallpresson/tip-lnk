@@ -22,11 +22,11 @@ async function safeFetch(url, options = {}) {
   }
 }
 
-export async function saveProfile(walletAddress, profileData) {
+export async function saveProfile(walletAddress, profileData, signature = null, message = null) {
   return await safeFetch(`${API_BASE_URL}/api/solana/profile`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ walletAddress, profile: profileData }),
+    body: JSON.stringify({ walletAddress, profile: profileData, signature, message }),
   });
 }
 
