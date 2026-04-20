@@ -117,6 +117,22 @@ router.get('/profile', async (req, res) => {
         }
 
         if (!user && wallet.includes('.sol')) {
+            // ─── Elite On-Chain Fallback ───
+            // If the handle is not in our database, check the Solana blockchain directly
+            const onChainWallet = await resolveSnsDomain(wallet);
+            if (onChainWallet) {
+                console.log(`🌐 SNS: Resolved ${wallet} to ${onChainWallet} on-chain.`);
+                // Auto-provision a temporary profile for external .sol owners
+                return res.json({ 
+                    success: true, 
+                    profile: { 
+                        displayName: wallet.replace('.sol', ''),
+                        solDomain: wallet,
+                        walletAddress: onChainWallet,
+                        isExternal: true
+                    } 
+                });
+            }
             user = await db('user').where({ solDomain: wallet }).first();
         }
         
