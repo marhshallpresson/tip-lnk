@@ -483,15 +483,3 @@ router.get('/diagnostic/check', async (req, res) => {
 });
 
 export default router;
-ult === 'ok' ? 'PASS' : 'FAIL';      
-  } catch (e) { results.checks.helius = 'FAIL'; }
-  try {
-    // 3. Check DB
-    const dbCheck = await db('user').first();
-    results.checks.database = 'PASS';
-  } catch (e) { results.checks.database = 'FAIL'; }
-
-  res.json(results);
-});
-
-export default router;
