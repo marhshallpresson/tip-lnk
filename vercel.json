@@ -10,13 +10,10 @@
     },
     "api": {
       "entrypoint": "api",
-      "routePrefix": "/api"
+      "routePrefix": "/api",
+      "framework": "node"
     }
   },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
   "headers": [
     {
       "source": "/(.*)",
