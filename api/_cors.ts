@@ -1,5 +1,5 @@
 const ALLOWED_ORIGINS = [
-  'https://tip-lnk.vercel.app',
+  ...(process.env.CORS_ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) || []),
   ...(process.env.NODE_ENV === 'development' ? ['http://localhost:5173'] : [])
 ]
 

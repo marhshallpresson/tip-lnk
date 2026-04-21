@@ -2,9 +2,13 @@ import { Request, Response } from 'express'
 import { randomUUID } from 'crypto'
 import { db } from './db.js'
 import { clearCsrfToken, issueCsrfToken } from './csrf.js'
-import {
-  extractBearerToken,
-} from './session-token.js'
+export const extractBearerToken = (req: Request): string | null => {
+  const authHeader = req.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7)
+  }
+  return null
+}
 import { signSessionToken, verifySessionToken } from './jwt.js'
 
 export const SESSION_COOKIE_NAME = 'sid'
