@@ -14,7 +14,13 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        if (warning.message.includes('contains an annotation that Rollup cannot interpret')) return;
+        warn(warning);
+      },
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3']
         return serverOnly.some(pkg => id.includes(pkg))

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import bs58 from 'bs58';
 import { useAuth } from './AuthContext';
 import { getProfile, saveProfile, logTip } from '../utils/database';
 
@@ -205,9 +206,6 @@ export function AppProvider({ children }) {
     const message = `Claiming TipLnk handle: ${handle}`;
     const encodedMessage = new TextEncoder().encode(message);
     const signature = await signMessage(encodedMessage);
-    
-    // Dynamically import bs58 for efficiency
-    const bs58 = (await import('bs58')).default;
     const signatureBase58 = bs58.encode(signature);
 
     // Explicit sync for handle claim with verification
