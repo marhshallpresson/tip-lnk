@@ -36,6 +36,13 @@ const config = process.env.DATABASE_URL
 
 const dbInstance = knex(config);
 
+// ─── ELITE AUTOMATION ───
+// Automatically ensure schema is provisioned on boot.
+// In serverless, this runs on cold start. In local dev, it runs once.
+initSchema().catch(err => {
+  console.error('❌ Failed to auto-initialize database schema:', err.message);
+});
+
 export const db = dbInstance;
 export { dbInstance as knex };
 export default dbInstance;
