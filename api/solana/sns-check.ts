@@ -11,7 +11,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const { domain } = req.query
-  if (typeof domain !== 'string') return res.status(400).json({ error: 'Domain required' })
+  if (typeof domain !== 'string' || domain.length === 0) {
+    return res.status(400).json({ error: 'Valid domain string required' })
+  }
+
+  // Task 1.2: Prevent parameter tampering and invalid characters
+  if (!/^[a-zA-Z0-9.-]{1,100}$/.test(domain)) {
+    return res.status(400).json({ error: 'Invalid domain format' })
+  }
 
   const fullDomain = domain.includes('.sol') ? domain : `${domain}.tiplnk.sol`
 

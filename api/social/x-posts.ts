@@ -12,6 +12,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { username } = req.query
   if (typeof username !== 'string') return res.status(400).json({ error: 'Username required' })
     
+  // Task 1.2: Strict username validation to prevent SSRF
+  if (!/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
+    return res.status(400).json({ error: 'Invalid Twitter username format' })
+  }
+
   const bearerToken = process.env.TWITTER_BEARER_TOKEN
 
   if (!bearerToken) {

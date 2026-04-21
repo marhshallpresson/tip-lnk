@@ -17,7 +17,7 @@ async function safeFetch(url, options = {}) {
     }
     return await response.json();
   } catch (error) {
-    console.warn(`Infrastructure Error at ${url}:`, error.message);
+    console.warn('Infrastructure Error:', error.message);
     return { error: true, message: error.message };
   }
 }

@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const adminSecret = req.headers['x-admin-secret']
-  if (!adminSecret || adminSecret !== process.env.ADMIN_SECRET) {
+  if (typeof adminSecret !== 'string' || adminSecret !== process.env.ADMIN_SECRET) {
       return res.status(403).json({ error: 'Unauthorized diagnostic access' })
   }
 

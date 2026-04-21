@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { applyCors } from "../_cors.js"
+import { rateLimit } from "../_ratelimit.js"
 import { db } from "../../backend/lib/db.js"
 import { hashPassword } from "../../backend/lib/password.js"
 import { createSession } from "../../backend/lib/session.js"
@@ -9,6 +10,7 @@ import { normalizeEmail, normalizeName, issueEmailVerification, patchResponse } 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!applyCors(req, res)) return
+  if (!rateLimit(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   patchResponse(res)

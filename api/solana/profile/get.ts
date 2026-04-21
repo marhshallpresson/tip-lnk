@@ -12,7 +12,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const wallet = req.query.wallet as string
-  if (!wallet) return res.status(400).json({ error: 'Wallet required' })
+  if (typeof wallet !== 'string' || wallet.length === 0) {
+    return res.status(400).json({ error: 'Valid wallet string required' })
+  }
 
   try {
     // Advanced Query: Search by walletAddress first, then googleSub, then solDomain, then id
