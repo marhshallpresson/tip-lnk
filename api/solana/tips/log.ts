@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { walletAddress, tip, isSent } = req.body
 
   // Elite Hardening: Ensure users can only log tips for THEIR wallet
-  if (walletAddress !== authUser.walletAddress) {
+  if (authUser.walletAddress && walletAddress !== authUser.walletAddress) {
       return res.status(403).json({ success: false, error: 'Unauthorized: Wallet mismatch' })
   }
 

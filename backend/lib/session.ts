@@ -1,26 +1,24 @@
 import { Request, Response } from 'express'
 import { randomUUID } from 'crypto'
 import { db } from './db.js'
-import { log } from './logger.js'
 import { clearCsrfToken, issueCsrfToken } from './csrf.js'
 import {
   extractBearerToken,
-  resolveSessionTokenSecret,
-  signSessionToken,
-  verifySessionToken,
 } from './session-token.js'
+import { signSessionToken, verifySessionToken } from './jwt.js'
 
 export const SESSION_COOKIE_NAME = 'sid'
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 export interface SessionUser {
-  id: string
-  email: string
-  name: string
-  roles: string[]
-  emailVerifiedAt: Date | null
-  sessionId: string
-  profileData?: any
+    id: string;
+    email: string | null;
+    name: string | null;
+    roles: string[];
+    emailVerifiedAt: Date | null;
+    sessionId: string;
+    walletAddress?: string;
+    profileData: any;
 }
 
 export type SessionCreateResult = {
@@ -64,12 +62,9 @@ export const createSession = async (
   res.cookie(SESSION_COOKIE_NAME, sessionId, opts)
   issueCsrfToken(req, res)
 
-  const secret = resolveSessionTokenSecret()
-  const nowSec = Math.floor(Date.now() / 1000)
-  const expSec = Math.floor(expiresAt.getTime() / 1000)
-  const accessToken = signSessionToken(
-    { v: 1, sid: sessionId, uid: userId, iat: nowSec, exp: expSec },
-    secret,
+  const accessToken = await signSessionToken(
+    { v: 1, sid: sessionId, uid: userId },
+    expiresAt,
   )
   
   return { sessionId, accessToken, expiresAt }
@@ -130,20 +125,12 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
 
   try {
     const session = await db('session').where({ id: sid }).first()
-    if (!session) {
-        console.warn(`🛡️ Auth: Session ${sid} not found in database.`);
-        return null;
-    }
-    
-    if (session.revokedAt) return null;
-    if (new Date(session.expiresAt).getTime() < Date.now()) {
-        console.warn(`🛡️ Auth: Session ${sid} has expired.`);
+    if (!session || session.revokedAt || new Date(session.expiresAt).getTime() < Date.now()) {
         return null;
     }
 
     const user = await db('user').where({ id: session.userId }).first()
     if (!user || user.deletedAt) {
-        console.warn(`🛡️ Auth: User linked to session ${sid} not found or deleted.`);
         return null;
     }
 
@@ -152,9 +139,7 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
     let profileData = {};
     try {
         profileData = typeof user.profileData === 'string' ? JSON.parse(user.profileData) : (user.profileData || {});
-    } catch (parseErr) {
-        console.error('🛡️ Auth: Profile data corruption detected for user', user.id);
-    }
+    } catch (parseErr) {}
 
     return {
         id: user.id,
@@ -163,14 +148,11 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
         roles,
         emailVerifiedAt: user.emailVerifiedAt,
         sessionId: sid,
+        walletAddress: user.walletAddress,
         profileData
     }
   } catch (e: any) {
       console.error('🛡️ Auth CRITICAL: getSessionUser crashed:', e.message);
-      return null
-  }
-}
-��️ Auth CRITICAL: getSessionUser crashed:', e.message);
       return null
   }
 }
