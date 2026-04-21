@@ -6,7 +6,7 @@
       "routePrefix": "/",
       "framework": "vite",
       "installCommand": "npm install --legacy-peer-deps",
-      "buildCommand": "npm run build"
+      "buildCommand": "npx vite build"
     },
     "api": {
       "entrypoint": "api",

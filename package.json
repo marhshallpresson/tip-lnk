@@ -1,5 +1,5 @@
 {
-  "name": "web3-creator-onboard",
+  "name": "tiplnk",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -42,7 +42,9 @@
     "openid-client": "6.3.3",
     "pg": "8.20.0",
     "postgres": "3.4.9",
-    "uuid": "11.0.3"
+    "uuid": "11.0.3",
+    "vite": "6.4.2",
+    "vite-plugin-node-polyfills": "0.23.0"
   },
   "devDependencies": {
     "@vercel/node": "5.7.12",
@@ -57,9 +59,7 @@
     "postcss": "8.4.49",
     "tailwindcss": "3.4.16",
     "tsx": "4.20.3",
-    "typescript": "5.8.3",
-    "vite": "6.4.2",
-    "vite-plugin-node-polyfills": "0.23.0"
+    "typescript": "5.8.3"
   },
   "overrides": {
     "protobufjs": "8.0.1",
