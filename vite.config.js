@@ -1,12 +1,12 @@
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import {nodePolyfills} from 'vite-plugin-node-polyfills';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      include: ['buffer', 'crypto', 'stream', 'util'],
+      include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder'],
     }),
   ],
   optimizeDeps: {
@@ -29,6 +29,7 @@ export default defineConfig({
     alias: {
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
+      string_decoder: 'string_decoder',
     },
   },
 });

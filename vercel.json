@@ -2,7 +2,7 @@
   "version": 2,
   "experimentalServices": {
     "web": {
-      "entrypoint": "vite.config.js",
+      "entrypoint": "index.html",
       "routePrefix": "/",
       "framework": "vite",
       "installCommand": "npm install --legacy-peer-deps",
