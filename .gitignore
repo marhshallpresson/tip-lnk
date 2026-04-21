@@ -1,0 +1,11 @@
+node_modules
+scripts
+.env
+skills
+PHASE2.md
+PHASE2_ELITE.md
+.qwen
+dist
+.gemini
+.vercel
+backend/final-mail-test.ts
