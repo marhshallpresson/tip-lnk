@@ -7,25 +7,34 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 /**
- * Elite Supabase (PostgreSQL) Integration
- * Hardened pooling and SSL for production-grade reliability.
+ * Elite Database Integration
+ * Hardened pooling for PostgreSQL (Supabase) and SQLite fallback for local dev.
  */
-const dbInstance = knex({
-  client: 'pg',
-  connection: {
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false } // Required for Supabase production
-  },
-  pool: {
-    min: 2,
-    max: 10,
-    // Professional Hardening: Detect and remove idle/broken connections
-    idleTimeoutMillis: 30000,
-    createTimeoutMillis: 30000,
-    acquireTimeoutMillis: 30000,
-    propagateCreateError: false
-  }
-});
+const config = process.env.DATABASE_URL 
+  ? {
+      client: 'pg',
+      connection: {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false } // Required for Supabase production
+      },
+      pool: {
+        min: 2,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        createTimeoutMillis: 30000,
+        acquireTimeoutMillis: 30000,
+        propagateCreateError: false
+      }
+    }
+  : {
+      client: 'sqlite3',
+      connection: {
+        filename: path.join(__dirname, '../../dev.db')
+      },
+      useNullAsDefault: true
+    };
+
+const dbInstance = knex(config);
 
 export const db = dbInstance;
 export { dbInstance as knex };

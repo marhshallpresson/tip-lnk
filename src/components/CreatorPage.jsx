@@ -139,7 +139,7 @@ const TabContent = ({ activeTab, profile }) => {
       setLoadingPosts(true);
       try {
         const isProd = import.meta.env.PROD;
-        const API_BASE = isProd ? window.location.origin : 'http://localhost:3005';
+        const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || '');
         const res = await fetch(`${API_BASE}/api/social/x-posts/${profile.twitterHandle}`);
         if (res.ok) {
           const data = await res.json();

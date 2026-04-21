@@ -2,7 +2,6 @@ node_modules
 scripts
 .env
 skills
-package-lock.json
 PHASE2.md
 PHASE2_ELITE.md
 .qwen
