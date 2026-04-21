@@ -93,6 +93,18 @@ const CreatorHeader = ({ profile, supporterCount }) => {
           <div className="flex-1 pb-2">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">{profile.solDomain || displayName}</h1>
+              {profile.walletAddress && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20" title="On-chain identity verified">
+                  <ShieldCheck size={12} className="text-emerald-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Verified</span>
+                </div>
+              )}
+              {profile.twitterHandle && (
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20" title="Social identity confirmed">
+                  <Twitter size={10} className="text-sky-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-sky-500">Linked</span>
+                </div>
+              )}
             </div>
             <p className="text-white/40 font-medium text-sm mt-1">{supporterCount} Supporters</p>
           </div>

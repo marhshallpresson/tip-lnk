@@ -323,7 +323,11 @@ export default function TipWidget({ fixedRecipient = null }) {
              </div>
              <div className="flex items-center justify-between text-xs">
                 <span className="text-white/60">MEV Protection</span>
-                <span className="text-emerald-500 font-bold italic uppercase text-[9px]">Enabled</span>
+                <span className="text-emerald-500 font-bold italic uppercase text-[9px]">Fortified</span>
+             </div>
+             <div className="flex items-center justify-between text-xs">
+                <span className="text-white/60">Slippage Guard</span>
+                <span className="text-sky-500 font-bold italic uppercase text-[9px]">Active (1.5% Cap)</span>
              </div>
           </div>
         )}
