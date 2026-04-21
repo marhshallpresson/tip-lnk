@@ -13,6 +13,7 @@ export default defineConfig({
     exclude: ['@solana/web3.js', 'tweetnacl']
   },
   build: {
+    target: 'esnext',
     rollupOptions: {
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3']

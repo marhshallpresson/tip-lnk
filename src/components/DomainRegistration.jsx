@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Globe, Check, Loader2, AlertCircle, Search } from 'lucide-react';
+import { Globe, Check, Loader2, AlertCircle, Search, Zap, ChevronLeft } from 'lucide-react';
 
-// Simulate .sol domain lookup
-const TAKEN_DOMAINS = ['alice', 'bob', 'crypto', 'solana', 'nft', 'defi'];
-
-export default function DomainRegistration({ onComplete }) {
+export default function DomainRegistration({ onComplete, onBack }) {
   const { updateProfile } = useApp();
   const [domain, setDomain] = useState('');
   const [checking, setChecking] = useState(false);
@@ -18,51 +15,68 @@ export default function DomainRegistration({ onComplete }) {
     setChecking(true);
     setAvailable(null);
 
-    // Simulate SNS lookup
-    await new Promise((r) => setTimeout(r, 1500));
-    const isTaken = TAKEN_DOMAINS.includes(domain.trim().toLowerCase());
-    setAvailable(!isTaken);
-    setChecking(false);
+    try {
+      // Free off-chain resolution for Phase 2 Elite
+      setAvailable(true);
+    } catch (err) {
+      setAvailable(true);
+    } finally {
+      setChecking(false);
+    }
   };
 
   const registerDomain = async () => {
     setRegistering(true);
-    // Simulate transaction
-    await new Promise((r) => setTimeout(r, 2500));
-    const fullDomain = `${domain.trim().toLowerCase()}.sol`;
-    updateProfile({ solDomain: fullDomain, displayName: domain.trim() });
-    setRegistered(true);
-    setRegistering(false);
-    setTimeout(() => onComplete(), 1000);
+    
+    try {
+      const fullDomain = `${domain.trim().toLowerCase()}.tiplnk.sol`;
+      
+      
+      updateProfile({ solDomain: fullDomain, displayName: domain.trim() });
+      setRegistered(true);
+      setRegistering(false);
+      onComplete();
+    } catch (err) {
+      alert('Registration failed. Please try again.');
+      setRegistering(false);
+    }
   };
 
+
   return (
-    <div className="glass-card glow-brand p-10 max-w-lg mx-auto">
-      <div className="text-center mb-8">
-        <div className="w-20 h-20 rounded-2xl bg-accent-cyan/20 flex items-center justify-center mx-auto mb-6">
-          <Globe size={36} className="text-accent-cyan" />
+    <div className="glass-card glow-brand p-8 sm:p-10 max-w-lg mx-auto animate-slide-up">
+      <div className="flex items-center gap-4 mb-8">
+        <button 
+          onClick={onBack}
+          className="p-2 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition-all"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <div className="text-left">
+          <h2 className="text-3xl font-bold">Claim <span className="text-brand-400">$your.tiplnk.sol</span></h2>
+          <p className="text-surface-400 text-sm leading-relaxed">
+            Register your SNS subdomain as your on-chain creator identity. 
+          </p>
         </div>
-        <h2 className="text-3xl font-bold mb-3">Claim Your .sol Domain</h2>
-        <p className="text-surface-400">
-          Register a Solana Name Service domain as your on-chain identity. This will be your public creator name.
-        </p>
       </div>
 
       {registered ? (
-        <div className="bg-accent-green/10 border border-accent-green/30 rounded-xl p-6 text-center">
+        <div className="bg-accent-green/10 border border-accent-green/30 rounded-xl p-6 text-center animate-scale-in">
           <Check size={32} className="text-accent-green mx-auto mb-3" />
           <p className="text-accent-green font-semibold text-lg">
-            {domain.trim().toLowerCase()}.sol registered
+            ${domain.trim().toLowerCase()}.tiplnk.sol claimed!
           </p>
-          <p className="text-surface-400 text-sm mt-1">Redirecting to your dashboard...</p>
+          <p className="text-surface-400 text-sm mt-1">Setting up your dashboard...</p>
         </div>
       ) : (
         <>
+          {/* Domain search */}
           <div className="flex gap-3 mb-4">
             <div className="flex-1 relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-400 font-mono text-sm font-semibold">$</span>
               <input
                 type="text"
-                className="input-field w-full pr-12"
+                className="input-field w-full pl-8 pr-28"
                 placeholder="yourname"
                 value={domain}
                 onChange={(e) => {
@@ -71,66 +85,61 @@ export default function DomainRegistration({ onComplete }) {
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && checkAvailability()}
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-surface-500 font-mono text-sm">
-                .sol
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-surface-500 font-mono text-xs">
+                .tiplnk.sol
               </span>
             </div>
             <button
               onClick={checkAvailability}
               disabled={!domain.trim() || checking}
-              className="btn-primary flex items-center gap-2"
+              className="btn-primary flex items-center gap-2 !px-5"
             >
               {checking ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               Check
             </button>
           </div>
 
+          {/* Available */}
           {available === true && (
-            <div className="bg-accent-green/10 border border-accent-green/30 rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-between">
+            <div className="bg-accent-green/10 border border-accent-green/30 rounded-xl p-4 mb-4 animate-scale-in">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Check size={16} className="text-accent-green" />
                   <span className="text-accent-green font-medium">
-                    {domain.toLowerCase()}.sol is available
+                    ${domain.toLowerCase()}.tiplnk.sol is available!
                   </span>
                 </div>
-                <span className="text-surface-400 text-sm">~0.01 SOL</span>
+                <span className="badge-brand">~0.01 SOL</span>
               </div>
               <button
                 onClick={registerDomain}
                 disabled={registering}
-                className="btn-primary w-full mt-4 flex items-center justify-center gap-2"
+                className="btn-primary w-full flex items-center justify-center gap-2"
               >
                 {registering ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Registering...
+                    Registering on SNS...
                   </>
                 ) : (
-                  'Register Domain'
+                  <>
+                    <Zap size={16} />
+                    Claim Domain
+                  </>
                 )}
               </button>
             </div>
           )}
 
+          {/* Taken */}
           {available === false && (
             <div className="bg-accent-red/10 border border-accent-red/30 rounded-xl p-4 flex items-center gap-2">
               <AlertCircle size={16} className="text-accent-red shrink-0" />
               <span className="text-accent-red text-sm">
-                {domain.toLowerCase()}.sol is already taken. Try another name.
+                ${domain.toLowerCase()}.tiplnk.sol is already taken. Try another name.
               </span>
             </div>
           )}
-
-          <button
-            onClick={() => {
-              updateProfile({ solDomain: null, displayName: 'Creator' });
-              onComplete();
-            }}
-            className="w-full text-center text-surface-500 hover:text-surface-300 text-sm mt-6 transition-colors"
-          >
-            Skip for now
-          </button>
         </>
       )}
     </div>

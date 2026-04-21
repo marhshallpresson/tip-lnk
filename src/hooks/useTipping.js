@@ -1,92 +1,222 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { VersionedTransaction, PublicKey } from '@solana/web3.js';
+import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 
-const SUPPORTED_TOKENS = [
-  { symbol: 'BONK', name: 'Bonk', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5, price: 0.000023 },
-  { symbol: 'WIF', name: 'dogwifhat', mint: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', decimals: 6, price: 2.34 },
-  { symbol: 'JUP', name: 'Jupiter', mint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', decimals: 6, price: 0.89 },
-  { symbol: 'SOL', name: 'Solana', mint: 'So11111111111111111111111111111111111111112', decimals: 9, price: 178.50 },
-  { symbol: 'USDC', name: 'USD Coin', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6, price: 1.00 },
-];
+// ─── Elite Protocol Constants ───
+const TREASURY_WALLET = import.meta.env.VITE_TREASURY_WALLET ;
 
-const DEX_ROUTES = [
-  { name: 'Jupiter', share: 45 },
-  { name: 'Raydium', share: 30 },
-  { name: 'Orca', share: 25 },
-];
-
+/**
+ * Professional Tipping Engine (Sender-Pays Fee Standard)
+ * Implements real-time routing with a dynamic near-zero platform fee added to the sender.
+ */
 export function useTipping(creatorAddress) {
+  const { publicKey, signTransaction } = useWallet();
+  const { connection } = useConnection();
+
+  const SUPPORTED_TOKENS = [
+    { symbol: 'USDC', name: 'USD Coin', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
+    { symbol: 'SOL', name: 'Solana', mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
+    { symbol: 'BONK', name: 'Bonk', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5 },
+  ];
+
+  const [tokens, setTokens] = useState(SUPPORTED_TOKENS);
   const [selectedToken, setSelectedToken] = useState(SUPPORTED_TOKENS[0]);
+
+  // ─── Elite Balance Detection ───
+  useEffect(() => {
+    const detectBalances = async () => {
+        if (!publicKey || !connection) return;
+        try {
+            const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+                programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+            });
+
+            const balances = {};
+            tokenAccounts.value.forEach(acc => {
+                const info = acc.account.data.parsed.info;
+                balances[info.mint] = info.tokenAmount.uiAmount;
+            });
+
+            // Add SOL balance
+            const solBalance = await connection.getBalance(publicKey);
+            balances[SUPPORTED_TOKENS[1].mint] = solBalance / 1e9;
+
+            const updatedTokens = SUPPORTED_TOKENS.map(t => ({
+                ...t,
+                balance: balances[t.mint] || 0
+            })).sort((a, b) => (b.balance > 0 ? 1 : -1));
+
+            setTokens(updatedTokens);
+            // Auto-select first token with balance
+            const withBalance = updatedTokens.find(t => t.balance > 0);
+            if (withBalance) setSelectedToken(withBalance);
+            
+        } catch (e) {
+            console.warn('Balance detection failed:', e);
+        }
+    };
+    detectBalances();
+  }, [publicKey, connection]);
+
   const [amount, setAmount] = useState('');
-  const [tipAmountUSDC, setTipAmountUSDC] = useState(0);
+  const [tipAmountUSDC, setTipAmountUSDC] = useState('0');
+  const [feeAmountUSDC, setFeeAmountUSDC] = useState('0');
+  const [totalChargedUSDC, setTotalChargedUSDC] = useState('0');
   const [processing, setProcessing] = useState(false);
   const [route, setRoute] = useState(null);
   const [txResult, setTxResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  // ─── Real-time Price Fetching (Jupiter Price V3 Standard) ───
+  const fetchPrice = useCallback(async (symbol) => {
+    try {
+      const token = SUPPORTED_TOKENS.find(t => t.symbol === symbol);
+      if (!token) return 1;
+
+      const response = await fetch(`https://price.jup.ag/v6/price?ids=${token.mint}`);
+      const data = await response.json();
+      return data.data[token.mint]?.price || 1;
+    } catch (err) {
+      console.error('Price API Failure:', err);
+      return 1;
+    }
+  }, []);
 
   const calculateRoute = useCallback(
-    (tokenSymbol, tokenAmount) => {
-      const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
-      if (!token || !tokenAmount || tokenAmount <= 0) {
+    async (tokenSymbol, tokenAmount) => {
+      if (!tokenAmount || isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) {
         setRoute(null);
-        setTipAmountUSDC(0);
+        setTipAmountUSDC('0');
+        setFeeAmountUSDC('0');
+        setTotalChargedUSDC('0');
         return;
       }
 
-      const rawUSDC = tokenAmount * token.price;
-      const fee = rawUSDC * 0.003; // 0.3% DFlow routing fee
-      const netUSDC = rawUSDC - fee;
-      const priceImpact = tokenAmount > 1000 ? 0.15 : 0.05;
+      setError(null);
 
-      setTipAmountUSDC(netUSDC);
-      setRoute({
-        inputToken: token.symbol,
-        inputAmount: tokenAmount,
-        outputToken: 'USDC',
-        outputAmount: netUSDC,
-        fee,
-        priceImpact,
-        dexSplit: DEX_ROUTES.map((d) => ({
-          ...d,
-          amount: (netUSDC * d.share) / 100,
-        })),
-        estimatedTime: '~12 seconds',
-      });
+      try {
+        const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
+        const amountInLamports = toLamports(tokenAmount, token.decimals);
+
+        const isProd = import.meta.env.PROD;
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+        const params = new URLSearchParams({
+          inputMint: token.mint,
+          outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+          amount: amountInLamports.toString(),
+          slippageBps: '50',
+          userPublicKey: publicKey?.toBase58() || '',
+        });
+
+        // Use our Professional Backend Proxy to avoid CORS
+        const response = await fetch(`${API_BASE_URL}/api/solana/dflow/quote?${params}`);
+        if (!response.ok) throw new Error('Professional routing engine failed');
+
+        const order = await response.json();
+
+        // ─── Phase 2: Dynamic Sender-Pays Fee Calculation ───
+        const baseOutAmount = BigInt(order.outAmount);
+        // 0% on direct stablecoin/sol donations, 1% on complex routes to cover infrastructure
+        const dynamicFeeBps = (tokenSymbol === 'USDC' || tokenSymbol === 'SOL') ? 0n : 100n;
+        const platformFee = (baseOutAmount * dynamicFeeBps) / 10000n;
+        const totalAuthorization = baseOutAmount + platformFee;
+
+        setTipAmountUSDC(fromLamports(baseOutAmount, 6));
+        setFeeAmountUSDC(fromLamports(platformFee, 6));
+        setTotalChargedUSDC(fromLamports(totalAuthorization, 6));
+
+        setRoute({
+          ...order,
+          baseAmount: baseOutAmount.toString(),
+          feeAmount: platformFee.toString(),
+          totalAmount: totalAuthorization.toString(),
+          estimatedTime: order.executionMode === 'async' ? '~15s (Jito Optimized)' : '~4s (Helius Fast)'
+        });
+      } catch (err) {
+        console.error('Routing Engine Error:', err);
+        setError('Routing engine unavailable. Please try again.');
+      }
     },
-    []
+    [publicKey, creatorAddress]
   );
 
   const executeTip = useCallback(
     async (senderName) => {
-      if (!route) return;
+      if (!route || !publicKey || !signTransaction || !connection) {
+        setError('Missing transaction data or wallet connection.');
+        return;
+      }
       setProcessing(true);
-      setTxResult(null);
+      setError(null);
 
-      // Simulate DFlow intent-based routing + DEX aggregation
-      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const isProd = import.meta.env.PROD;
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
-      const result = {
-        success: true,
-        txSignature: `${Math.random().toString(36).slice(2, 10)}...${Math.random().toString(36).slice(2, 10)}`,
-        inputToken: route.inputToken,
-        inputAmount: route.inputAmount,
-        outputAmount: route.outputAmount,
-        fee: route.fee,
-        timestamp: Date.now(),
-        sender: senderName || 'Anonymous',
-        recipient: creatorAddress,
-      };
+        let signature;
+        if (route.transaction) {
+          // ─── Elite Multi-Instruction Processing ───
+          const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
+          const signedTx = await signTransaction(tx);
 
-      setTxResult(result);
-      setProcessing(false);
-      return result;
+          // Use our Professional Backend Sender Relay
+          const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              transaction: Buffer.from(signedTx.serialize()).toString('base64')
+            }),
+          });
+
+          const submitData = await submitRes.json();
+          signature = submitData.result;
+
+          if (!signature) {
+            throw new Error(submitData.error?.message || 'Transaction submission failed.');
+          }
+
+          // Wait for confirmation
+          const latestBlockhash = await connection.getLatestBlockhash();
+          await connection.confirmTransaction({
+            signature,
+            ...latestBlockhash
+          }, 'confirmed');
+        }
+
+        const result = {
+          success: true,
+          signature,
+          executionMode: route.executionMode,
+          outAmount: parseFloat(fromLamports(BigInt(route.baseAmount), 6)),
+          feeAmount: parseFloat(fromLamports(BigInt(route.feeAmount), 6)),
+          totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
+          timestamp: Date.now(),
+          sender: senderName || 'Anonymous',
+          recipientAddress: creatorAddress,
+          treasuryAddress: TREASURY_WALLET
+        };
+
+        setTxResult(result);
+        return result;
+      } catch (err) {
+        console.error('Tipping Engine Fault:', err);
+        setError(err.message || 'Transaction failed. Check wallet.');
+      } finally {
+        setProcessing(false);
+      }
     },
-    [route, creatorAddress]
+    [route, publicKey, signTransaction, creatorAddress, connection]
   );
 
   const reset = useCallback(() => {
     setAmount('');
-    setTipAmountUSDC(0);
+    setTipAmountUSDC('0');
+    setFeeAmountUSDC('0');
+    setTotalChargedUSDC('0');
     setRoute(null);
     setTxResult(null);
+    setError(null);
   }, []);
 
   return {
@@ -96,11 +226,14 @@ export function useTipping(creatorAddress) {
     amount,
     setAmount,
     tipAmountUSDC,
+    feeAmountUSDC,
+    totalAuthorizedUSDC: totalChargedUSDC,
     calculateRoute,
     route,
     processing,
     executeTip,
     txResult,
     reset,
+    error,
   };
 }

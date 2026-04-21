@@ -1,9 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.eitherway.ai';
+const isProd = import.meta.env.PROD;
+// Ensure we always have a full URL for the Solana Connection constructor
+const API_BASE_URL = isProd
+  ? window.location.origin
+  : (import.meta.env.VITE_API_BASE_URL);
 
 export const QUICKNODE_SOLANA_RPC = `${API_BASE_URL}/api/quicknode/rpc/solana`;
 
 export const PROXY_API = (url) =>
-  `${API_BASE_URL}/api/proxy-api?url=${encodeURIComponent(url)}`;
+  `${API_BASE_URL}/api/proxy?url=${encodeURIComponent(url)}`;
 
 export const PROXY_CDN = (url) =>
   `${API_BASE_URL}/api/proxy-cdn?url=${encodeURIComponent(url)}`;
