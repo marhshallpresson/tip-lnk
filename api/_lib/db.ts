@@ -45,7 +45,6 @@ export default dbInstance;
 // In serverless, this runs on cold start. In local dev, it runs once.
 // We call this after 'db' is exported to avoid "Cannot access 'db' before initialization"
 initSchema().catch(err => {
-  console.error('❌ Failed to auto-initialize database schema:', err.message);
 });
 
 /**
@@ -53,7 +52,6 @@ initSchema().catch(err => {
  * Automatically creates and hardens tables on your Supabase instance.
  */
 export async function initSchema() {
-  console.log('🚀 Synchronizing schema with Supabase...');
 
   try {
     // ─── ELITE SAFETY GUARD ───
@@ -78,7 +76,6 @@ export async function initSchema() {
         table.dateTime('deletedAt');
         table.timestamps(true, true);
       });
-      console.log('✨ User table provisioned.');
     }
 
     // 2. Tips Table
@@ -102,7 +99,6 @@ export async function initSchema() {
         table.index(['recipient']);
         table.index(['timestamp']);
       });
-      console.log('✨ Tips table provisioned.');
     }
 
     // 3. Indexer State
@@ -112,7 +108,6 @@ export async function initSchema() {
         table.bigInteger('lastIndexedSlot').defaultTo(0);
         table.dateTime('updated_at').defaultTo(db.fn.now());
       });
-      console.log('✨ Indexer state table provisioned.');
     }
 
     // 4. Roles Table
@@ -135,7 +130,6 @@ export async function initSchema() {
         table.string('roleId').references('id').inTable('roles').onDelete('CASCADE');
         table.primary(['userId', 'roleId']);
       });
-      console.log('✨ User roles table provisioned.');
     }
 
     // 6. Session Table
@@ -149,7 +143,6 @@ export async function initSchema() {
         table.dateTime('revokedAt');
         table.timestamps(true, true);
       });
-      console.log('✨ Session table provisioned.');
     }
 
     // 7. Email Verification Tokens
@@ -162,11 +155,9 @@ export async function initSchema() {
         table.dateTime('expiresAt').notNullable();
         table.timestamps(true, true);
       });
-      console.log('✨ Email verification table provisioned.');
     }
 
     // ─── ELITE SECURITY HARDENING ───
-    console.log('🛡️ Hardening database with Row Level Security Policies...');
     const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token'];
     for (const table of tables) {
         try {
@@ -174,17 +165,13 @@ export async function initSchema() {
         } catch (e) { /* Already enabled */ }
     }
 
-    console.log('✅ Supabase Schema Sync & Hardening Complete.');
-
     // ─── ELITE DATA CLEANUP ───
     // Remove legacy dummy emails and prompt users for real addresses.
     const cleanupCount = await db('user')
       .where('email', 'like', '%@phantom.local')
       .update({ email: null });
     if (cleanupCount > 0) {
-      console.log(`🧹 Cleaned up ${cleanupCount} legacy dummy emails.`);
     }
   } catch (err) {
-    console.error('❌ Supabase Sync Failed:', err);
   }
 }
