@@ -1,0 +1,175 @@
+# npm audit report
+
+bigint-buffer  *
+Severity: high
+bigint-buffer Vulnerable to Buffer Overflow via toBigIntLE() Function - https://github.com/advisories/GHSA-3gc7-fjrx-p6mg
+fix available via `npm audit fix --force`
+Will install @bonfida/spl-name-service@0.1.25, which is a breaking change
+node_modules/bigint-buffer
+  @solana/buffer-layout-utils  *
+  Depends on vulnerable versions of bigint-buffer
+  node_modules/@solana/buffer-layout-utils
+    @solana/spl-token  >=0.2.0-alpha.0
+    Depends on vulnerable versions of @solana/buffer-layout-utils
+    node_modules/@solana/spl-token
+      @bonfida/spl-name-service  >=0.1.26
+      Depends on vulnerable versions of @solana/spl-token
+      node_modules/@bonfida/spl-name-service
+  @solana/web3.js  1.43.1 - 1.98.0
+  Depends on vulnerable versions of bigint-buffer
+  node_modules/@solana/web3.js
+
+elliptic  *
+Elliptic Uses a Cryptographic Primitive with a Risky Implementation - https://github.com/advisories/GHSA-848j-6mx2-7j84
+fix available via `npm audit fix --force`
+Will install vite-plugin-node-polyfills@0.2.0, which is a breaking change
+node_modules/elliptic
+  @toruslabs/eccrypto  <=6.2.0
+  Depends on vulnerable versions of elliptic
+  node_modules/@toruslabs/eccrypto
+    @toruslabs/broadcast-channel  <=12.0.0
+    Depends on vulnerable versions of @toruslabs/eccrypto
+    Depends on vulnerable versions of @toruslabs/metadata-helpers
+    node_modules/@toruslabs/broadcast-channel
+      @toruslabs/base-controllers  1.6.16 - 8.17.0
+      Depends on vulnerable versions of @toruslabs/broadcast-channel
+      node_modules/@toruslabs/base-controllers
+        @toruslabs/solana-embed  0.2.0 - 2.1.0
+        Depends on vulnerable versions of @toruslabs/base-controllers
+        node_modules/@toruslabs/solana-embed
+  @toruslabs/metadata-helpers  <=7.0.2
+  Depends on vulnerable versions of @toruslabs/eccrypto
+  Depends on vulnerable versions of elliptic
+  node_modules/@toruslabs/metadata-helpers
+  @walletconnect/utils  2.15.0-canary.1 - 2.19.1
+  Depends on vulnerable versions of elliptic
+  node_modules/@reown/appkit-controllers/node_modules/@walletconnect/utils
+  node_modules/@reown/appkit-utils/node_modules/@walletconnect/utils
+  node_modules/@reown/appkit/node_modules/@walletconnect/utils
+  node_modules/@walletconnect/utils
+    @walletconnect/core  2.15.0-canary-1b3068 - 2.19.1
+    Depends on vulnerable versions of @walletconnect/utils
+    node_modules/@reown/appkit-controllers/node_modules/@walletconnect/core
+    node_modules/@reown/appkit-utils/node_modules/@walletconnect/core
+    node_modules/@reown/appkit/node_modules/@walletconnect/core
+    node_modules/@walletconnect/core
+    @walletconnect/sign-client  2.15.0-canary-1b3068 - 2.19.1
+    Depends on vulnerable versions of @walletconnect/core
+    Depends on vulnerable versions of @walletconnect/utils
+    node_modules/@reown/appkit-controllers/node_modules/@walletconnect/sign-client
+    node_modules/@reown/appkit-utils/node_modules/@walletconnect/sign-client
+    node_modules/@reown/appkit/node_modules/@walletconnect/sign-client
+    node_modules/@walletconnect/sign-client
+    @walletconnect/solana-adapter  >=0.0.6
+    Depends on vulnerable versions of @reown/appkit
+    Depends on vulnerable versions of @walletconnect/universal-provider
+    Depends on vulnerable versions of @walletconnect/utils
+    node_modules/@walletconnect/solana-adapter
+      @solana/wallet-adapter-walletconnect  >=0.1.18
+      Depends on vulnerable versions of @walletconnect/solana-adapter
+      node_modules/@solana/wallet-adapter-walletconnect
+        @solana/wallet-adapter-wallets  >=0.16.2
+        Depends on vulnerable versions of @solana/wallet-adapter-torus
+        Depends on vulnerable versions of @solana/wallet-adapter-trezor
+        Depends on vulnerable versions of @solana/wallet-adapter-walletconnect
+        node_modules/@solana/wallet-adapter-wallets
+    @walletconnect/universal-provider  2.15.0-canary-1b3068 - 2.19.1
+    Depends on vulnerable versions of @walletconnect/sign-client
+    Depends on vulnerable versions of @walletconnect/utils
+    node_modules/@reown/appkit-controllers/node_modules/@walletconnect/universal-provider
+    node_modules/@reown/appkit-utils/node_modules/@walletconnect/universal-provider
+    node_modules/@reown/appkit/node_modules/@walletconnect/universal-provider
+    node_modules/@walletconnect/universal-provider
+      @reown/appkit  <=1.7.3-fd380eb099c043db8c203f943692af94e8b00f5b.0
+      Depends on vulnerable versions of @reown/appkit-controllers
+      Depends on vulnerable versions of @reown/appkit-scaffold-ui
+      Depends on vulnerable versions of @reown/appkit-ui
+      Depends on vulnerable versions of @reown/appkit-utils
+      Depends on vulnerable versions of @walletconnect/universal-provider
+      node_modules/@reown/appkit
+      @reown/appkit-controllers  <=1.7.3-fd380eb099c043db8c203f943692af94e8b00f5b.0
+      Depends on vulnerable versions of @walletconnect/universal-provider
+      node_modules/@reown/appkit-controllers
+        @reown/appkit-scaffold-ui  <=1.7.3-fd380eb099c043db8c203f943692af94e8b00f5b.0
+        Depends on vulnerable versions of @reown/appkit-controllers
+        Depends on vulnerable versions of @reown/appkit-ui
+        Depends on vulnerable versions of @reown/appkit-utils
+        node_modules/@reown/appkit-scaffold-ui
+        @reown/appkit-ui  1.7.1-449657bc8f95adcfd295a2e883c4bcd439045044.0 - 1.7.3-fd380eb099c043db8c203f943692af94e8b00f5b.0
+        Depends on vulnerable versions of @reown/appkit-controllers
+        node_modules/@reown/appkit-ui
+        @reown/appkit-utils  <=1.7.3-fd380eb099c043db8c203f943692af94e8b00f5b.0
+        Depends on vulnerable versions of @reown/appkit-controllers
+        Depends on vulnerable versions of @walletconnect/universal-provider
+        node_modules/@reown/appkit-utils
+  browserify-sign  >=2.4.0
+  Depends on vulnerable versions of elliptic
+  node_modules/browserify-sign
+    crypto-browserify  >=3.4.0
+    Depends on vulnerable versions of browserify-sign
+    Depends on vulnerable versions of create-ecdh
+    node_modules/@trezor/blockchain-link/node_modules/crypto-browserify
+    node_modules/crypto-browserify
+      @solana/wallet-adapter-torus  >=0.11.12
+      Depends on vulnerable versions of @toruslabs/solana-embed
+      Depends on vulnerable versions of crypto-browserify
+      node_modules/@solana/wallet-adapter-torus
+      @trezor/blockchain-link  >=2.1.0
+      Depends on vulnerable versions of @trezor/blockchain-link-types
+      Depends on vulnerable versions of @trezor/utxo-lib
+      Depends on vulnerable versions of crypto-browserify
+      node_modules/@trezor/blockchain-link
+        @trezor/connect  *
+        Depends on vulnerable versions of @trezor/blockchain-link
+        Depends on vulnerable versions of @trezor/blockchain-link-types
+        Depends on vulnerable versions of @trezor/utxo-lib
+        node_modules/@trezor/connect
+          @trezor/connect-web  *
+          Depends on vulnerable versions of @trezor/connect
+          node_modules/@trezor/connect-web
+            @solana/wallet-adapter-trezor  *
+            Depends on vulnerable versions of @trezor/connect-web
+            node_modules/@solana/wallet-adapter-trezor
+      node-stdlib-browser  *
+      Depends on vulnerable versions of crypto-browserify
+      node_modules/node-stdlib-browser
+        vite-plugin-node-polyfills  >=0.3.0
+        Depends on vulnerable versions of node-stdlib-browser
+        node_modules/vite-plugin-node-polyfills
+  create-ecdh  *
+  Depends on vulnerable versions of elliptic
+  node_modules/create-ecdh
+  tiny-secp256k1  0.0.0-rc-1560324438 || 0.2.0 - 1.1.7
+  Depends on vulnerable versions of elliptic
+  node_modules/tiny-secp256k1
+    @trezor/utxo-lib  >=1.0.0-beta.1
+    Depends on vulnerable versions of tiny-secp256k1
+    node_modules/@trezor/utxo-lib
+      @trezor/blockchain-link-types  >=1.0.13
+      Depends on vulnerable versions of @trezor/utxo-lib
+      node_modules/@trezor/blockchain-link-types
+      node_modules/@trezor/blockchain-link/node_modules/@trezor/blockchain-link-types
+
+smol-toml  <1.6.1
+Severity: moderate
+smol-toml: Denial of Service via TOML documents containing thousands of consecutive commented lines - https://github.com/advisories/GHSA-v3rj-xjv7-4jmq
+fix available via `npm audit fix --force`
+Will install @vercel/node@5.5.30, which is a breaking change
+node_modules/smol-toml
+  @vercel/python-analysis  *
+  Depends on vulnerable versions of smol-toml
+  node_modules/@vercel/python-analysis
+    @vercel/build-utils  >=13.3.1
+    Depends on vulnerable versions of @vercel/python-analysis
+    node_modules/@vercel/build-utils
+      @vercel/node  2.8.10 || >=5.5.31
+      Depends on vulnerable versions of @vercel/build-utils
+      node_modules/@vercel/node
+
+40 vulnerabilities (31 low, 4 moderate, 5 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

@@ -15,12 +15,7 @@
     }
   },
   "rewrites": [
-    { "source": "/api/auth/(.*)", "destination": "/api/auth/index.ts" },
-    { "source": "/api/solana/(.*)", "destination": "/api/solana/index.ts" },
-    { "source": "/api/admin/(.*)", "destination": "/api/admin/index.ts" },
-    { "source": "/api/social/(.*)", "destination": "/api/social/index.ts" },
-    { "source": "/api/deep-link/(.*)", "destination": "/api/deep-link/index.ts" },
-    { "source": "/api/payouts/(.*)", "destination": "/api/payouts/index.ts" },
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
@@ -31,7 +26,7 @@
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Permissions-Policy", "camera=(), microphone=(), geolocation=()" },
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=63072000; includeSubDomains; preload"
