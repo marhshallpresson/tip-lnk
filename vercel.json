@@ -9,7 +9,7 @@
       "buildCommand": "npx vite build"
     },
     "api": {
-      "entrypoint": "api",
+      "entrypoint": "api/index.ts",
       "routePrefix": "/api",
       "framework": "node"
     }
