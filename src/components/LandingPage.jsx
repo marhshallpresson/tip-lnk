@@ -86,12 +86,12 @@ export default function LandingPage({ onGetStarted }) {
             Accept tips, sell memberships, and grow your audience with zero platform fees. Instantly cash out anywhere in the world.
           </p>
 
-          <div className="animate-slide-up bg-[#111111] border border-white/10 rounded-xl p-1.5 max-w-lg mx-auto flex items-center shadow-2xl mb-8" style={{ animationDelay: '0.2s' }}>
-            <div className="flex items-center text-white/40 pl-4 flex-1">
-              <input type="text" placeholder="yourname" className="bg-transparent outline-none flex-1 border-none text-white focus:ring-0 placeholder:text-white/20 ml-1" />
-              <span className="text-brand-500 font-medium">.tiplnk.sol</span>
+          <div className="animate-slide-up bg-[#111111] border border-white/10 rounded-xl p-1.5 max-w-lg mx-auto flex items-center shadow-2xl mb-8 overflow-hidden" style={{ animationDelay: '0.2s' }}>
+            <div className="flex items-center text-white/40 pl-4 flex-1 min-w-0">
+              <input type="text" placeholder="yourname" className="bg-transparent outline-none flex-1 min-w-0 border-none text-white focus:ring-0 placeholder:text-white/20 ml-1" />
+              <span className="text-brand-500 font-medium whitespace-nowrap">.tiplnk.sol</span>
             </div>
-            <button onClick={onGetStarted} className="btn-primary !px-6">
+            <button onClick={onGetStarted} className="btn-primary !px-6 flex-shrink-0">
               Claim Link
             </button>
           </div>

@@ -5,6 +5,7 @@ import { useTipping } from '../hooks/useTipping';
 import { useSecurityGuardian } from '../hooks/useSecurityGuardian';
 import { useTransactionSimulation } from '../hooks/useTransactionSimulation';
 import { getPhantomDeepLink, getSolflareDeepLink, isMobile, hasSolanaProvider } from '../utils/deepLinks';
+import { SNSWarning } from './SNSWarning';
 import {
   Gift,
   ArrowDown,
@@ -28,6 +29,7 @@ import {
   CreditCard,
   ShieldAlert
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 /**
  * Advanced Creator-to-Creator Tipping Widget
@@ -66,7 +68,7 @@ export default function TipWidget({ fixedRecipient = null }) {
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
         if (recipientInput.startsWith('@')) {
-          const res = await fetch(`${API_BASE_URL}/api/deep-link/resolve/${recipientInput}`);
+          const res = await fetch(`${API_BASE_URL}/api/deep-link/resolve?handle=${recipientInput}`);
           if (res.ok) {
             const { walletAddress } = await res.json();
             setResolvedAddress(walletAddress);
@@ -368,6 +370,13 @@ export default function TipWidget({ fixedRecipient = null }) {
               <span>Expected Balance Change</span>
               <span className="text-white">-{parseFloat(totalAuthorizedUSDC).toFixed(2)} USDC</span>
             </div>
+          </div>
+        )}
+
+        {/* --- SNS Impersonation Safety (Task 3.3) --- */}
+        {recipientInput.includes('.sol') && (
+          <div className="mb-6 animate-fade-in">
+            <SNSWarning snsName={recipientInput} walletAddress={resolvedAddress} />
           </div>
         )}
 

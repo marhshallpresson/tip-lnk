@@ -637,12 +637,9 @@ router.post('/exchange', async (req: Request, res: Response) => {
 
     const user = await db('user').where({ id: session.userId }).whereNull('deletedAt').first()
     const roles = await getUserRoles(user.id)
-    const secret = resolveSessionTokenSecret()
-    const accessToken = signSessionToken({
-      v: 1, sid: session.id, uid: user.id,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(new Date(session.expiresAt).getTime() / 1000)
-    }, secret)
+    const accessToken = await signSessionToken({
+      v: 1, sid: session.id, uid: user.id
+    }, new Date(session.expiresAt))
 
     res.status(200).json({
       success: true,
@@ -866,6 +863,12 @@ router.post('/link-email/verify', async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Email successfully verified and linked.' });
   } catch (err) {
+    res.status(500).json({ error: 'Verification failed.' });
+  }
+});
+
+export default router;
+
     res.status(500).json({ error: 'Verification failed.' });
   }
 });

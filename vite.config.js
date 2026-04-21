@@ -9,6 +9,17 @@ export default defineConfig({
       include: ['buffer', 'crypto', 'stream', 'util'],
     }),
   ],
+  optimizeDeps: {
+    exclude: ['@solana/web3.js', 'tweetnacl']
+  },
+  build: {
+    rollupOptions: {
+      external: (id) => {
+        const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3']
+        return serverOnly.some(pkg => id.includes(pkg))
+      }
+    }
+  },
   test: {
     environment: 'jsdom',
     globals: true,

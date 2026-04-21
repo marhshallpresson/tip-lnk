@@ -78,9 +78,8 @@ export const createSession = async (
 export const destroySession = async (req: Request, res: Response) => {
   const cookieSid = (req.signedCookies || {})[SESSION_COOKIE_NAME] as string | undefined
   const bearer = extractBearerToken(req)
-  const secret = resolveSessionTokenSecret()
-  const tokenSid = bearer ? verifySessionToken(bearer, secret)?.sid : null
-  const sid = cookieSid || tokenSid || undefined
+  const tokenPayload = bearer ? await verifySessionToken(bearer) : null
+  const sid = cookieSid || tokenPayload?.sid || undefined
   
   if (sid) {
     await db('session').where({ id: sid }).update({
@@ -118,9 +117,8 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
   if (!sid) {
     const bearer = extractBearerToken(req)
     if (bearer) {
-      const secret = resolveSessionTokenSecret()
       try {
-        const payload = verifySessionToken(bearer, secret)
+        const payload = await verifySessionToken(bearer)
         if (payload?.sid) sid = payload.sid
       } catch (tokenErr) {
         console.warn('🛡️ Auth: Invalid Bearer token detected.');
@@ -169,6 +167,10 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
     }
   } catch (e: any) {
       console.error('🛡️ Auth CRITICAL: getSessionUser crashed:', e.message);
+      return null
+  }
+}
+��️ Auth CRITICAL: getSessionUser crashed:', e.message);
       return null
   }
 }

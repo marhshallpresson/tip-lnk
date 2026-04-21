@@ -67,7 +67,7 @@ export default function AdminDashboard() {
     setError(null);
     try {
         const isProd = import.meta.env.PROD;
-        const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005');
+        const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
         const response = await fetch(`${API_BASE}/api/auth/admin/login`, {
             method: 'POST',
