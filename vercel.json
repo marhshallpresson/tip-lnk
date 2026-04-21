@@ -1,12 +1,19 @@
 {
-  "framework": "vite",
-  "buildCommand": "vite build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install --legacy-peer-deps",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.ts" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
+  "version": 2,
+  "experimentalServices": {
+    "web": {
+      "entrypoint": "vite.config.js",
+      "routePrefix": "/",
+      "framework": "vite",
+      "installCommand": "npm install --legacy-peer-deps",
+      "buildCommand": "npx vite build"
+    },
+    "api": {
+      "entrypoint": "api/index.ts",
+      "routePrefix": "/api",
+      "framework": "node"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
@@ -22,7 +29,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag; img-src 'self' data: https:; font-src 'self' data:; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; frame-ancestors 'none'"
         }
       ]
     }
