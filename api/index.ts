@@ -27,56 +27,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const routeKey = `${moduleName}${action ? '/' + action : ''}${subAction ? '/' + subAction : ''}`;
     let handlerModule;
 
-    // High-speed dynamic dispatcher
-    if (moduleName === 'auth') {
-        if (action === 'google') {
-            if (subAction === 'start') handlerModule = await import('./_handlers/auth/google/start.js')
-            if (subAction === 'callback') handlerModule = await import('./_handlers/auth/google/callback.js')
-        } else if (action === 'link-email') {
-            if (subAction === 'start') handlerModule = await import('./_handlers/auth/link-email/start.js')
-            if (subAction === 'verify') handlerModule = await import('./_handlers/auth/link-email/verify.js')
-        } else {
-            handlerModule = await import(`./_handlers/auth/${action}.js`)
-        }
-    } 
-    
-    else if (moduleName === 'solana') {
-        if (action === 'dflow' && subAction === 'quote') {
-            handlerModule = await import('./_handlers/solana/dflow/quote.js')
-        } else if (action === 'profile') {
-            handlerModule = await import(`./_handlers/solana/profile/${subAction}.js`)
-        } else if (action === 'tips') {
-            handlerModule = await import(`./_handlers/solana/tips/${subAction}.js`)
-        } else if (action === 'webhooks' && subAction === 'helius') {
-            handlerModule = await import('./_handlers/solana/webhooks/helius.js')
-        } else {
-            handlerModule = await import(`./_handlers/solana/${action}.js`)
-        }
-    }
+    switch (routeKey) {
+        // Auth Module
+        case 'auth/login': handlerModule = await import('./_handlers/auth/login.js'); break;
+        case 'auth/register': handlerModule = await import('./_handlers/auth/register.js'); break;
+        case 'auth/logout': handlerModule = await import('./_handlers/auth/logout.js'); break;
+        case 'auth/me': handlerModule = await import('./_handlers/auth/me.js'); break;
+        case 'auth/csrf': handlerModule = await import('./_handlers/auth/csrf.js'); break;
+        case 'auth/wallet-login': handlerModule = await import('./_handlers/auth/wallet-login.js'); break;
+        case 'auth/exchange': handlerModule = await import('./_handlers/auth/exchange.js'); break;
+        case 'auth/admin-login': handlerModule = await import('./_handlers/auth/admin-login.js'); break;
+        case 'auth/google/start': handlerModule = await import('./_handlers/auth/google/start.js'); break;
+        case 'auth/google/callback': handlerModule = await import('./_handlers/auth/google/callback.js'); break;
+        case 'auth/link-email/start': handlerModule = await import('./_handlers/auth/link-email/start.js'); break;
+        case 'auth/link-email/verify': handlerModule = await import('./_handlers/auth/link-email/verify.js'); break;
+        case 'auth/phantom-google-callback': handlerModule = await import('./_handlers/auth/phantom-google-callback.js'); break;
+        
+        // Solana Module
+        case 'solana/priority-fee': handlerModule = await import('./_handlers/solana/priority-fee.js'); break;
+        case 'solana/assets': handlerModule = await import('./_handlers/solana/assets.js'); break;
+        case 'solana/send': handlerModule = await import('./_handlers/solana/send.js'); break;
+        case 'solana/send-smart': handlerModule = await import('./_handlers/solana/send-smart.js'); break;
+        case 'solana/sns-check': handlerModule = await import('./_handlers/solana/sns-check.js'); break;
+        case 'solana/backfill': handlerModule = await import('./_handlers/solana/backfill.js'); break;
+        case 'solana/diagnostic-check': handlerModule = await import('./_handlers/solana/diagnostic-check.js'); break;
+        case 'solana/profile/get': handlerModule = await import('./_handlers/solana/profile/get.js'); break;
+        case 'solana/profile/update': handlerModule = await import('./_handlers/solana/profile/update.js'); break;
+        case 'solana/tips/get': handlerModule = await import('./_handlers/solana/tips/get.js'); break;
+        case 'solana/tips/log': handlerModule = await import('./_handlers/solana/tips/log.js'); break;
+        case 'solana/dflow/quote': handlerModule = await import('./_handlers/solana/dflow/quote.js'); break;
+        case 'solana/webhooks/helius': handlerModule = await import('./_handlers/solana/webhooks/helius.js'); break;
 
-    else if (moduleName === 'admin') {
-        handlerModule = await import(`./_handlers/admin/${action}.js`)
-    }
+        // Admin Module
+        case 'admin/stats': handlerModule = await import('./_handlers/admin/stats.js'); break;
+        case 'admin/ledger': handlerModule = await import('./_handlers/admin/ledger.js'); break;
+        case 'admin/creators': handlerModule = await import('./_handlers/admin/creators.js'); break;
 
-    else if (moduleName === 'social') {
-        handlerModule = await import(`./_handlers/social/${action}.js`)
-    }
+        // Social Module
+        case 'social/x-posts': handlerModule = await import('./_handlers/social/x-posts.js'); break;
 
-    else if (moduleName === 'deep-link') {
-        handlerModule = await import(`./_handlers/deep-link/${action}.js`)
-    }
+        // Deep Link Module
+        case 'deep-link/resolve': handlerModule = await import('./_handlers/deep-link/resolve.js'); break;
+        case 'deep-link/link-social': handlerModule = await import('./_handlers/deep-link/link-social.js'); break;
 
-    else if (moduleName === 'payouts') {
-        handlerModule = await import(`./_handlers/payouts/${action}.js`)
+        // Payouts Module
+        case 'payouts/webhook': handlerModule = await import('./_handlers/payouts/webhook.js'); break;
+
+        default:
+            return res.status(404).json({ error: `Unified Route '/api/${routeKey}' not found` });
     }
 
     if (handlerModule?.default) {
       return await handlerModule.default(req, res)
     }
 
-    res.status(404).json({ error: `Unified Route '/api/${moduleName}/${action}' not found` })
+    res.status(404).json({ error: `Unified Route '/api/${routeKey}' handler export default not found` })
   } catch (err: any) {
     console.error(`🛡️ Unified Dispatch Error [${moduleName}/${action}]:`, err.message)
     res.status(500).json({ error: 'Internal Server Error', details: err.message })

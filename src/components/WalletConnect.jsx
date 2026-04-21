@@ -36,8 +36,8 @@ function useIsPhantom() {
 }
 
 export default function WalletConnect({ onConnected }) {
-  const { connected, publicKey, wallet, signMessage } = useWallet();
-  const { login, register, user: authUser, loginWithWallet } = useAuth();
+  const { publicKey, disconnect, connected, connect, select, wallets, signMessage } = useWallet();
+  const { login, register, user, loginWithWallet } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   const mobileDevice = isMobile();
@@ -111,12 +111,38 @@ export default function WalletConnect({ onConnected }) {
   }, [performSiwsLogin, advancing]);
 
   useEffect(() => {
-    if (connected && publicKey && !advancing) {
+    // Only trigger SIWS if we have a wallet but no matching auth session
+    const isAlreadyLoggedIn = user && user.walletAddress === publicKey?.toBase58();
+    
+    if (connected && publicKey && !advancing && !isAlreadyLoggedIn) {
       const addr = publicKey.toBase58();
       setAdvancing(true);
       performSiwsLogin(addr, 'adapter');
     }
-  }, [connected, publicKey, advancing, performSiwsLogin]);
+  }, [connected, publicKey, advancing, performSiwsLogin, user]);
+
+  useEffect(() => {
+    // Perform auto-connect if redirected via explicit deep link
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('autoConnect') === 'true' && !advancing) {
+      if (isPhantom) {
+        const timer = setTimeout(() => {
+          handleSocialSelect('injected');
+        }, 500);
+        return () => clearTimeout(timer);
+      } else if (isSolflare) {
+        const solflareWallet = wallets.find(w => w.adapter.name.toLowerCase().includes('solflare'));
+        if (solflareWallet) {
+          select(solflareWallet.adapter.name);
+          const timer = setTimeout(() => {
+             // Standard wallet adapter should auto-connect but we can force it if needed
+             if (!connected) connect().catch(e => console.error('AutoConnect error:', e));
+          }, 500);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [isPhantom, isSolflare, advancing, wallets, select, connect, connected]);
 
   // Countdown and Auto-redirection logic
   useEffect(() => {

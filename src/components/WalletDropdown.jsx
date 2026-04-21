@@ -5,8 +5,9 @@ import { ChevronDown, ChevronUp, User, LayoutDashboard, Gift, CreditCard, Settin
 import { useNavigate } from 'react-router-dom';
 
 export default function WalletDropdown() {
-  const { publicKey, disconnect } = useWallet();
+  const { publicKey, disconnect, connected } = useWallet();
   const { profile, updateProfile, resetOnboarding } = useApp();
+  const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [priceInSol, setPriceInSol] = useState(false);
 
@@ -35,7 +36,7 @@ export default function WalletDropdown() {
         if (connected) {
             await disconnect().catch(() => null);
         }
-        await authLogout().catch(() => null);
+        await logout().catch(() => null);
     } catch (e) {
         console.warn('Logout cleanup incomplete:', e);
     } finally {

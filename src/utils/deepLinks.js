@@ -4,12 +4,25 @@
  */
 
 export const getPhantomDeepLink = (url) => {
-  const cleanUrl = url.split('#')[0].split('?')[0]; // Use base URL for cleaner routing
-  return `https://phantom.app/ul/browse/${encodeURIComponent(url)}`;
+  try {
+    const target = new URL(url);
+    target.searchParams.set('autoConnect', 'true');
+    return `https://phantom.app/ul/browse/${encodeURIComponent(target.toString())}`;
+  } catch (e) {
+    const cleanUrl = url.split('#')[0].split('?')[0];
+    return `https://phantom.app/ul/browse/${encodeURIComponent(cleanUrl)}`;
+  }
 };
 
 export const getSolflareDeepLink = (url) => {
-  return `https://solflare.com/ul/v1/browse/${encodeURIComponent(url)}`;
+  try {
+    const target = new URL(url);
+    target.searchParams.set('autoConnect', 'true');
+    return `https://solflare.com/ul/v1/browse/${encodeURIComponent(target.toString())}`;
+  } catch (e) {
+    const cleanUrl = url.split('#')[0].split('?')[0];
+    return `https://solflare.com/ul/v1/browse/${encodeURIComponent(cleanUrl)}`;
+  }
 };
 
 export const isMobile = () => {

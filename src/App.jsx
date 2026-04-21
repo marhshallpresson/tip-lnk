@@ -342,7 +342,7 @@ export default function App() {
     <SolanaWalletProvider>
       <AuthProvider>
         <AppProvider>
-          <div className="min-h-screen bg-surface-950 text-white">
+          <div className="min-h-screen bg-surface-950 text-white p-4 md:p-6">
             <AppContent />
           </div>
         </AppProvider>

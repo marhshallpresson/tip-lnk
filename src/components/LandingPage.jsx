@@ -86,12 +86,12 @@ export default function LandingPage({ onGetStarted }) {
             Accept tips, sell memberships, and grow your audience with zero platform fees. Instantly cash out anywhere in the world.
           </p>
 
-          <div className="animate-slide-up bg-[#111111] border border-white/10 rounded-xl p-1.5 max-w-lg mx-auto flex items-center gap-2 shadow-2xl mb-8" style={{ animationDelay: '0.2s' }}>
-            <div className="flex items-center flex-1 min-w-0 pl-3 gap-1">
-              <input type="text" placeholder="yourname" className="bg-transparent outline-none w-full min-w-0 border-none text-white focus:ring-0 placeholder:text-white/30 py-2 text-base" />
-              <span className="text-brand-500 font-medium whitespace-nowrap text-sm pr-1">.tiplnk.sol</span>
+          <div className="animate-slide-up bg-[#111111] border border-white/10 rounded-xl p-1.5 max-w-lg mx-auto flex flex-col sm:flex-row items-center gap-2 shadow-2xl mb-8" style={{ animationDelay: '0.2s' }}>
+            <div className="flex items-center flex-1 w-full pl-3 gap-1">
+              <input type="text" placeholder="yourname" className="bg-transparent outline-none w-full min-w-0 border-none text-white focus:ring-0 placeholder:text-white/30 py-2 sm:py-3 text-base sm:text-lg" />
+              <span className="text-brand-500 font-medium whitespace-nowrap text-sm sm:text-base pr-1">.tiplnk.sol</span>
             </div>
-            <button onClick={onGetStarted} className="btn-primary !px-6 !py-2.5 flex-shrink-0 whitespace-nowrap">
+            <button onClick={onGetStarted} className="btn-primary w-full sm:w-auto !px-6 !py-3 sm:!py-2.5 flex-shrink-0 whitespace-nowrap text-base">
               Claim Link
             </button>
           </div>

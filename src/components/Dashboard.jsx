@@ -24,7 +24,7 @@ import EmbedGenerator from './EmbedGenerator';
 import SettingsModal from './SettingsModal';
 
 export default function Dashboard() {
-  const { publicKey, disconnect } = useWallet();
+  const { publicKey, disconnect, connected } = useWallet();
   const { user: authUser, logout: authLogout } = useAuth();
   const { profile, resetOnboarding, totalTipsUSDC } = useApp();
   const navigate = useNavigate();
