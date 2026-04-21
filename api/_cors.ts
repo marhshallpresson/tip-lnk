@@ -1,5 +1,6 @@
 const ALLOWED_ORIGINS = [
   ...(process.env.CORS_ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) || []),
+  ...(process.env.NODE_ENV === 'production' ? ['https://tiplnk.me', 'https://www.tiplnk.me'] : []),
   ...(process.env.NODE_ENV === 'development' ? ['http://localhost:5173'] : [])
 ]
 
@@ -12,13 +13,13 @@ export function applyCors(req: any, res: any): boolean {
     res.status(403).json({ error: 'CORS: origin not allowed' })
     return false
   }
-  
+
   // Allow requests with no origin (like same-origin or server-to-server)
   res.setHeader('Access-Control-Allow-Origin', origin || '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-csrf-token')
   res.setHeader('Access-Control-Allow-Credentials', 'true')
-  
+
   if (req.method === 'OPTIONS') {
     res.status(204).end()
     return false

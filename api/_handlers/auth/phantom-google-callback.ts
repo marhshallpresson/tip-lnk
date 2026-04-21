@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
 import bs58 from "bs58"
-import { applyCors } from "../_cors.js"
+import { applyCors } from "../../_cors.js"
 import { db } from "../../_lib/db.js"
 import { createSession, getUserRoles } from "../../_lib/session.js"
 import { verifySignature } from "../../../src/lib/crypto.js"

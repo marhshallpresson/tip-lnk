@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyCors } from '../_cors.js'
+import { applyCors } from '../../_cors.js'
 
 // Master Dispatcher for Hobby Plan Compliance (Limit: 12 Functions)
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (subAction === 'callback') module = await import('./google/callback.js')
     } else if (action === 'link-email') {
         if (subAction === 'start') module = await import('./link-email/start.js')
-        if (subAction === 'verify') module = await import('./link-email/verify.ts')
+        if (subAction === 'verify') module = await import('./link-email/verify.js')
     } else {
         // Direct actions: login, register, logout, me, exchange, etc.
         if (action === 'login') module = await import('./login.js')

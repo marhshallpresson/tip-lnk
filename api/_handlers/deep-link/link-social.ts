@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { applyCors } from "../_cors.js"
+import { applyCors } from "../../_cors.js"
 import { db } from "../../_lib/db.js"
 import { verifySignature } from "../../../src/lib/crypto.js"
 
