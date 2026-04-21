@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import axios from 'axios'
-import { applyCors } from '../../_cors.js'
+import { applyCors } from '../../../_cors.js'
 import { validateSwapParams } from '../../../_lib/swap-validator.js'
 
 /**

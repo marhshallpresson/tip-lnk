@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import * as oidc from "openid-client"
 import { randomUUID } from "crypto"
-import { applyCors } from "../../_cors.js"
+import { applyCors } from "../../../_cors.js"
 import { 
   getGoogleConfig, 
   oauthRedirectUrl, 

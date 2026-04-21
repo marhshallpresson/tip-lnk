@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import * as oidc from "openid-client"
-import { applyCors } from "../../_cors.js"
+import { applyCors } from "../../../_cors.js"
 import { getGoogleConfig, oauthRedirectUrl, patchResponse } from "../_utils.js"
 import { getCookieOptions } from "../../../_lib/session.js"
 

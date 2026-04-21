@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
-import { applyCors } from "../../_cors.js"
+import { applyCors } from "../../../_cors.js"
 import { db } from "../../../_lib/db.js"
 import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.js"
 
