@@ -7,7 +7,8 @@ import { BrowserSDK, AddressType } from '@phantom/browser-sdk';
 const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID;
 
 // Professional Hardening: Exact string match from your Phantom Developer Dashboard
-const redirectUrl = "https://tip-lnk.vercel.app/auth/callback/phantom-google";
+const appUrl = import.meta.env.VITE_APP_URL?.replace(/\/$/, '') || window.location.origin;
+const redirectUrl = `${appUrl}/auth/callback/phantom-google`;
 
 export const phantomSdk = new BrowserSDK({
   providers: ["google", "injected"],
