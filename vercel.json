@@ -2,18 +2,15 @@
   "version": 2,
   "experimentalServices": {
     "web": {
-      "entrypoint": "package.json",
-      "routePrefix": "/"
+      "entrypoint": "vite.config.js",
+      "routePrefix": "/",
+      "framework": "vite"
     },
     "api": {
-      "entrypoint": "api",
+      "entrypoint": "api/_cors.ts",
       "routePrefix": "/api"
     }
   },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
   "headers": [
     {
       "source": "/(.*)",
