@@ -10,6 +10,15 @@ export const AuthProvider = ({ children }) => {
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   const fetchMe = async () => {
+    // ─── ELITE CONSOLE CLEANUP ───
+    // If we don't have a token, don't even try to fetch the user.
+    // This stops the browser from logging a red 401 error in the console.
+    if (!api.accessToken) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, ok } = await api.get('/auth/me');
@@ -17,13 +26,12 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
       } else {
         setUser(null);
-        // Clear token if me fails with 401
-        if (data.status === 401) {
-          api.setAccessToken(null);
-        }
+        // Clear token if me fails (likely expired)
+        api.setAccessToken(null);
       }
     } catch (err) {
-      console.error('Fetch me failed:', err);
+      // Only log if it's a real network error, not a 401
+      console.debug('Session check: No active user session found.');
       setUser(null);
     } finally {
       setLoading(false);

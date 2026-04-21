@@ -36,7 +36,7 @@ function useIsPhantom() {
 }
 
 export default function WalletConnect({ onConnected }) {
-  const { publicKey, disconnect, connected, connect, select, wallets, signMessage } = useWallet();
+  const { publicKey, disconnect, connected, connect, select, wallets, signMessage, wallet } = useWallet();
   const { login, register, user, loginWithWallet } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
@@ -558,4 +558,3 @@ export default function WalletConnect({ onConnected }) {
     </div>
   );
 }
-
