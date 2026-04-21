@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { applyCors } from "../_cors.js"
+import { applyCors } from "../../_cors.js"
+import { rateLimit } from "../../_ratelimit.js"
 import { db } from "../../_lib/db.js"
 import { createSession, getSessionUser, getUserRoles } from "../../_lib/session.js"
 import { logError, serializeError } from "../../_lib/logger.js"

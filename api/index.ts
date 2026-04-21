@@ -24,22 +24,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let handler;
     // Map paths directly to the files in _handlers/
     if (moduleName === 'auth') {
-        if (action === 'google') {
+        if (action === 'google' && subAction) {
             handler = await import(`./_handlers/auth/google/${subAction}.js`)
-        } else if (action === 'link-email') {
+        } else if (action === 'link-email' && subAction) {
             handler = await import(`./_handlers/auth/link-email/${subAction}.js`)
-        } else {
+        } else if (action) {
             handler = await import(`./_handlers/auth/${action}.js`)
         }
     } else if (moduleName === 'solana') {
-        if (action === 'dflow') {
+        if (action === 'dflow' && subAction) {
             handler = await import(`./_handlers/solana/dflow/${subAction}.js`)
-        } else if (action === 'profile' || action === 'tips' || action === 'webhooks') {
+        } else if (subAction && (action === 'profile' || action === 'tips' || action === 'webhooks')) {
             handler = await import(`./_handlers/solana/${action}/${subAction}.js`)
-        } else {
+        } else if (action) {
+            // Handle cases where subAction is missing for profile/tips/webhooks
+            if (action === 'profile' || action === 'tips' || action === 'webhooks') {
+                return res.status(404).json({ error: `Missing sub-action for ${action}` })
+            }
             handler = await import(`./_handlers/solana/${action}.js`)
         }
-    } else {
+    } else if (moduleName && action) {
         handler = await import(`./_handlers/${moduleName}/${action}.js`)
     }
 

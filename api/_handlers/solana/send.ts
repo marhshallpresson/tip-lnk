@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import axios from "axios"
-import { applyCors } from "../_cors.js"
+import { applyCors } from "../../_cors.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Helius Sender Relay

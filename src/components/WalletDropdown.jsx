@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { ChevronDown, ChevronUp, User, LayoutDashboard, Gift, CreditCard, Settings, HelpCircle, LogOut, Copy, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

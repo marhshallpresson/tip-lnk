@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyCors } from '../_cors.js'
+import { applyCors } from '../../_cors.js'
 
 // Master Dispatcher for Solana Logic (Compliance with 12-function limit)
 export default async function handler(req: VercelRequest, res: VercelResponse) {

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { applyCors } from "../_cors.js"
+import { applyCors } from "../../_cors.js"
 import { destroySession } from "../../_lib/session.js"
 import { patchResponse } from "./_utils.js"
 
