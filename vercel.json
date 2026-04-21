@@ -5,7 +5,6 @@
       "entrypoint": "index.html",
       "routePrefix": "/",
       "framework": "vite",
-      "installCommand": "npm install --legacy-peer-deps",
       "buildCommand": "npx vite build"
     },
     "api": {
