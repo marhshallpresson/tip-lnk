@@ -1,19 +1,12 @@
 {
-  "version": 2,
-  "experimentalServices": {
-    "web": {
-      "entrypoint": "index.html",
-      "routePrefix": "/",
-      "framework": "vite",
-      "installCommand": "npm install --legacy-peer-deps",
-      "buildCommand": "npx vite build"
-    },
-    "api": {
-      "entrypoint": "api/index.ts",
-      "routePrefix": "/api",
-      "framework": "node"
-    }
-  },
+  "framework": "vite",
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install --legacy-peer-deps",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
