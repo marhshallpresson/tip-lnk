@@ -26,92 +26,93 @@ export default function CreatorAnalyticsPanel() {
   const uniqueSupportersCount = Object.keys(supporterMap).length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between bg-surface-800/40 p-4 rounded-xl border border-surface-700/50">
+    <div className="space-y-6 animate-fade-in pb-20">
+      <div className="flex items-center justify-between bg-[#0c0c0c] p-6 rounded-[24px] border border-white/5">
         <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <BarChart3 className="text-brand-400" /> Creator Analytics
+          <h2 className="text-xl font-bold flex items-center gap-3">
+            <BarChart3 className="text-brand-500" /> 
+            <span className="italic uppercase tracking-tight">Creator Analytics</span>
           </h2>
-          <p className="text-sm text-surface-400 mt-1">Metrics derived from your on-chain tipping activity and social reach.</p>
+          <p className="text-xs text-white/40 mt-1 font-medium uppercase tracking-widest">Metrics derived from your on-chain tipping activity.</p>
         </div>
       </div>
 
       {/* Main KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="glass-card p-5 border-t-2 border-t-accent-cyan">
-          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><DollarSign size={14}/> Total Volume</p>
-          <p className="text-2xl font-bold text-white">${totalTipsUSDC.toFixed(2)}</p>
-          <p className="text-xs text-surface-500 mt-2">All-time earnings</p>
+        <div className="grass-card !p-5 border-t-2 border-t-accent-cyan">
+          <p className="grass-stat-label flex items-center gap-1"><DollarSign size={14}/> Total Volume</p>
+          <p className="text-2xl font-bold text-white tracking-tight">${totalTipsUSDC.toFixed(2)}</p>
+          <p className="text-[10px] text-white/20 mt-2 font-bold uppercase tracking-widest">All-time earnings</p>
         </div>
-        <div className="glass-card p-5 border-t-2 border-t-brand-500">
-          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><Users size={14}/> Unique Supporters</p>
-          <p className="text-2xl font-bold text-white">{uniqueSupportersCount}</p>
-          <p className="text-xs text-surface-500 mt-2">Verified contributors</p>
+        <div className="grass-card !p-5 border-t-2 border-t-brand-500">
+          <p className="grass-stat-label flex items-center gap-1"><Users size={14}/> Supporters</p>
+          <p className="text-2xl font-bold text-white tracking-tight">{uniqueSupportersCount}</p>
+          <p className="text-[10px] text-white/20 mt-2 font-bold uppercase tracking-widest">Verified contributors</p>
         </div>
-        <div className="glass-card p-5 border-t-2 border-t-accent-orange">
-          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><PieChart size={14}/> Transaction Count</p>
-          <p className="text-2xl font-bold text-white">{tipsReceived.length}</p>
-          <p className="text-xs text-surface-500 mt-2">Successful tips</p>
+        <div className="grass-card !p-5 border-t-2 border-t-accent-orange">
+          <p className="grass-stat-label flex items-center gap-1"><PieChart size={14}/> Tips</p>
+          <p className="text-2xl font-bold text-white tracking-tight">{tipsReceived.length}</p>
+          <p className="text-[10px] text-white/20 mt-2 font-bold uppercase tracking-widest">Successful transactions</p>
         </div>
-        <div className="glass-card p-5 border-t-2 border-t-accent-green">
-          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><Activity size={14}/> Avg. Tip Size</p>
-          <p className="text-2xl font-bold text-white">
+        <div className="grass-card !p-5 border-t-2 border-t-accent-green">
+          <p className="grass-stat-label flex items-center gap-1"><Activity size={14}/> Avg. Size</p>
+          <p className="text-2xl font-bold text-white tracking-tight">
             ${tipsReceived.length > 0 ? (totalTipsUSDC / tipsReceived.length).toFixed(2) : '0.00'}
           </p>
-          <p className="text-xs text-surface-500 mt-2">USDC equivalent</p>
+          <p className="text-[10px] text-white/20 mt-2 font-bold uppercase tracking-widest">USDC equivalent</p>
         </div>
-        <div className="glass-card p-5 border-t-2 border-t-accent-purple">
-          <p className="text-surface-400 text-sm mb-1 flex items-center gap-1"><TrendingUp size={14}/> Total Reach</p>
-          <p className="text-2xl font-bold text-white">{totalReach.toLocaleString()}</p>
-          <p className="text-xs text-surface-500 mt-2">Social followers</p>
+        <div className="grass-card !p-5 border-t-2 border-t-accent-purple">
+          <p className="grass-stat-label flex items-center gap-1"><TrendingUp size={14}/> Total Reach</p>
+          <p className="text-2xl font-bold text-white tracking-tight">{totalReach.toLocaleString()}</p>
+          <p className="text-[10px] text-white/20 mt-2 font-bold uppercase tracking-widest">Social followers</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-card p-6 flex flex-col items-center justify-center min-h-[300px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grass-card p-6 flex flex-col items-center justify-center min-h-[300px]">
           {tipsReceived.length > 0 ? (
              <div className="w-full h-full flex flex-col">
-                <h3 className="text-lg font-semibold mb-4 text-left w-full">Earnings Trend</h3>
-                <div className="flex-1 flex items-end justify-between gap-2 bg-surface-900/20 rounded-xl p-4">
-                   {Array.from({ length: 7 }).map((_, i) => (
-                     <div key={i} className="w-full bg-surface-800 rounded-t-sm h-4"></div>
+                <h3 className="text-lg font-bold mb-8 italic uppercase tracking-tight">Earnings Trend</h3>
+                <div className="flex-1 flex items-end justify-between gap-4 bg-[#111111] rounded-2xl p-6">
+                   {Array.from({ length: 12 }).map((_, i) => (
+                     <div key={i} className="w-full bg-brand-500/20 group-hover:bg-brand-500 rounded-full h-4 transition-all hover:h-full"></div>
                    ))}
                 </div>
-                <p className="text-xs text-surface-500 mt-4 text-center italic">Time-series data will populate as tips are received.</p>
+                <p className="text-[10px] text-white/20 mt-4 text-center font-bold uppercase tracking-widest">Time-series data populating...</p>
              </div>
           ) : (
             <>
-              <BarChart3 size={48} className="text-surface-700 mb-4" />
-              <p className="text-surface-500 text-sm">No trend data available yet.</p>
+              <BarChart3 size={48} className="text-white/10 mb-4" />
+              <p className="text-white/40 text-xs font-bold uppercase tracking-widest">No trend data available</p>
             </>
           )}
         </div>
 
-        <div className="glass-card p-6">
-          <h3 className="text-lg font-semibold mb-4">Top Supporters</h3>
+        <div className="grass-card p-6">
+          <h3 className="text-lg font-bold mb-8 italic uppercase tracking-tight">Top Supporters</h3>
           {topSupporters.length > 0 ? (
             <div className="space-y-4">
               {topSupporters.map((supporter, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-surface-800/40 border border-surface-700/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-600 to-accent-purple flex items-center justify-center text-xs font-bold">
-                      {index + 1}
+                <div key={index} className="flex items-center justify-between p-4 rounded-[18px] bg-[#111111] border border-white/5 hover:border-white/10 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center text-xs font-bold text-brand-500">
+                      #{index + 1}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-sm">{supporter.name}</h4>
-                      <p className="text-xs text-surface-500">{supporter.count} tips sent</p>
+                      <h4 className="font-bold text-sm text-white">{supporter.name}</h4>
+                      <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{supporter.count} tips sent</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-accent-green">${supporter.amount.toFixed(2)}</p>
+                    <p className="font-bold text-brand-500 tracking-tight">${supporter.amount.toFixed(2)}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-10">
-              <Users size={32} className="text-surface-700 mx-auto mb-3" />
-              <p className="text-surface-500 text-sm">Waiting for your first supporter...</p>
+            <div className="text-center py-10 opacity-20">
+              <Users size={32} className="mx-auto mb-3" />
+              <p className="text-[10px] font-bold uppercase tracking-widest">Waiting for supporters</p>
             </div>
           )}
         </div>

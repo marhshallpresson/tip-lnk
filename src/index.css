@@ -102,6 +102,39 @@
     @apply bg-[#8C4EFF]/10 text-[#8C4EFF] border-[#8C4EFF]/20;
   }
 
+  /* Grass Redesign Utilities */
+  .grass-card {
+    @apply bg-[#0c0c0c] border border-white/5 rounded-[24px] p-6 transition-all duration-200 overflow-hidden;
+  }
+
+  .grass-card:hover {
+    @apply border-white/10 bg-[#111111];
+  }
+
+  .grass-pill {
+    @apply bg-[#111111] border border-white/10 rounded-full px-4 py-1.5 flex items-center gap-2;
+  }
+
+  .grass-sidebar-btn {
+    @apply w-12 h-12 rounded-[18px] bg-transparent hover:bg-white/5 flex items-center justify-center transition-all duration-200 text-white/40;
+  }
+
+  .grass-sidebar-btn-active {
+    @apply bg-[#151515] text-brand-500 shadow-[0_0_20px_rgba(22,229,162,0.1)];
+  }
+
+  .grass-banner {
+    @apply bg-[#121212] border border-white/5 rounded-[24px] p-6 relative overflow-hidden;
+  }
+
+  .grass-stat-label {
+    @apply text-white/40 text-xs font-medium uppercase tracking-widest mb-1;
+  }
+
+  .grass-stat-value {
+    @apply text-white text-3xl font-bold tracking-tight;
+  }
+
   /* Mobile UI Overrides */
   @media (max-width: 640px) {
     .btn-primary, .btn-secondary, .btn-outline {

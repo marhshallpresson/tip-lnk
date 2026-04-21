@@ -64,7 +64,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex h-screen bg-main-bg text-white overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans relative">
       <ReferralModal 
         isOpen={isReferralOpen} 
         onClose={() => setIsReferralOpen(false)} 
@@ -76,46 +76,37 @@ export default function Dashboard() {
         onClose={() => setIsSettingsOpen(false)} 
       />
 
-      {/* --- MOBILE HEADER --- */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-[60]">
-        <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-brand-500 flex items-center justify-center">
-                <Zap size={18} className="text-black" />
+      {/* --- MOBILE HEADER (Grass Style) --- */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#0c0c0c]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-[60]">
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center">
+                <Zap size={18} className="text-brand-500" />
             </div>
             <span className="font-bold text-lg tracking-tight">TipLnk</span>
         </div>
 
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 rounded-lg bg-[#111111] border border-white/10 text-white/60 active:scale-95 transition-transform"
+          className="w-10 h-10 rounded-xl bg-[#111111] border border-white/10 flex items-center justify-center text-white/60 active:scale-95 transition-transform"
         >
           {isSidebarOpen ? <XCircle size={20} /> : <MoreHorizontal size={20} />}
         </button>
       </div>
 
-      {/* --- SIDEBAR --- */}
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[45]"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
+      {/* --- SIDEBAR (Grass Style) --- */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 w-64 border-r border-white/5 flex flex-col shrink-0 bg-[#0a0a0a] z-50 transition-transform duration-300 transform
+        fixed md:static inset-y-0 left-0 w-[88px] border-r border-white/5 flex flex-col items-center shrink-0 bg-[#000000] z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo Section */}
-        <div className="hidden md:flex items-center gap-2 px-8 py-8">
-            <div className="w-8 h-8 rounded bg-brand-500 flex items-center justify-center">
-                <Zap size={18} className="text-black" />
+        <div className="py-10">
+            <div className="w-10 h-10 rounded-[14px] bg-brand-500 flex items-center justify-center shadow-[0_0_20px_rgba(22,229,162,0.2)]">
+                <Zap size={22} className="text-black" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-white">TipLnk</span>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 w-full px-4 flex flex-col items-center gap-4 py-4">
           {menuItems.map((item) => {
             const isActive = location.pathname.includes(item.id) || (item.id === 'overview' && location.pathname === '/dashboard');
             return (
@@ -125,37 +116,73 @@ export default function Dashboard() {
                   navigate(`/dashboard/${item.id === 'overview' ? '' : item.id}`);
                   setIsSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all font-medium text-sm ${
-                  isActive 
-                    ? 'bg-white/5 text-brand-500' 
-                    : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
-                }`}
+                className={`grass-sidebar-btn ${isActive ? 'grass-sidebar-btn-active' : ''} group relative`}
+                title={item.label}
               >
-                <item.icon size={18} />
-                {item.label}
+                <item.icon size={22} />
+                {isActive && (
+                    <div className="absolute left-[-16px] w-1 h-6 bg-brand-500 rounded-r-full" />
+                )}
               </button>
             );
           })}
         </nav>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-white/5 mt-auto">
-          <button
-            onClick={handleDisconnect}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-500 hover:bg-red-500/5 transition-all font-medium text-sm"
-          >
-            <LogOut size={18} />
-            Log Out
-          </button>
+        {/* Footer Actions */}
+        <div className="py-8 flex flex-col items-center gap-6">
+            <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="grass-sidebar-btn text-white/20 hover:text-white"
+                title="Support"
+            >
+                <Heart size={20} />
+            </button>
+            <button
+                onClick={handleDisconnect}
+                className="grass-sidebar-btn text-red-500/40 hover:text-red-500 hover:bg-red-500/5"
+                title="Log Out"
+            >
+                <LogOut size={20} />
+            </button>
         </div>
       </aside>
 
-      {/* --- MAIN CONTENT --- */}
-      <main className="flex-1 overflow-y-auto bg-[#0a0a0a] pt-16 md:pt-0">
-        <div className="p-4 md:p-8 lg:p-12 max-w-6xl mx-auto">
+      {/* --- MAIN CONTENT (Grass Style) --- */}
+      <main className="flex-1 overflow-y-auto bg-[#000000] pt-16 md:pt-0">
+        <div className="p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto">
+          {/* Header Status Bar (Grass Style) */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-6">
+            <div className="flex items-center gap-4">
+                <div className="grass-pill bg-[#111111] !px-5 !py-2.5">
+                    <span className="text-sm font-bold tracking-tight">Dashboard</span>
+                </div>
+                <div className="grass-pill bg-brand-500/10 border-brand-500/20 md:flex hidden">
+                    <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+                    <span className="text-xs font-bold text-brand-500 uppercase tracking-wider">Live System</span>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+                <div className="hidden lg:flex items-center gap-3 grass-pill !bg-transparent border-white/5">
+                    <div className="flex -space-x-2">
+                        {[1,2,3].map(i => (
+                            <div key={i} className="w-6 h-6 rounded-full border-2 border-black bg-surface-800" />
+                        ))}
+                    </div>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest pl-2">Network Friends</span>
+                </div>
+                <button 
+                    onClick={() => setIsReferralOpen(true)}
+                    className="grass-pill bg-brand-500 !text-black !border-none hover:opacity-90 active:scale-95 transition-all font-bold text-xs"
+                >
+                    SHARE WITH FRIENDS
+                </button>
+            </div>
+          </div>
+
           <Routes>
-            <Route index element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
-            <Route path="overview" element={<OverviewTab onInvite={() => setIsReferralOpen(true)} />} />
+            <Route index element={<OverviewTab />} />
+            <Route path="overview" element={<OverviewTab />} />
             <Route path="analytics" element={<CreatorAnalyticsPanel />} />
             <Route path="embed" element={<EmbedGenerator creatorAddress={address} handle={profile.solDomain || profile.displayName || address} />} />
             <Route path="history" element={<TransactionHistoryTab />} />
@@ -169,156 +196,187 @@ export default function Dashboard() {
   );
 }
 
-/* ─── Overview Tab ─── */
+/* ─── Overview Tab (Grass Style Rebuild) ─── */
 export function OverviewTab() {
   const { totalTipsUSDC, tipsReceived, profile } = useApp();
   const portfolio = useWalletPortfolio();
 
-  const stats = [
-    { label: 'Total Net Worth', value: portfolio.loading ? '...' : `$${portfolio.totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, icon: Wallet, color: 'text-brand-500', bgColor: 'bg-brand-500/10' },
-    { label: 'Tips Earned', value: `$${totalTipsUSDC.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-    { label: 'Tip Count', value: tipsReceived.length, icon: Gift, color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
-    { label: 'SOL Balance', value: portfolio.loading ? '...' : `${portfolio.solBalance.toFixed(3)} SOL`, icon: Zap, color: 'text-sky-500', bgColor: 'bg-sky-500/10' },
-  ];
-
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* ─── Level 1: Stats ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="stat-card flex flex-col items-start gap-4">
-            <div className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-              <stat.icon size={20} className={stat.color} />
+    <div className="space-y-8 animate-fade-in pb-20">
+      {/* Welcome Banner (Grass Style) */}
+      <div className="grass-banner">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="max-w-2xl">
+                <h2 className="text-xl font-bold mb-2">Welcome to TipLnk Epoch 1!</h2>
+                <p className="text-white/40 text-sm leading-relaxed">
+                    On your dashboard you will see your earnings for this epoch. To view your total number of points and rewards, simply navigate to the analytics tab on the left.
+                </p>
             </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
-              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wider mt-1">{stat.label}</p>
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500">
+                    <TrendingUp size={24} />
+                </div>
+                <div className="text-right">
+                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Active Status</p>
+                    <p className="text-lg font-bold text-brand-500">Node Online</p>
+                </div>
             </div>
-          </div>
-        ))}
+        </div>
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 blur-[100px] -mr-32 -mt-32" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* ─── Level 2: Portfolio ─── */}
-          <div className="lg:col-span-2 space-y-8">
-              <div className="glass-card p-6">
-                <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2">
-                    <ShieldCheck size={16} /> On-Chain Assets
-                    </h3>
-                    <span className="badge badge-brand">
-                        Live
-                    </span>
+      {/* Main Stats Grid (Grass Style) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Earnings Card */}
+        <div className="grass-card flex flex-col justify-between min-h-[220px]">
+            <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold">Earnings</h3>
+                <RefreshCw size={18} className="text-white/20 hover:text-white cursor-pointer transition-colors" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8 mt-4">
+                <div className="space-y-1">
+                    <p className="grass-stat-label">Total Earnings</p>
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-black">
+                            <Zap size={16} />
+                        </div>
+                        <span className="grass-stat-value">${totalTipsUSDC.toFixed(2)}</span>
+                    </div>
+                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest pt-2">Uptime: 0 day, 0 hr, 0 min</p>
                 </div>
+                <div className="space-y-1">
+                    <p className="grass-stat-label">Today's Tips</p>
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500">
+                            <Gift size={16} />
+                        </div>
+                        <span className="grass-stat-value">{tipsReceived.length}</span>
+                    </div>
+                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest pt-2">Last Tip: Just now</p>
+                </div>
+            </div>
+        </div>
 
-                {portfolio.loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <Loader2 size={24} className="animate-spin text-brand-500" />
-                        <p className="text-xs text-white/40">Syncing wallet...</p>
+        {/* Status Card */}
+        <div className="grass-card flex flex-col justify-between min-h-[220px]">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                        <Shield size={20} />
                     </div>
-                ) : (
-                    <div className="space-y-1">
-                        {portfolio.tokens.slice(0, 5).map((token) => (
-                            <div key={token.mint} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/[0.02] transition-colors group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/5">
-                                        {token.icon && token.icon.startsWith('http') ? (
-                                            <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-xs font-bold">{token.symbol[0]}</span>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h4 className="font-medium text-sm text-white">{token.name}</h4>
-                                        <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">{token.symbol}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-semibold text-sm text-white">{token.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
-                                    <p className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wider">${token.valueUSD.toFixed(2)}</p>
-                                </div>
-                            </div>
-                        ))}
+                    <div>
+                        <h4 className="font-bold text-sm tracking-tight text-white">Network Connection</h4>
+                        <p className="text-[10px] text-orange-500 font-semibold uppercase tracking-wider italic">Action Required</p>
                     </div>
-                )}
-              </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            </div>
 
-              {/* ─── Level 3: NFTs ─── */}
-              {portfolio.nfts.length > 0 && (
-                <div className="glass-card p-6">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2 mb-8">
-                        <ImageIcon size={16} /> Digital Collectibles
-                    </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        {portfolio.nfts.slice(0, 4).map((nft) => (
-                            <div key={nft.id} className="group relative aspect-square rounded-xl overflow-hidden border border-white/5 bg-white/[0.02]">
-                                <img src={nft.image} alt={nft.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                                    <p className="text-[10px] font-semibold text-white truncate">{nft.name}</p>
-                                </div>
-                            </div>
-                        ))}
+            <p className="text-xs text-white/40 leading-relaxed py-4">
+                Complete your profile and link your social handles to increase your earnings potential.
+            </p>
+
+            <button className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(22,229,162,0.3)] transition-all active:scale-[0.98]">
+                CONNECT NETWORK / HANDLE
+            </button>
+        </div>
+      </div>
+
+      {/* Large Statistics Area (Grass Style Chart Simulator) */}
+      <div className="grass-card">
+        <div className="flex items-center justify-between mb-10">
+            <h3 className="text-lg font-bold flex items-center gap-3 italic">
+                <TrendingUp size={22} className="text-brand-500" />
+                EARNINGS STATISTICS
+            </h3>
+            <button className="text-[10px] font-bold text-white/40 uppercase tracking-widest hover:text-white flex items-center gap-2">
+                REFRESH <RefreshCw size={12} />
+            </button>
+        </div>
+
+        <div className="h-[300px] w-full flex flex-col justify-end gap-2 relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-[10px] font-bold text-white/10 uppercase tracking-[0.3em]">Collecting Analytics Data</p>
+            </div>
+            
+            {/* Mock Chart Grid */}
+            <div className="flex items-end justify-between px-2 h-full border-b border-white/5 pb-2">
+                {Array.from({length: 24}).map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-2 w-full group">
+                        <div 
+                            className="w-1 bg-brand-500/20 group-hover:bg-brand-500 transition-all rounded-full" 
+                            style={{ height: `${Math.random() * 100 + 10}%` }}
+                        />
+                        <span className="text-[8px] font-bold text-white/20 group-hover:text-white/60 transition-colors uppercase">{i+1}H</span>
                     </div>
+                ))}
+            </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6 mt-8 pt-6 border-t border-white/5">
+            {[
+                { label: 'Network Points', color: 'bg-sky-500' },
+                { label: 'Tip Velocity', color: 'bg-brand-500' },
+                { label: 'Referral Bonus', color: 'bg-purple-500' },
+                { label: 'Uptime Rank', color: 'bg-emerald-500' },
+                { label: 'Social Edge', color: 'bg-orange-500' }
+            ].map(item => (
+                <div key={item.label} className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${item.color}`} />
+                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{item.label}</span>
+                </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Asset Explorer (Grass Style Integration) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grass-card">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-white/40 mb-8 italic">Asset Portfolio</h3>
+              {portfolio.loading ? (
+                 <div className="flex flex-col items-center justify-center py-10 gap-4">
+                    <Loader2 size={20} className="animate-spin text-brand-500" />
+                 </div>
+              ) : (
+                <div className="space-y-4">
+                    {portfolio.tokens.slice(0, 4).map(token => (
+                        <div key={token.mint} className="flex items-center justify-between group">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-[14px] bg-[#111111] flex items-center justify-center p-1 border border-white/5">
+                                    <img src={token.icon} alt="" className="w-full h-full rounded-[10px] grayscale group-hover:grayscale-0 transition-all" />
+                                </div>
+                                <span className="text-sm font-bold">{token.name}</span>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm font-bold">${token.valueUSD.toFixed(2)}</p>
+                                <p className="text-[10px] text-white/40 font-bold uppercase">{token.balance} {token.symbol}</p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
               )}
           </div>
 
-          <div className="space-y-8">
-              {/* ─── Recent Tips ─── */}
-              <div className="glass-card p-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2 mb-8">
-                    <Clock size={16} /> Latest Earnings
-                </h3>
-                {tipsReceived.length === 0 ? (
-                    <div className="text-center py-10 opacity-30">
-                        <Gift size={24} className="mx-auto mb-3" />
-                        <p className="text-[10px] font-semibold uppercase tracking-wider">No activity</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {tipsReceived.slice(0, 5).map((tip, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                    <ArrowDownLeft size={14} />
-                                </div>
-                                <div>
-                                    <p className="font-semibold text-xs">{tip.sender}</p>
-                                    <p className="text-[9px] text-white/40 font-semibold uppercase tracking-wider">{tip.inputAmount} {tip.inputToken}</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <p className="font-semibold text-xs text-emerald-500">+${tip.amountUSDC.toFixed(2)}</p>
-                            </div>
-                        </div>
-                        ))}
-                        <button 
-                            onClick={() => window.location.hash = 'history'}
-                            className="w-full py-2.5 rounded-lg border border-white/5 text-[10px] font-semibold uppercase tracking-wider text-white/40 hover:text-white hover:bg-white/5 transition-all mt-2"
-                        >
-                            View All History
-                        </button>
-                    </div>
-                )}
-              </div>
-
-              {/* ─── Share Kit ─── */}
-              <div className="glass-card p-6 border-brand-500/20 bg-brand-500/[0.02]">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="w-10 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-black">
-                            <QrCode size={20} />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-sm tracking-tight text-white">Creator Kit</h4>
-                            <p className="text-[10px] text-brand-500 font-semibold uppercase tracking-wider">QR & Links</p>
-                        </div>
-                    </div>
-                    <p className="text-xs text-white/40 leading-relaxed mb-6">
-                        Your professional tipping page is ready to accept payments on-chain.
-                    </p>
-                    <button className="btn-outline w-full !py-2 text-[10px] font-semibold uppercase tracking-wider">
-                        Open Kit <ArrowRight size={14} />
-                    </button>
+          <div className="grass-card">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-white/40 mb-8 italic">Recent Activity</h3>
+              <div className="space-y-4">
+                  {tipsReceived.slice(0, 3).map((tip, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-[14px] bg-brand-500/10 flex items-center justify-center text-brand-500">
+                                  <ArrowDownLeft size={18} />
+                              </div>
+                              <div>
+                                  <p className="text-sm font-bold">{tip.sender}</p>
+                                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Inbound Tip</p>
+                              </div>
+                          </div>
+                          <span className="text-sm font-bold text-brand-500">+${tip.amountUSDC.toFixed(2)}</span>
+                      </div>
+                  ))}
+                  {tipsReceived.length === 0 && <p className="text-center py-6 text-[10px] font-bold text-white/20 uppercase tracking-widest">No recent transactions</p>}
               </div>
           </div>
       </div>
