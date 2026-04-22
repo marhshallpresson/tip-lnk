@@ -84,10 +84,10 @@ export async function initSchema() {
         table.string('signature').primary();
         table.bigInteger('slot').notNullable();
         table.dateTime('timestamp').notNullable();
-        table.string('sender').notNullable();
+        table.string('sender').notNullable().index();
         table.string('sender_name');
         table.text('message');
-        table.string('recipient').notNullable();
+        table.string('recipient').notNullable().index();
         table.decimal('amount', 20, 8).notNullable();
         table.decimal('fee_amount', 20, 8).defaultTo(0);
         table.string('treasury_address');
@@ -95,10 +95,8 @@ export async function initSchema() {
         table.string('tokenSymbol').notNullable();
         table.string('status').defaultTo('confirmed');
         table.string('type').defaultTo('tip');
-        table.index(['sender']);
-        table.index(['recipient']);
-        table.index(['timestamp']);
       });
+      await db.raw('CREATE INDEX IF NOT EXISTS idx_tips_timestamp ON "tips" (timestamp DESC);');
     }
 
     // 3. Indexer State
