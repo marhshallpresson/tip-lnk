@@ -31,7 +31,7 @@ export async function signSessionToken(payload: SessionTokenPayload, expiresAt: 
 
 /**
  * Professional Hardened JWT Verifier
- * Enforces algorithm, audience, and issuer.
+ * Enforces algorithm, audience, issuer, and internal versioning.
  */
 export async function verifySessionToken(token: string): Promise<SessionTokenPayload | null> {
   try {
@@ -41,9 +41,22 @@ export async function verifySessionToken(token: string): Promise<SessionTokenPay
       issuer: ISSUER,
       clockTolerance: 30,
     })
-    return payload as unknown as SessionTokenPayload
-  } catch (err) {
-    console.warn('🛡️ JWT: Verification failed:', err instanceof Error ? err.message : 'Unknown error')
+    
+    const sessionPayload = payload as unknown as SessionTokenPayload
+    
+    // ─── ELITE VERSION ENFORCEMENT ───
+    if (sessionPayload.v !== 1) {
+        console.warn('🛡️ JWT: Unsupported token version detected:', sessionPayload.v)
+        return null
+    }
+
+    return sessionPayload
+  } catch (err: any) {
+    if (err.code === 'ERR_JWT_EXPIRED') {
+        console.debug('🛡️ JWT: Token expired.')
+    } else {
+        console.warn('🛡️ JWT: Verification failed:', err.message)
+    }
     return null
   }
 }

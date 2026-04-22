@@ -157,8 +157,21 @@ export async function initSchema() {
       });
     }
 
+    // 8. Payouts Table
+    if (!(await db.schema.hasTable('payouts'))) {
+      await db.schema.createTable('payouts', (table) => {
+        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.string('pajcash_reference').unique().notNullable();
+        table.string('status').notNullable();
+        table.decimal('amount_ngn', 20, 2).notNullable();
+        table.string('wallet_address').notNullable();
+        table.text('raw_payload');
+        table.timestamps(true, true);
+      });
+    }
+
     // ─── ELITE SECURITY HARDENING ───
-    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token'];
+    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'payouts'];
     for (const table of tables) {
         try {
             // Enable RLS

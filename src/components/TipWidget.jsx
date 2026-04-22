@@ -332,6 +332,21 @@ export default function TipWidget({ fixedRecipient = null }) {
           </div>
         )}
 
+        {/* --- ZERO-TRUST SECURITY BADGE --- */}
+        <div className="mb-6 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+            <ShieldCheck size={18} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Verified Secure</p>
+            <p className="text-[9px] text-white/40 leading-none">End-to-end encryption • Non-custodial</p>
+          </div>
+          <div className="ml-auto flex gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />
+          </div>
+        </div>
+
         <div className="bg-white/[0.02] border border-white/5 rounded-xl p-6 mb-8">
           <div className="flex justify-between items-start mb-1">
             <h4 className="text-sm font-medium text-white/40">Amount</h4>

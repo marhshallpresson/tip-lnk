@@ -38,9 +38,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { reference, status, amount, walletAddress } = req.body
 
   try {
+    // ─── ELITE IDEMPOTENCY CHECK ───
+    const existing = await db('payouts').where({ pajcash_reference: reference }).first()
+    if (existing && existing.status === status) {
+        console.log(`ℹ️ Pajcash Webhook: Reference ${reference} already processed with status ${status}. Skipping.`)
+        return res.status(200).json({ success: true, duplicated: true })
+    }
+
     console.log(`💰 Pajcash Payout Update: ${reference} | Status: ${status}`)
 
-    // Log attempt in payouts table (Directive 06B.5)
+    // Log update in payouts table (Directive 06B.5)
     await db('payouts').insert({
       pajcash_reference: reference,
       status: status,
