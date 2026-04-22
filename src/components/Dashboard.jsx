@@ -1,4 +1,4 @@
-import { useState, useCallback, Suspense, lazy } from 'react';
+import { useState, useEffect,useCallback, Suspense, lazy } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';

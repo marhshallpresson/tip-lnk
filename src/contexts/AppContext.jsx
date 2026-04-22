@@ -142,10 +142,14 @@ export function AppProvider({ children }) {
       // Local Cache
       localStorage.setItem(`${STORAGE_KEY}_${pubkeyStr}`, JSON.stringify(state));
 
+      // ─── ELITE SYNC GUARD ───
       // Remote Sync (Supabase Cloud)
-      saveProfile(pubkeyStr, state);
+      // Only sync if we have a real auth session, otherwise we get 401.
+      if (authUser) {
+        saveProfile(pubkeyStr, state);
+      }
     }
-  }, [state, pubkeyStr]);
+  }, [state, pubkeyStr, authUser]);
 
   const role = useMemo(() => {
     if (authLoading) return 'guest'; // Hold until auth state is known
