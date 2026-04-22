@@ -143,13 +143,13 @@ export function AppProvider({ children }) {
       localStorage.setItem(`${STORAGE_KEY}_${pubkeyStr}`, JSON.stringify(state));
 
       // ─── ELITE SYNC GUARD ───
-      // Remote Sync (Supabase Cloud)
-      // Only sync if we have a real auth session, otherwise we get 401.
-      if (authUser) {
+      // Only sync if we have a real auth session AND the wallet matches.
+      // This prevents 401s during the connection/login transition.
+      if (authUser && authUser.walletAddress === publicKey?.toBase58()) {
         saveProfile(pubkeyStr, state);
       }
     }
-  }, [state, pubkeyStr, authUser]);
+  }, [state, pubkeyStr, authUser, publicKey]);
 
   const role = useMemo(() => {
     if (authLoading) return 'guest'; // Hold until auth state is known
