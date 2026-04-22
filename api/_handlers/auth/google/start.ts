@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import * as oidc from "openid-client"
-import { applyCors } from "../../../_cors.js"
 import { getGoogleConfig, oauthRedirectUrl, patchResponse } from "../_utils.js"
 import { getCookieOptions } from "../../../_lib/session.js"
 
@@ -8,7 +7,6 @@ import { getCookieOptions } from "../../../_lib/session.js"
  * Task 2.2: Standalone Vercel Function for Google OAuth Start
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   patchResponse(res)
 
   const next = (req.query.next as string) || '/'

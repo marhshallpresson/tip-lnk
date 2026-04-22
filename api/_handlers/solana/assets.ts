@@ -1,12 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { applyCors } from "../../_cors.js"
 import { getAssetsByOwner } from "../../_lib/helius.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Asset Fetching
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const owner = req.query.owner as string

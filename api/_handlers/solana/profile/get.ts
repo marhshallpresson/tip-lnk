@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
-import { applyCors } from "../../../_cors.js"
 import { db } from "../../../_lib/db.js"
 import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.js"
 
@@ -8,7 +7,6 @@ import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.j
  * Task 2.2: Standalone Vercel Function for Profile Fetching
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const wallet = req.query.wallet as string
@@ -34,7 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     solDomain: wallet,
                     walletAddress: onChainWallet,
                     isExternal: true
-                } 
+                },
+                metadata: {
+                    title: `Tip ${wallet.replace('.sol', '')} on TipLnk`,
+                    description: `Support this creator with direct SOL and USDC tips. Secure and instant.`,
+                    image: `https://tiplnk.me/api/og/${wallet}`
+                }
             })
         }
         user = await db('user').where({ solDomain: wallet }).first()
@@ -74,7 +77,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.discordHandle = user.discordHandle
     profile.solDomain = user.solDomain
 
-    return res.json({ success: true, profile })
+    // ─── ELITE SEO METADATA ───
+    const displayName = profile.displayName || user.name || 'Solana Creator'
+    const metadata = {
+        title: `${displayName} (@${user.twitterHandle || 'tiplnk'})`,
+        description: profile.bio || `Support ${displayName} with SOL/USDC on TipLnk. 0% platform fees.`,
+        image: profile.avatarUrl || `https://tiplnk.me/api/og/${user.walletAddress}`,
+        card: 'summary_large_image'
+    }
+
+    return res.json({ success: true, profile, metadata })
   } catch (err) {
     console.error('Profile Fetch Error:', err)
     res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' })

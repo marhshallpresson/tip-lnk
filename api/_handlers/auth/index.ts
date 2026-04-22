@@ -1,10 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyCors } from '../../_cors.js'
-
 // Master Dispatcher for Hobby Plan Compliance (Limit: 12 Functions)
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
-
   // Extract the sub-route from the URL or a custom header
   // Path format: /api/auth/login -> subRoute: login
   const path = req.url?.split('?')[0] || ''

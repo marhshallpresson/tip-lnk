@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
 import bs58 from "bs58"
-import { applyCors } from "../../_cors.js"
 import { db } from "../../_lib/db.js"
 import { createSession, getUserRoles } from "../../_lib/session.js"
 import { verifySignature } from "../../../src/lib/crypto.js"
@@ -12,7 +11,6 @@ import { logError, serializeError } from "../../_lib/logger.js"
  * Task 2.2: Standalone Vercel Function for Phantom Google Callback
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   patchResponse(res)
 

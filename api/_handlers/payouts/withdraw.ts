@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { randomUUID } from 'crypto'
 import axios from 'axios'
-import { applyCors } from '../../_cors.js'
 import { db } from '../../_lib/db.js'
 import { getSessionUser } from '../../_lib/session.js'
 

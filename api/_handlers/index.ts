@@ -1,8 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyCors } from '../_cors.js'
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   const action = req.url?.split('/').filter(Boolean)[2]
   try {
     let module;

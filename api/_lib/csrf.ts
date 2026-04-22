@@ -66,6 +66,13 @@ export const ensureCsrfToken = (req: Request, res: Response) => {
   return issueCsrfToken(req, res)
 }
 
+export const verifyCsrfToken = (req: Request) => {
+  const cookieToken = getCsrfCookieToken(req)
+  const headerToken = getCsrfHeaderToken(req)
+  if (!cookieToken || !headerToken) return false
+  return cookieToken === headerToken
+}
+
 export const clearCsrfToken = (req: Request, res: Response) => {
   const opts = getCsrfCookieOptions(req)
   res.clearCookie(CSRF_COOKIE_NAME, opts as any)

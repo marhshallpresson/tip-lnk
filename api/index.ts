@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { applyCors } from './_cors.js'
 import { rateLimit } from './_ratelimit.js'
+import { verifyCsrfToken } from './_lib/csrf.js'
 
 // Import Handlers
 import { default as authMe } from './_handlers/auth/me.js'
@@ -106,6 +107,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   
   if (sensitiveModules.includes(moduleName) || sensitiveActions.includes(action)) {
     if (!rateLimit(req, res)) return
+  }
+
+  // ─── ELITE CSRF ENFORCEMENT ───
+  const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
+  const bypassCsrf = ['auth/csrf', 'payouts/webhook', 'solana/webhooks/helius'].includes(routeKey)
+  
+  if (isMutation && !bypassCsrf) {
+    if (!verifyCsrfToken(req as any)) {
+      console.warn(`🛡️ CSRF: Blocked potential attack on [${routeKey}] from ${req.headers['origin']}`)
+      return res.status(403).json({ error: 'Security Breach', message: 'Invalid CSRF token.' })
+    }
+  }
+
+  // ─── PERFORMANCE: CACHE CONTROL ───
+  if (req.method === 'GET') {
+    // Shared cache for 60s, client cache for 10s
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30')
   }
 
   try {

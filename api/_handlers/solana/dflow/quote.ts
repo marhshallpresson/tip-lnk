@@ -1,14 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import axios from 'axios'
-import { applyCors } from '../../../_cors.js'
 import { validateSwapParams } from '../../../_lib/swap-validator.js'
 
 /**
  * Task 3.2: Professional DFlow Quote Proxy with Hardened Validation
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
-
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

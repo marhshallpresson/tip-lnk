@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyCors } from '../../_cors.js'
 import { db } from '../../_lib/db.js'
 import { getSessionUser } from '../../_lib/session.js'
 
@@ -8,7 +7,6 @@ import { getSessionUser } from '../../_lib/session.js'
  * Fetches the user's withdrawal history from the database.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {

@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { applyCors } from "../../_cors.js"
 import { getSessionUser } from "../../_lib/session.js"
 import { backfillTransactions } from "../../_lib/helius.js"
 
@@ -7,7 +6,6 @@ import { backfillTransactions } from "../../_lib/helius.js"
  * Task 2.2: Standalone Vercel Function for Wallet Backfill
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const authUser = await getSessionUser(req as any)

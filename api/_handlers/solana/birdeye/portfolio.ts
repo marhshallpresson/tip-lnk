@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import axios from 'axios'
-import { applyCors } from '../../../_cors.js'
 import { BIRDEYE_API_KEY } from '../../../_lib/env.js'
 
 /**
@@ -8,8 +7,6 @@ import { BIRDEYE_API_KEY } from '../../../_lib/env.js'
  * Provides creators with deep market insights into their supporting audience.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
-
   const { address } = req.query
   if (!address) return res.status(400).json({ error: 'Address required' })
 

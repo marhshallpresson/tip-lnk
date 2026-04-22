@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { applyCors } from "../../../_cors.js"
 import { db } from "../../../_lib/db.js"
 import { getSessionUser } from "../../../_lib/session.js"
 
@@ -7,7 +6,6 @@ import { getSessionUser } from "../../../_lib/session.js"
  * Task 2.2: Standalone Vercel Function for Secure Tip Logging
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const authUser = await getSessionUser(req as any)

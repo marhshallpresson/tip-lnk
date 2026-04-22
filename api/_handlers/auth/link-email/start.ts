@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
-import { applyCors } from "../../../_cors.js"
 import { db } from "../../../_lib/db.js"
 import { getSessionUser } from "../../../_lib/session.js"
 import { sendMail } from "../../../_lib/mailer.js"
@@ -11,7 +10,6 @@ import { patchResponse } from "../_utils.js"
  * Task 2.2: Standalone Vercel Function for Email Linking Phase 1
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   patchResponse(res)
 
