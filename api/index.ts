@@ -28,6 +28,11 @@ import { default as solanaTipsGet } from './_handlers/solana/tips/get.js'
 import { default as solanaTipsLog } from './_handlers/solana/tips/log.js'
 import { default as solanaWebhookHelius } from './_handlers/solana/webhooks/helius.js'
 import { default as solanaDflowQuote } from './_handlers/solana/dflow/quote.js'
+import { default as solanaBirdeyePortfolio } from './_handlers/solana/birdeye/portfolio.js'
+
+import { default as payoutsWebhook } from './_handlers/payouts/webhook.js'
+import { default as payoutsHistory } from './_handlers/payouts/history.js'
+import { default as payoutsWithdraw } from './_handlers/payouts/withdraw.js'
 
 import { default as adminStats } from './_handlers/admin/stats.js'
 import { default as adminCreators } from './_handlers/admin/creators.js'
@@ -62,6 +67,12 @@ const ROUTES: Record<string, Function> = {
   'solana/tips/log': solanaTipsLog,
   'solana/webhooks/helius': solanaWebhookHelius,
   'solana/dflow/quote': solanaDflowQuote,
+  'solana/birdeye/portfolio': solanaBirdeyePortfolio,
+
+  // Payouts
+  'payouts/webhook': payoutsWebhook,
+  'payouts/history': payoutsHistory,
+  'payouts/withdraw': payoutsWithdraw,
 
   // Admin
   'admin/stats': adminStats,
@@ -88,8 +99,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let routeKey = `${moduleName}/${action}`
   if (subAction) routeKey += `/${subAction}`
 
-  // Apply Ratelimit for sensitive auth routes
-  if (moduleName === 'auth' && (action === 'login' || action === 'register')) {
+  // ─── ELITE GATEWAY SECURITY ───
+  // Apply Ratelimit for sensitive modules
+  const sensitiveModules = ['auth', 'payouts'];
+  const sensitiveActions = ['update']; // e.g., solana/profile/update
+  
+  if (sensitiveModules.includes(moduleName) || sensitiveActions.includes(action)) {
     if (!rateLimit(req, res)) return
   }
 
@@ -100,12 +115,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return await handlerFunc(req, res)
     }
 
-    // Fallback for base routes (e.g., /api/solana/profile can point to /api/solana/profile/index.js if needed)
-    // But here we've explicitly mapped 'solana/profile' to solanaProfile which is /solana/index.js
-    
     res.status(404).json({ error: `Route not found: ${routeKey}` })
   } catch (err: any) {
-    console.error('Dispatch Error:', err.message)
-    res.status(500).json({ error: 'Internal Error', details: err.message })
+    // ─── ERROR MASKING (Anti-Information Leakage) ───
+    console.error(`🛡️ Critical Dispatch Error [${routeKey}]:`, err.message)
+    res.status(500).json({ 
+        error: 'Internal Server Error', 
+        message: 'An unexpected error occurred. Please try again later.' 
+    })
   }
 }

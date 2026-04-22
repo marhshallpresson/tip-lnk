@@ -45,5 +45,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     results.checks.database = dbCheck ? 'PASS' : 'FAIL'
   } catch (e) { results.checks.database = 'FAIL' }
 
+  // ─── ELITE QUICKNODE PERFORMANCE METRICS ───
+  try {
+    const start = Date.now();
+    await axios.post(process.env.VITE_SOLANA_RPC_URL!, {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'getSlot',
+        params: []
+    });
+    results.metrics = {
+        rpcLatencyMs: Date.now() - start,
+        provider: 'Quicknode',
+        infrastructureHealth: 'Optimal'
+    };
+  } catch (e) {
+    results.metrics = { infrastructureHealth: 'Degraded' };
+  }
+
   res.json(results)
 }

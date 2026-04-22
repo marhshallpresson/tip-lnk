@@ -62,7 +62,9 @@ function AppContent() {
   }, [onboardingStep, update]);
 
   const finishOnboarding = useCallback(() => {
+    // ─── ELITE COMPLETION TRIGGER ───
     update({ onboardingComplete: true });
+    localStorage.setItem('onboarding_just_finished', 'true');
     navigate('/dashboard');
   }, [update, navigate]);
 

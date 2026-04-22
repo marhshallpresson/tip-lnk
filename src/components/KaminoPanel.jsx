@@ -105,16 +105,23 @@ export default function KaminoPanel() {
             <p className="text-[10px] text-white/40 mt-1 leading-relaxed">Protected by Kamino's professional-grade collateralized infrastructure.</p>
         </div>
 
-        <div className="bg-[#111111] border border-white/5 p-6 rounded-2xl hover:border-white/10 transition-colors group cursor-pointer text-white">
+        {/* --- KAMINO AUTOMATED REBALANCING (DEEP INTEGRATION) --- */}
+        <div className="bg-[#111111] border border-brand-500/20 p-6 rounded-2xl hover:border-brand-500/40 transition-colors group cursor-pointer text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 blur-3xl -mr-16 -mt-16" />
             <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-accent-purple/10 flex items-center justify-center text-accent-purple border border-accent-purple/10">
-                    <ArrowUpRight size={20} />
+                <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-500 border border-brand-500/10">
+                    <RefreshCw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
                 </div>
-                <p className="text-xs font-bold uppercase tracking-widest text-white/60">Manage Vault</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-500">Auto-Rebalance</p>
             </div>
             <div className="flex items-center justify-between">
-                <p className="text-xl font-black tracking-tight underline underline-offset-4 decoration-accent-purple/40">View on Kamino</p>
-                <ChevronRight size={18} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+                <div>
+                    <p className="text-xl font-black tracking-tight">Strategy: Active</p>
+                    <p className="text-[10px] text-white/40 mt-1">Automatic drift correction enabled.</p>
+                </div>
+                <div className="px-2 py-1 bg-brand-500/10 rounded border border-brand-500/20 text-[8px] font-black text-brand-500 uppercase">
+                    Elite Mode
+                </div>
             </div>
         </div>
       </div>

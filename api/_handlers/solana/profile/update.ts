@@ -8,7 +8,6 @@ import { verifySignature } from "../../../../src/lib/crypto.js"
  * Task 2.2: Standalone Vercel Function for Profile Updates
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const authUser = await getSessionUser(req as any)

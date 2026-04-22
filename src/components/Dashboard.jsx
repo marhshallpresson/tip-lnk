@@ -22,6 +22,7 @@ import {
 import ReferralModal from './ReferralModal';
 import EmbedGenerator from './EmbedGenerator';
 import SettingsModal from './SettingsModal';
+import DashboardWalkthrough from './DashboardWalkthrough';
 
 export default function Dashboard() {
   const { publicKey, disconnect, connected } = useWallet();
@@ -34,6 +35,21 @@ export default function Dashboard() {
   const [isReferralOpen, setIsReferralOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+  // ─── ELITE WALKTHROUGH TRIGGER ───
+  useEffect(() => {
+    const hasSeenWalkthrough = localStorage.getItem(`walkthrough_seen_${authUser?.id}`);
+    // Show walkthrough if user just finished onboarding or hasn't seen it
+    if (!hasSeenWalkthrough && authUser) {
+        setShowWalkthrough(true);
+    }
+  }, [authUser]);
+
+  const handleWalkthroughComplete = () => {
+    localStorage.setItem(`walkthrough_seen_${authUser?.id}`, 'true');
+    setShowWalkthrough(false);
+  };
 
   const address = publicKey?.toBase58() || '';
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
@@ -65,6 +81,9 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans relative">
+      {showWalkthrough && (
+        <DashboardWalkthrough onComplete={handleWalkthroughComplete} />
+      )}
       <ReferralModal 
         isOpen={isReferralOpen} 
         onClose={() => setIsReferralOpen(false)} 

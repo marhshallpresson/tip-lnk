@@ -8,8 +8,6 @@ import { logError, serializeError } from "../../_lib/logger.js"
 import { normalizeEmail, patchResponse } from "./_utils.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!applyCors(req, res)) return
-  if (!rateLimit(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   patchResponse(res)

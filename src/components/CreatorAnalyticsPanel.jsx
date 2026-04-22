@@ -1,5 +1,6 @@
-import { BarChart3, TrendingUp, Users, DollarSign, Activity, PieChart, ArrowUpRight } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, DollarSign, Activity, PieChart, ArrowUpRight, Globe, ShieldCheck } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { useBirdeye } from '../hooks/useBirdeye';
 
 /**
  * Real-time Creator Analytics
@@ -7,6 +8,7 @@ import { useApp } from '../contexts/AppContext';
  */
 export default function CreatorAnalyticsPanel() {
   const { totalTipsUSDC, tipsReceived, profile } = useApp();
+  const { insights, loading: birdeyeLoading } = useBirdeye();
 
   const totalReach = profile?.socialMetrics?.totalFollowers || 0;
 
@@ -69,6 +71,67 @@ export default function CreatorAnalyticsPanel() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* --- BIRDEYE MARKET INTELLIGENCE --- */}
+        <div className="grass-card p-6 border-t-2 border-t-brand-500 overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+                <Globe size={80} />
+            </div>
+            <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-bold italic uppercase tracking-tight">Market Intelligence</h3>
+                <div className="px-2 py-1 bg-white/5 rounded-md flex items-center gap-1.5 border border-white/10">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Live via Birdeye</span>
+                </div>
+            </div>
+
+            {birdeyeLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 size={24} className="animate-spin text-brand-500 mb-2" />
+                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Scanning Portfolio...</p>
+                </div>
+            ) : insights ? (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-[#111111] p-4 rounded-xl border border-white/5">
+                            <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mb-1">Portfolio Value</p>
+                            <p className="text-xl font-black text-white">${insights.totalUsdValue.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-[#111111] p-4 rounded-xl border border-white/5">
+                            <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mb-1">Sentiment</p>
+                            <p className={`text-xl font-black ${insights.marketSentiment === 'Bullish' ? 'text-emerald-500' : 'text-brand-500'}`}>
+                                {insights.marketSentiment}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-1">Top Holdings</p>
+                        {(insights.tokens || []).slice(0, 3).map((token, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-brand-500/10 flex items-center justify-center text-[8px] font-bold text-brand-500">
+                                        {token.symbol[0]}
+                                    </div>
+                                    <span className="text-xs font-bold text-white">{token.symbol}</span>
+                                </div>
+                                <span className="text-xs font-mono text-white/60">${parseFloat(token.value).toFixed(2)}</span>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="pt-4 flex items-center gap-2 text-emerald-500/60">
+                        <ShieldCheck size={12} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">Verified On-Chain Data</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="text-center py-12 opacity-20">
+                    <Globe size={32} className="mx-auto mb-3" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest">Insights Unavailable</p>
+                </div>
+            )}
+        </div>
+
         <div className="grass-card p-6 flex flex-col items-center justify-center min-h-[300px]">
           {tipsReceived.length > 0 ? (
              <div className="w-full h-full flex flex-col">
