@@ -157,7 +157,18 @@ export async function initSchema() {
       });
     }
 
-    // 8. Payouts Table
+    // 8. Password Reset Tokens
+    if (!(await db.schema.hasTable('password_reset_token'))) {
+      await db.schema.createTable('password_reset_token', (table) => {
+        table.string('id').primary();
+        table.string('userId').references('id').inTable('user').onDelete('CASCADE');
+        table.string('tokenHash').notNullable();
+        table.dateTime('expiresAt').notNullable();
+        table.timestamps(true, true);
+      });
+    }
+
+    // 9. Payouts Table
     if (!(await db.schema.hasTable('payouts'))) {
       await db.schema.createTable('payouts', (table) => {
         table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
@@ -171,7 +182,7 @@ export async function initSchema() {
     }
 
     // ─── ELITE SECURITY HARDENING ───
-    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'payouts'];
+    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts'];
     for (const table of tables) {
         try {
             // Enable RLS

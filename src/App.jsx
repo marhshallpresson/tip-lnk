@@ -15,6 +15,7 @@ import CreatorPage from './components/CreatorPage';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AppNavbar from './components/AppNavbar';
+import ResetPassword from './components/ResetPassword';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 
@@ -129,6 +130,7 @@ function AppContent() {
           } />
 
           <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/:username" element={<CreatorPage />} />
 
           <Route path="/terms" element={

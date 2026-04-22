@@ -16,6 +16,8 @@ import { default as authGoogleStart } from './_handlers/auth/google/start.js'
 import { default as authGoogleCallback } from './_handlers/auth/google/callback.js'
 import { default as authLinkEmailStart } from './_handlers/auth/link-email/start.js'
 import { default as authLinkEmailVerify } from './_handlers/auth/link-email/verify.js'
+import { default as authResetPasswordStart } from './_handlers/auth/reset-password-start.js'
+import { default as authResetPasswordVerify } from './_handlers/auth/reset-password-verify.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
 import { default as solanaProfileGet } from './_handlers/solana/profile/get.js'
@@ -54,6 +56,8 @@ const ROUTES: Record<string, Function> = {
   'auth/google/callback': authGoogleCallback,
   'auth/link-email/start': authLinkEmailStart,
   'auth/link-email/verify': authLinkEmailVerify,
+  'auth/reset-password-start': authResetPasswordStart,
+  'auth/reset-password-verify': authResetPasswordVerify,
 
   // Solana
   'solana/profile': solanaProfile,
@@ -103,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ─── ELITE GATEWAY SECURITY ───
   // Apply Ratelimit for sensitive modules
   const sensitiveModules = ['auth', 'payouts'];
-  const sensitiveActions = ['update']; // e.g., solana/profile/update
+  const sensitiveActions = ['update', 'reset-password-start', 'reset-password-verify']; // e.g., solana/profile/update
   
   if (sensitiveModules.includes(moduleName) || sensitiveActions.includes(action)) {
     if (!rateLimit(req, res)) return

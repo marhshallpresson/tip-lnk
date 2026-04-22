@@ -23,7 +23,7 @@ async function safeFetch(url, options = {}) {
 }
 
 export async function saveProfile(walletAddress, profileData, signature = null, message = null) {
-  return await safeFetch(`${API_BASE_URL}/api/solana/profile`, {
+  return await safeFetch(`${API_BASE_URL}/api/solana/profile/update`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ walletAddress, profile: profileData, signature, message }),
@@ -31,13 +31,13 @@ export async function saveProfile(walletAddress, profileData, signature = null, 
 }
 
 export async function getProfile(walletAddress) {
-  const data = await safeFetch(`${API_BASE_URL}/api/solana/profile?wallet=${walletAddress}`);
+  const data = await safeFetch(`${API_BASE_URL}/api/solana/profile/get?wallet=${walletAddress}`);
   return data?.profile || null;
 }
 
 export async function logTip(walletAddress, tipData, isSent = false) {
   // Silent background log to our local indexer
-  await safeFetch(`${API_BASE_URL}/api/solana/tips`, {
+  await safeFetch(`${API_BASE_URL}/api/solana/tips/log`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ walletAddress, tip: tipData, isSent }),

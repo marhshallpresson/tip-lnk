@@ -30,6 +30,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (action === 'wallet-login') module = await import('./wallet-login.js')
         if (action === 'admin-login') module = await import('./admin-login.js')
         if (action === 'phantom-google-callback') module = await import('./phantom-google-callback.js')
+        if (action === 'reset-password-start') module = await import('./reset-password-start.js')
+        if (action === 'reset-password-verify') module = await import('./reset-password-verify.js')
     }
 
     if (module?.default) {

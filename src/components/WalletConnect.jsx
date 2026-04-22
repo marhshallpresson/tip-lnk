@@ -204,6 +204,15 @@ export default function WalletConnect({ onConnected }) {
         result = await login(formData.email, formData.password);
       } else if (view === 'email-register') {
         result = await register(formData.name, formData.email, formData.password);
+      } else if (view === 'email-reset') {
+        const res = await api.post('/auth/reset-password-start', { email: formData.email });
+        if (res.ok && res.data.success) {
+          setView('email-reset-sent');
+          return;
+        } else {
+          setAuthError(res.data.error || 'Failed to send reset email.');
+          return;
+        }
       } else if (view === 'email-prompt') {
           // Send linking code
           const res = await api.post('/auth/link-email/start', { email: formData.email });
@@ -252,6 +261,69 @@ export default function WalletConnect({ onConnected }) {
   const isSolflareWallet = wallet?.adapter?.name?.toLowerCase().includes('solflare');
   const isPhantomWallet = wallet?.adapter?.name?.toLowerCase().includes('phantom');
   
+  if (view === 'email-reset') {
+    return (
+        <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
+            <div className="flex items-center justify-between mb-8">
+                <button onClick={() => setView('email-login')} className="p-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-white/40 hover:text-white transition-all">
+                    <ChevronLeft size={20} />
+                </button>
+                <h2 className="text-xl font-bold text-white text-center flex-1">Reset Password</h2>
+                <div className="w-8"></div>
+            </div>
+            <p className="text-white/40 text-sm mb-8 leading-relaxed text-left">
+                Enter your email address and we'll send you a link to reset your password.
+            </p>
+            
+            {authError && (
+                <div className="mb-6 p-4 bg-red-500/5 border border-red-500/10 rounded-lg text-red-500 text-xs text-left">
+                    {authError}
+                </div>
+            )}
+
+            <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
+                <div>
+                    <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider ml-1">Email Address</label>
+                    <div className="relative mt-1">
+                        <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                        <input 
+                            type="email" 
+                            name="email" 
+                            required 
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="input-field w-full !pl-12" 
+                            placeholder="your@email.com" 
+                        />
+                    </div>
+                </div>
+                <button type="submit" disabled={loadingProvider !== null} className="btn-primary w-full !mt-6">
+                    {loadingProvider === 'email' ? <Loader2 size={18} className="animate-spin" /> : 'Send Reset Link'}
+                </button>
+            </form>
+        </div>
+    );
+  }
+
+  if (view === 'email-reset-sent') {
+    return (
+        <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
+            <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
+                <Mail size={24} className="text-brand-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Check your email</h2>
+            <p className="text-white/40 text-sm mb-8 leading-relaxed">
+                If an account exists for <span className="text-white font-semibold">{formData.email}</span>, we've sent a password reset link.
+            </p>
+            <div className="space-y-4 mt-8">
+                <button onClick={() => setView('email-login')} className="btn-secondary w-full">
+                    Back to Login
+                </button>
+            </div>
+        </div>
+    );
+  }
+
   if (view === 'email-prompt') {
     return (
         <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
@@ -445,6 +517,15 @@ export default function WalletConnect({ onConnected }) {
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                 </div>
+            </div>
+            <div className="flex justify-end">
+                <button 
+                    type="button"
+                    onClick={() => setView('email-reset')}
+                    className="text-[10px] font-semibold text-brand-500 hover:text-brand-400 transition-colors"
+                >
+                    Forgot Password?
+                </button>
             </div>
             <button 
                 type="submit" 
