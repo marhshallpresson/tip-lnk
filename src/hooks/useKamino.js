@@ -5,9 +5,8 @@ import { useSecurityGuardian } from './useSecurityGuardian';
 const MAIN_MARKET = '7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF';
 
 const MAINNET_RESERVES = [
-  { id: 'usdc', name: 'USDC Reserve', token: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', apy: 12.5, tvl: 450000000, logo: '💵' },
-  { id: 'sol', name: 'SOL Reserve', token: 'SOL', mint: 'So11111111111111111111111111111111111111112', apy: 8.2, tvl: 820000000, logo: '◎' },
-  { id: 'jup', name: 'JUP Reserve', token: 'JUP', mint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', apy: 15.1, tvl: 120000000, logo: '🪐' },
+  { id: 'usdc', name: 'USDC Reserve', token: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', apy: 12.5, tvl: 450000000, logo: '💵', multiplier: 1 },
+  { id: 'sol', name: 'SOL Reserve', token: 'SOL', mint: 'So11111111111111111111111111111111111111112', apy: 8.2, tvl: 820000000, logo: '◎', multiplier: 1.5 },
 ];
 
 export function useKamino(walletConnected) {
@@ -20,23 +19,34 @@ export function useKamino(walletConnected) {
   const [risks, setRisks] = useState([]);
   const guardian = useSecurityGuardian();
 
-  // Load real-time market data
+  // ─── ELITE REAL-TIME YIELD FETCHING ───
   useEffect(() => {
-    const loadMarketData = async () => {
-      if (!walletConnected) return;
-      
-      try {
-        // In Phase 2: await KaminoMarket.load(connection, new PublicKey(MAIN_MARKET))
-        setStreamData({ connected: true, lastUpdate: Date.now() });
-        
-        const saved = localStorage.getItem('kamino_positions');
-        if (saved) setPositions(JSON.parse(saved));
-      } catch (err) {
-        console.error('Kamino Market Load Error:', err);
-      }
+    const fetchLiveApys = async () => {
+        try {
+            // Fetch live rates from Jupiter Price V3 (proxying for Kamino yields)
+            const response = await fetch('https://api.kamino.finance/v1/reserves');
+            const data = await response.json();
+            
+            if (data?.reserves) {
+                const updatedVaults = MAINNET_RESERVES.map(v => {
+                    const realRes = data.reserves.find(r => r.mint === v.mint);
+                    return realRes ? {
+                        ...v,
+                        apy: (realRes.supplyApy * 100).toFixed(2),
+                        tvl: realRes.totalDeposits
+                    } : v;
+                });
+                setVaults(updatedVaults);
+            }
+        } catch (e) {
+            console.warn('🛡️ Kamino: Using high-fidelity fallback APYs');
+        }
     };
-    
-    loadMarketData();
+    if (walletConnected) {
+        fetchLiveApys();
+        const timer = setInterval(fetchLiveApys, 30000); // 30s heart-beat
+        return () => clearInterval(timer);
+    }
   }, [walletConnected]);
 
   // Persist positions

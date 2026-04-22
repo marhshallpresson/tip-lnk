@@ -11,27 +11,29 @@ import {
   Trophy
 } from 'lucide-react';
 
+import { useKamino } from '../hooks/useKamino';
+
 export default function KaminoPanel() {
   const { connected } = useWallet();
+  const { vaults, selectedVault, setSelectedVault } = useKamino(connected);
   const [loading, setLoading] = useState(true);
   const [yieldData, setYieldData] = useState(null);
 
   useEffect(() => {
     // ─── Professional Yield Simulation ───
-    // In production, this would fetch real Kamino K-Token data
     const simulateYield = async () => {
         setLoading(true);
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 800));
         setYieldData({
-            currentApy: "12.45%",
+            currentApy: selectedVault ? `${selectedVault.apy}%` : "12.45%",
             totalYieldEarned: "42.80",
-            optimizedStrategy: "USDC Multiply",
+            optimizedStrategy: selectedVault ? `${selectedVault.token} Multiply` : "USDC Multiply",
             protocolSafety: "Elite (9.2/10)"
         });
         setLoading(false);
     };
     if (connected) simulateYield();
-  }, [connected]);
+  }, [connected, selectedVault]);
 
   if (!connected) {
     return (
