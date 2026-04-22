@@ -45,8 +45,20 @@ export const getCsrfCookieOptions = (req: Request) => {
 
 export const createCsrfToken = () => randomBytes(CSRF_TOKEN_BYTES).toString('hex')
 
-export const getCsrfCookieToken = (req: Request) =>
-  normalizeToken((req.cookies || {})[CSRF_COOKIE_NAME])
+export const getCsrfCookieToken = (req: Request) => {
+  const fromMiddleware = normalizeToken((req.cookies || {})[CSRF_COOKIE_NAME])
+  if (fromMiddleware) return fromMiddleware
+
+  // Manual Parsing Fallback (Crucial for Vercel/Serverless edge cases)
+  const cookieHeader = req.headers.cookie || ''
+  const cookies = cookieHeader.split(';').reduce((acc: any, curr) => {
+    const [key, value] = curr.trim().split('=')
+    acc[key] = value
+    return acc
+  }, {})
+  
+  return normalizeToken(cookies[CSRF_COOKIE_NAME])
+}
 
 export const getCsrfHeaderToken = (req: Request) => {
   const raw = req.headers['x-csrf-token']
