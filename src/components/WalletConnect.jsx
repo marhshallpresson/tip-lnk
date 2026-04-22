@@ -450,7 +450,7 @@ export default function WalletConnect({ onConnected }) {
     return (
         <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
         <div className="flex items-center justify-between mb-8">
-            <button onClick={() => setView('email')} className="p-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-white/40 hover:text-white transition-all">
+            <button onClick={() => setView('wallets')} className="p-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-white/40 hover:text-white transition-all">
                 <ChevronLeft size={20} />
             </button>
             <h2 className="text-xl font-bold text-white text-center flex-1">{isLogin ? 'Sign In' : 'Create Account'}</h2>
@@ -548,14 +548,6 @@ export default function WalletConnect({ onConnected }) {
         </p>
       </div>
     );
-  }
-
-  if (view === 'selection') {
-    // We can still use selection if needed, but for now we'll match the main redesign
-    // By default, WalletConnect starts in 'wallets' view or handles it here.
-    // I will just make selection look similar or redirect back to wallets.
-    setView('wallets');
-    return null;
   }
 
   return (

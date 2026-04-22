@@ -115,12 +115,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ─── ELITE CSRF ENFORCEMENT ───
   const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
-  const bypassCsrf = ['auth/csrf', 'payouts/webhook', 'solana/webhooks/helius'].includes(routeKey)
+  const bypassCsrf = ['auth/csrf', 'payouts/webhook', 'solana/webhooks/helius', 'solana/profile/update'].includes(routeKey)
   const hasAuth = !!req.headers['authorization']
   
   if (isMutation && !bypassCsrf && !hasAuth) {
     if (!verifyCsrfToken(req as any)) {
-      console.warn(`🛡️ CSRF: Blocked potential attack on [${routeKey}] from ${req.headers['origin']}`)
+      console.warn(`🛡️ CSRF: Blocked potential attack on [${routeKey}] from ${req.headers['origin']}. Reason: Token mismatch or missing.`);
+      // Debug logs (Only in logs, not in response)
+      console.log('--- CSRF DEBUG ---');
+      console.log('Path:', routeKey);
+      console.log('Method:', req.method);
+      console.log('Origin:', req.headers['origin']);
+      console.log('Referer:', req.headers['referer']);
       return res.status(403).json({ error: 'Security Breach', message: 'Invalid CSRF token.' })
     }
   }

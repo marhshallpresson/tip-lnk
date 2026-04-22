@@ -10,3 +10,4 @@ dist
 .vercel
 backend/final-mail-test.ts
 .env*.local
+dev.db

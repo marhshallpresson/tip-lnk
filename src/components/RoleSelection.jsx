@@ -79,18 +79,6 @@ export default function RoleSelection({ onComplete }) {
     onComplete();
   };
 
-  const handleSkip = () => {
-    // ─── Professional Skip Sequence ───
-    // Applies standard defaults and moves to the next major step
-    updateProfile({
-      roleTier: 'creator',
-      roleTitle: 'Individual Creator',
-      platforms: [],
-      auto_convert_usdc: true
-    });
-    onComplete();
-  };
-
   const currentPlatforms = selectedRoleId ? ROLE_PLATFORMS[selectedRoleId] : [];
 
   return (
@@ -102,12 +90,6 @@ export default function RoleSelection({ onComplete }) {
             Tell us how you'll use TipLnk to customize your experience.
           </p>
         </div>
-        <button 
-          onClick={handleSkip}
-          className="hidden md:flex items-center gap-2 text-white/40 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
-        >
-          Skip for Now <FastForward size={14} />
-        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 md:mb-12">
@@ -166,12 +148,6 @@ export default function RoleSelection({ onComplete }) {
               className="btn-primary w-full md:w-auto md:px-12 py-4"
             >
               Confirm Selection <ChevronRight size={20} />
-            </button>
-            <button 
-              onClick={handleSkip}
-              className="md:hidden text-white/40 hover:text-white text-xs font-bold uppercase tracking-widest py-2"
-            >
-              Skip for Now
             </button>
           </div>
         </div>

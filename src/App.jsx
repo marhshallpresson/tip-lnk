@@ -186,6 +186,10 @@ function RequireAuth({ children, requiredRole }) {
     return <Navigate to="/onboarding" replace />;
   }
 
+  if (requiredRole === 'user' && role === 'creator') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return children;
 }
 

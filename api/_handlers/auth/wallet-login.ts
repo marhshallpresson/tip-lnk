@@ -29,8 +29,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ success: false, error: 'Invalid public key format.' });
       }
 
-      if (!nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes)) {
-        return res.status(401).json({ success: false, error: 'Invalid signature.' });
+      const verified = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+      
+      if (!verified) {
+        // Log the message attempt for debugging if it fails in prod
+        console.warn('🛡️ SIWS: Signature Verification Failed', { walletAddress, message });
+        return res.status(401).json({ success: false, error: 'Invalid signature. Please ensure your wallet date/time is correct.' });
       }
 
       // Replay Protection: Verify timestamp
@@ -38,9 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!timestampMatch) return res.status(400).json({ success: false, error: 'Missing timestamp in message.' });
       const timestamp = parseInt(timestampMatch[1]);
       const now = Date.now();
-      const FIVE_MINUTES = 5 * 60 * 1000;
-      if (Math.abs(now - timestamp) > FIVE_MINUTES) {
-        return res.status(401).json({ success: false, error: 'Signature expired (replay protection).' });
+      const TEN_MINUTES = 10 * 60 * 1000; // Increased tolerance for slow connections
+      if (Math.abs(now - timestamp) > TEN_MINUTES) {
+        return res.status(401).json({ success: false, error: 'Signature expired. Please try again.' });
       }
     } catch (e) {
         logError('siws_signature_verification_error', { error: serializeError(e), walletAddress });

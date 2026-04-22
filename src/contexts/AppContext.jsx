@@ -153,10 +153,16 @@ export function AppProvider({ children }) {
 
     // Elite Admin Shortcut: Admins are always creators and skip onboarding
     const isAdmin = authUser?.roles?.includes('admin');
-    if (isAdmin || state.onboardingComplete) return 'creator';
+    
+    // ─── ELITE ONBOARDING VALIDATION ───
+    // Only trust onboardingComplete if they actually have a name or domain.
+    // This prevents "Empty Profiles" from skipping the setup flow.
+    const isProfileComplete = state.onboardingComplete && (state.profile?.displayName || state.profile?.solDomain);
+    
+    if (isAdmin || isProfileComplete) return 'creator';
 
     return 'user';
-  }, [connected, authUser, authLoading, state.onboardingComplete]);
+  }, [connected, authUser, authLoading, state.onboardingComplete, state.profile]);
 
   const update = useCallback((partial) => {
     setState((prev) => ({ ...prev, ...partial }));
