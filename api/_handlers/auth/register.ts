@@ -47,7 +47,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json({
       success: true,
-      user: { id: userId, email, name, roles: ['user'], emailVerifiedAt: null },
+      user: { 
+        id: userId, 
+        email, 
+        name, 
+        full_name: name,
+        first_name: name ? name.split(' ')[0] : null,
+        roles: ['user'], 
+        emailVerifiedAt: null,
+        onboardingComplete: false,
+        onboarding_complete: false
+      },
       auth: {
         accessToken: session.accessToken,
         tokenType: 'Bearer',

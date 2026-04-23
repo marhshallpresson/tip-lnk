@@ -18,9 +18,12 @@ export interface SessionUser {
     id: string;
     email: string | null;
     name: string | null;
+    full_name: string | null;
+    first_name: string | null;
     roles: string[];
     emailVerifiedAt: Date | null;
     onboardingComplete: boolean;
+    onboarding_complete: boolean;
     sessionId: string;
     walletAddress?: string;
     profileData: any;
@@ -150,9 +153,12 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
         id: user.id,
         email: user.email,
         name: user.name,
+        full_name: user.name,
+        first_name: user.name ? user.name.split(' ')[0] : null,
         roles,
         emailVerifiedAt: user.emailVerifiedAt,
         onboardingComplete: Boolean(user.onboardingComplete),
+        onboarding_complete: Boolean(user.onboardingComplete),
         sessionId: sid,
         walletAddress: user.walletAddress,
         profileData

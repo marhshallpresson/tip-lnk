@@ -40,6 +40,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // ─── Elite Profile Sync ───
+    const incomingName = profile.displayName || profile.name;
+    const finalName = incomingName && incomingName.trim().length > 0 ? incomingName.trim() : authUser.name;
+
     await db('user')
       .where({ id: authUser.id })
       .update({ 
@@ -47,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         solDomain: solDomain || null,
         twitterHandle: profile.twitterHandle || null,
         discordHandle: profile.discordHandle || null,
-        name: profile.displayName || profile.name,
+        name: finalName,
         onboardingComplete: profile.onboardingComplete === true,
         updated_at: new Date()
       })

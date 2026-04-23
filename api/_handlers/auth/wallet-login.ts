@@ -95,9 +95,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         id: user.id, 
         email: user.email, 
         name: user.name, 
+        full_name: user.name,
+        first_name: user.name ? user.name.split(' ')[0] : null,
         walletAddress, 
         roles, 
-        emailVerifiedAt: user.emailVerifiedAt 
+        emailVerifiedAt: user.emailVerifiedAt,
+        onboardingComplete: Boolean(user.onboardingComplete),
+        onboarding_complete: Boolean(user.onboardingComplete)
       },
       auth: {
         accessToken: session.accessToken,

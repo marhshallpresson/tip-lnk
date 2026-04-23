@@ -6,7 +6,10 @@ import api from '../lib/api';
 
 export default function AuthCompletion() {
   const { user, refreshUser, logout } = useAuth();
-  const [view, setView] = useState('email-prompt'); // email-prompt | email-verify | email-success
+  const [view, setView] = useState(() => {
+    if (user?.email && user?.emailVerifiedAt && !user?.name) return 'name-prompt';
+    return 'email-prompt';
+  });
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -56,6 +59,31 @@ export default function AuthCompletion() {
         setView('email-success');
       } else {
         setError(res.data.error || 'Invalid or expired verification code.');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateName = async (e) => {
+    e.preventDefault();
+    
+    if (!name || name.trim().length < 2) {
+      setError('Please enter your full name (at least 2 characters).');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.post('/auth/update-name', { name: name.trim() });
+      if (res.ok && res.data.success) {
+        await refreshUser();
+        navigate('/onboarding');
+      } else {
+        setError(res.data.error || 'Failed to update name.');
       }
     } catch (err) {
       setError('An unexpected error occurred.');
@@ -207,6 +235,48 @@ export default function AuthCompletion() {
 
         {view === 'email-success' && (
           <div className="glass-card p-8 sm:p-10 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-accent-green/10 flex items-center justify-center mx-auto mb-8 border border-accent-green/20">
+                <CheckCircle size={40} className="text-accent-green" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">Account Verified</h2>
+            <p className="text-surface-400 text-sm mb-10 leading-relaxed">
+              Fantastic! Your account is now secure. <br/>
+              Let's finish setting up your creator profile.
+            </p>
+            
+            <button 
+              onClick={handleContinue}
+              className="btn-primary w-full h-14 text-base font-bold flex items-center justify-center gap-2"
+            >
+              Continue to Onboarding <ArrowRight size={18} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+cent-green" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">Account Verified</h2>
+            <p className="text-surface-400 text-sm mb-10 leading-relaxed">
+              Fantastic! Your account is now secure. <br/>
+              Let's finish setting up your creator profile.
+            </p>
+            
+            <button 
+              onClick={handleContinue}
+              className="btn-primary w-full h-14 text-base font-bold flex items-center justify-center gap-2"
+            >
+              Continue to Onboarding <ArrowRight size={18} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+      <div className="glass-card p-8 sm:p-10 text-center">
             <div className="w-20 h-20 rounded-3xl bg-accent-green/10 flex items-center justify-center mx-auto mb-8 border border-accent-green/20">
                 <CheckCircle size={40} className="text-accent-green" />
             </div>
