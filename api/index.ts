@@ -74,7 +74,7 @@ const ROUTES: Record<string, Function> = {
   'solana/webhooks/helius': solanaWebhookHelius,
   'solana/dflow/quote': solanaDflowQuote,
   'solana/birdeye/portfolio': solanaBirdeyePortfolio,
-  'solana/rpc': solanaRpc,
+  'quicknode/rpc/solana': solanaRpc,
 
   // Payouts
   'payouts/webhook': payoutsWebhook,
@@ -117,18 +117,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ─── ELITE CSRF ENFORCEMENT ───
   const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
-  const bypassCsrf = ['auth/csrf', 'payouts/webhook', 'solana/webhooks/helius', 'solana/profile/update'].includes(routeKey)
+  const bypassCsrf = ['auth/csrf', 'payouts/webhook', 'solana/webhooks/helius', 'solana/profile/update', 'quicknode/rpc/solana'].includes(routeKey)
   const hasAuth = !!req.headers['authorization']
   
   if (isMutation && !bypassCsrf && !hasAuth) {
     if (!verifyCsrfToken(req as any)) {
       console.warn(`🛡️ CSRF: Blocked potential attack on [${routeKey}] from ${req.headers['origin']}. Reason: Token mismatch or missing.`);
-      // Debug logs (Only in logs, not in response)
-      console.log('--- CSRF DEBUG ---');
-      console.log('Path:', routeKey);
-      console.log('Method:', req.method);
-      console.log('Origin:', req.headers['origin']);
-      console.log('Referer:', req.headers['referer']);
       return res.status(403).json({ error: 'Security Breach', message: 'Invalid CSRF token.' })
     }
   }
@@ -140,7 +134,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const handlerFunc = ROUTES[routeKey]
+    // ─── ELITE ROUTE RESOLUTION ───
+    // Check for exact matches first (e.g., auth/login)
+    let handlerFunc = ROUTES[routeKey]
+
+    // Check for module/action matches if no exact match (handles params like solana/assets/WALLET)
+    if (!handlerFunc) {
+        const baseKey = `${moduleName}/${action}`
+        handlerFunc = ROUTES[baseKey]
+    }
 
     if (typeof handlerFunc === 'function') {
       return await handlerFunc(req, res)

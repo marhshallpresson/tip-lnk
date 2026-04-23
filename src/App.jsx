@@ -71,9 +71,9 @@ function AppContent() {
       
       {/* --- Global Background Branding --- */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-[0.03]">
-          <img src="/logo.svg" className="absolute -top-20 -left-20 w-[600px] h-[600px] blur-[100px] rotate-12 bg-branding-watermark" alt="" />
-          <img src="/logo.svg" className="absolute top-1/2 -right-40 w-[800px] h-[800px] blur-[120px] -rotate-12 bg-branding-watermark" alt="" />
-          <img src="/logo.svg" className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] blur-[80px] bg-branding-watermark" alt="" />
+          <img src="/logo.svg" className="absolute -top-20 -left-20 w-[600px] h-[600px] blur-[100px] rotate-12" alt="" />
+          <img src="/logo.svg" className="absolute top-1/2 -right-40 w-[800px] h-[800px] blur-[120px] -rotate-12" alt="" />
+          <img src="/logo.svg" className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] blur-[80px]" alt="" />
       </div>
 
       {/* Standard App Navbar - Hidden on White-Label Creator Pages */}
@@ -202,24 +202,15 @@ function AuthCallbackHandler() {
 
   // Elite Handler: Phantom SDK uses this route as a redirect URL.
   // We must not interfere with Phantom's own message passing if it's phantom-google.
-  if (platform === 'phantom-google') {
-    // Phantom SDK handles its own popup lifecycle here. We just render a loading state.
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-surface-950 text-center animate-fade-in">
-         <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-         <h2 className="text-2xl font-bold text-white">Authenticating Wallet...</h2>
-         <p className="text-surface-400 mt-2 italic">Securing link with Google infrastructure...</p>
-      </div>
-    );
-  }
+  const isPhantomGoogle = platform === 'phantom-google';
 
   useEffect(() => {
+    if (isPhantomGoogle) return;
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    const state = params.get('state');
     const errorParam = params.get('error');
 
-    // If OAuth provider returned an error
     if (errorParam) {
       const errorMsg = params.get('error_description') || 'Authorization denied.';
       setError(errorMsg);
@@ -236,51 +227,35 @@ function AuthCallbackHandler() {
     if (code) {
       const exchangeCode = async () => {
         try {
-          const isProd = import.meta.env.PROD;
-          const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-
-          const response = await fetch(`${API_BASE}/api/auth/${platform}/callback`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              code,
-              redirectUri: `${window.location.origin}/auth/callback/${platform}`
-            })
+          const res = await api.post(`/auth/${platform}/callback`, {
+            code,
+            redirectUri: `${window.location.origin}/auth/callback/${platform}`
           });
 
-          let data;
-          if (response.ok) {
-            data = await response.json();
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Identity provider rejected the authorization code.');
-          }
+          if (res.ok) {
+            const data = res.data;
+            updateProfile({
+              socials: {
+                [platform === 'twitter' ? 'twitter' : 'discord']: data.username,
+                [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true
+              }
+            });
 
-          updateProfile({
-            socials: {
-              [platform === 'twitter' ? 'twitter' : 'discord']: data.username,
-              [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true
+            setStatus('success');
+
+            if (window.opener) {
+              window.opener.postMessage({ type: 'OAUTH_SUCCESS', platform, username: data.username }, window.location.origin);
+              setTimeout(() => window.close(), 500);
+            } else {
+              navigate(`/onboarding?step=3&oauth_success=${platform}`);
             }
-          });
-
-          setStatus('success');
-
-          // If in a popup, message the opener and close
-          if (window.opener) {
-            window.opener.postMessage({
-              type: 'OAUTH_SUCCESS',
-              platform,
-              username: data.username
-            }, window.location.origin);
-            setTimeout(() => window.close(), 500);
           } else {
-            navigate(`/onboarding?step=1&oauth_success=${platform}`);
+            throw new Error(res.data?.message || 'Identity provider rejected the authorization code.');
           }
         } catch (err) {
           console.error('OAuth Exchange Error:', err);
           setError(err.message);
           setStatus('error');
-
           if (window.opener) {
             window.opener.postMessage({ type: 'OAUTH_ERROR', platform, error: err.message }, window.location.origin);
             setTimeout(() => window.close(), 2000);
@@ -291,7 +266,6 @@ function AuthCallbackHandler() {
       };
       exchangeCode();
     } else if (!code && !errorParam) {
-      // No code and no error param — something went wrong
       setError('No authorization code received.');
       setStatus('error');
       if (window.opener) {
@@ -299,13 +273,18 @@ function AuthCallbackHandler() {
         setTimeout(() => window.close(), 1500);
       }
     }
-  }, [platform, navigate, updateProfile]);
-
+  }, [platform, navigate, updateProfile, isPhantomGoogle]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-950">
       <div className="text-center animate-fade-in">
-        {status === 'error' ? (
+        {isPhantomGoogle ? (
+           <>
+            <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 className="text-2xl font-bold text-white">Authenticating Wallet...</h2>
+            <p className="text-surface-400 mt-2 italic">Securing link with Google infrastructure...</p>
+           </>
+        ) : status === 'error' ? (
           <div className="text-accent-red">
             <h2 className="text-2xl font-bold">Verification Failed</h2>
             <p className="mt-2">{error}</p>

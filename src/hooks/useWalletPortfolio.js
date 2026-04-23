@@ -32,14 +32,14 @@ export default function useWalletPortfolio() {
 
       // ─── Parallel Elite Data Fetching ───
       const [balance, priceRes, assetRes] = await Promise.all([
-        connection.getBalance(publicKey),
-        fetch('https://price.jup.ag/v6/price?ids=SOL,USDC').then(r => r.json()),
-        fetch(`${API_BASE_URL}/api/solana/assets/${publicKey.toBase58()}`).then(r => r.json())
+        connection.getBalance(publicKey).catch(() => 0),
+        fetch('https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112,EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y').then(r => r.json()).catch(() => ({ data: {} })),
+        fetch(`${API_BASE_URL}/api/solana/assets/${publicKey.toBase58()}`).then(r => r.json()).catch(() => ({ assets: { items: [] } }))
       ]);
 
       const solBalance = balance / LAMPORTS_PER_SOL;
-      const solPrice = priceRes.data?.SOL?.price || 180;
-      const usdcPrice = priceRes.data?.USDC?.price || 1;
+      const solPrice = parseFloat(priceRes.data?.['So11111111111111111111111111111111111111112']?.price || 180);
+      const usdcPrice = parseFloat(priceRes.data?.['EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y']?.price || 1);
 
       // ─── Professional DAS API Transformation ───
       const rawAssets = assetRes.assets?.items || [];

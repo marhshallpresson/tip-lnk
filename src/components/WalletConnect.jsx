@@ -107,11 +107,10 @@ export default function WalletConnect({ onConnected }) {
   useEffect(() => {
     const isAlreadyLoggedIn = user && user.walletAddress === publicKey?.toBase58();
     if (connected && publicKey && !advancing && !isAlreadyLoggedIn) {
-      const addr = publicKey.toBase58();
-      setAdvancing(true);
-      performSiwsLogin(addr, 'adapter');
+      // Auto-trigger SIWS is disabled to prevent "Connection rejected" errors
+      // from overlapping auto-connect handshakes. The user must click "Continue".
     }
-  }, [connected, publicKey, advancing, performSiwsLogin, user]);
+  }, [connected, publicKey, advancing, user]);
 
   // Deep Link Auto-Connect
   useEffect(() => {
@@ -374,9 +373,7 @@ export default function WalletConnect({ onConnected }) {
 
         {!connected ? (
             <div className="flex flex-col gap-3">
-                <button onClick={() => handleSocialSelect('injected')} className="w-full h-14 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold text-white flex items-center justify-center gap-3">
-                    <Smartphone size={20} /> Browser Extension
-                </button>
+               
                 <div className="flex justify-center opacity-30 hover:opacity-100 transition-opacity scale-90"><WalletMultiButton /></div>
             </div>
         ) : (

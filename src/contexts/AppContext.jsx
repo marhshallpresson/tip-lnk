@@ -106,11 +106,13 @@ export function AppProvider({ children }) {
             if (dbProfile) {
             // Flatten/Merge handles from root into profile object
             setState(prev => {
-                const newState = { ...prev, ...dbProfile };
+                const profileData = JSON.parse(dbProfile.profileData || '{}');
+                const newState = { ...prev, ...dbProfile, profile: { ...prev.profile, ...profileData } };
 
-                // Critical: If DB says onboarding is done, respect it immediately
-                if (dbProfile.onboardingComplete === true) {
-                newState.onboardingComplete = true;
+                // ─── ELITE ONBOARDING RESOLUTION ───
+                // Check both the DB column and the nested profile JSON
+                if (dbProfile.onboardingComplete === true || profileData.onboardingComplete === true) {
+                    newState.onboardingComplete = true;
                 }
 
                 if (dbProfile.twitterHandle || dbProfile.discordHandle) {
