@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronRight, ChevronLeft, Zap, BarChart3, ShieldCheck, Landmark } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
 
 const STEPS = [
   {

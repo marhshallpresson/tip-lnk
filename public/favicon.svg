@@ -1,11 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#047857"/>
+    <linearGradient id="purpleGradient" x1="32" y1="8" x2="32" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9f35e8"/>
+      <stop offset="100%" stop-color="#7b1fa2"/>
     </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
   </defs>
-  <rect width="32" height="32" rx="8" fill="url(#g)"/>
-  <path d="M11 10l5 6-5 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M16 10l5 6-5 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
+  
+  <!-- Disk 4 (Bottom) -->
+  <path d="M52 48C52 53.5228 43.0457 58 32 58C20.9543 58 12 53.5228 12 48V44C12 49.5228 20.9543 54 32 54C43.0457 54 52 49.5228 52 44V48Z" fill="url(#purpleGradient)" fill-opacity="0.3"/>
+  
+  <!-- Disk 3 -->
+  <path d="M52 38C52 43.5228 43.0457 48 32 48C20.9543 48 12 43.5228 12 38V34C12 39.5228 20.9543 44 32 44C43.0457 44 52 39.5228 52 34V38Z" fill="url(#purpleGradient)" fill-opacity="0.5"/>
+  
+  <!-- Disk 2 -->
+  <path d="M52 28C52 33.5228 43.0457 38 32 38C20.9543 38 12 33.5228 12 28V24C12 29.5228 20.9543 34 32 34C43.0457 34 52 29.5228 52 24V28Z" fill="url(#purpleGradient)" fill-opacity="0.7"/>
+  
+  <!-- Disk 1 (Top) -->
+  <path d="M52 18C52 23.5228 43.0457 28 32 28C20.9543 28 12 23.5228 12 18C12 12.4772 20.9543 8 32 8C43.0457 8 52 12.4772 52 18Z" fill="url(#purpleGradient)" filter="url(#glow)"/>
 </svg>

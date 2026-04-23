@@ -120,7 +120,13 @@
   }
 
   .grass-sidebar-btn-active {
-    @apply bg-[#151515] text-brand-500 shadow-[0_0_20px_rgba(22,229,162,0.1)];
+    @apply bg-[#151515] text-brand-500 shadow-[0_0_20px_rgba(159,53,232,0.1)];
+  }
+
+  /* --- BRANDING WATERMARK --- */
+  .bg-branding-watermark {
+    @apply fixed pointer-events-none z-0 opacity-[0.03] select-none;
+    filter: grayscale(100%) brightness(200%);
   }
 
   .grass-banner {
@@ -157,8 +163,8 @@
 
 /* Wallet adapter overrides */
 .wallet-adapter-button {
-  background-color: #00D265 !important;
-  color: #000000 !important;
+  background-color: #9f35e8 !important;
+  color: #ffffff !important;
   border-radius: 8px !important;
   height: 44px !important;
   font-family: inherit !important;
@@ -169,7 +175,7 @@
 }
 
 .wallet-adapter-button:hover {
-  background-color: #00F075 !important;
+  background-color: #a95bff !important;
   transform: translateY(-1px);
 }
 

@@ -381,7 +381,7 @@ export default function WalletConnect({ onConnected }) {
             </div>
         ) : (
             <div className="bg-brand-500/10 border border-brand-500/20 rounded-xl p-6 text-center animate-scale-in">
-                <p className="text-brand-400 font-black text-xs uppercase tracking-widest mb-1">Wallet Linked</p>
+                <p className="text-brand-500 font-black text-xs uppercase tracking-widest mb-1">Wallet Linked</p>
                 <p className="text-white font-mono text-[10px] truncate mb-4">{publicKey?.toBase58()}</p>
                 <button onClick={() => onConnected(publicKey.toBase58(), true)} className="btn-primary w-full">Continue</button>
             </div>

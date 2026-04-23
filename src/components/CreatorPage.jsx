@@ -3,14 +3,14 @@ import { useParams } from 'react-router-dom';
 import { getProfile } from '../utils/database';
 import TipWidget from './TipWidget';
 import {
-  Twitter,
   Globe,
   Loader2,
   Heart,
   MessageSquare,
   Repeat,
   Image as ImageIcon,
-  ShieldCheck
+  ShieldCheck,
+  Share2
 } from 'lucide-react';
 
 export default function CreatorPage() {
@@ -18,6 +18,9 @@ export default function CreatorPage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('about');
+
+  // Use generic icons for branded ones
+  const TwitterIcon = Share2;
 
   useEffect(() => {
     const fetchCreator = async () => {
@@ -101,7 +104,7 @@ const CreatorHeader = ({ profile, supporterCount }) => {
               )}
               {profile.twitterHandle && (
                 <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20" title="Social identity confirmed">
-                  <Twitter size={10} className="text-sky-500" />
+                  <TwitterIcon size={10} className="text-sky-500" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-sky-500">Linked</span>
                 </div>
               )}
@@ -175,7 +178,7 @@ const TabContent = ({ activeTab, profile }) => {
         <div className="flex flex-wrap gap-3 not-prose">
           {profile.twitterHandle && (
             <a href={`https://x.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-white/80 hover:bg-white/10 text-xs font-medium">
-              <Twitter size={14} className="text-white/40" /> @{profile.twitterHandle}
+              <TwitterIcon size={14} className="text-white/40" /> @{profile.twitterHandle}
             </a>
           )}
           {profile.link && (
@@ -195,7 +198,7 @@ const TabContent = ({ activeTab, profile }) => {
     if (!posts?.data?.length) {
       return (
         <div className="py-16 bg-[#111111] border border-white/5 rounded-xl text-center">
-          <Twitter size={32} className="text-white/5 mx-auto mb-4" />
+          <TwitterIcon size={32} className="text-white/5 mx-auto mb-4" />
           <p className="text-white/20 font-semibold uppercase tracking-wider text-[10px]">No posts found or creator has not linked their X account.</p>
         </div>
       );

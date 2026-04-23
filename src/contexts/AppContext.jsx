@@ -101,29 +101,34 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const syncWithDb = async () => {
       if (pubkeyStr && !dbSynced) {
+        try {
+            const dbProfile = await getProfile(pubkeyStr);
+            if (dbProfile) {
+            // Flatten/Merge handles from root into profile object
+            setState(prev => {
+                const newState = { ...prev, ...dbProfile };
 
-        const dbProfile = await getProfile(pubkeyStr);
-        if (dbProfile) {
-          // Flatten/Merge handles from root into profile object
-          setState(prev => {
-            const newState = { ...prev, ...dbProfile };
+                // Critical: If DB says onboarding is done, respect it immediately
+                if (dbProfile.onboardingComplete === true) {
+                newState.onboardingComplete = true;
+                }
 
-            // Critical: If DB says onboarding is done, respect it immediately
-            if (dbProfile.onboardingComplete === true) {
-              newState.onboardingComplete = true;
+                if (dbProfile.twitterHandle || dbProfile.discordHandle) {
+                newState.profile = {
+                    ...newState.profile,
+                    twitterHandle: dbProfile.twitterHandle || newState.profile.twitterHandle,
+                    discordHandle: dbProfile.discordHandle || newState.profile.discordHandle
+                };
+                }
+                return newState;
+            });
             }
-
-            if (dbProfile.twitterHandle || dbProfile.discordHandle) {
-              newState.profile = {
-                ...newState.profile,
-                twitterHandle: dbProfile.twitterHandle || newState.profile.twitterHandle,
-                discordHandle: dbProfile.discordHandle || newState.profile.discordHandle
-              };
-            }
-            return newState;
-          });
+            setDbSynced(true);
+        } catch (err) {
+            console.error('🛡️ AppContext: Sync fault. Using local state.', err);
+            // Don't crash - allow user to use app with local state
+            setDbSynced(true); 
         }
-        setDbSynced(true);
       }
     };
     syncWithDb();

@@ -23,7 +23,6 @@ import ReferralModal from './ReferralModal';
 import EmbedGenerator from './EmbedGenerator';
 import SettingsModal from './SettingsModal';
 import DashboardWalkthrough from './DashboardWalkthrough';
-import OnboardingPromptModal from './OnboardingPromptModal';
 
 export default function Dashboard() {
   const { publicKey, disconnect, connected } = useWallet();
@@ -138,7 +137,7 @@ export default function Dashboard() {
       `}>
         {/* Logo Section */}
         <div className="py-10">
-            <div className="w-10 h-10 rounded-[14px] bg-brand-500 flex items-center justify-center shadow-[0_0_20px_rgba(22,229,162,0.2)]">
+            <div className="w-10 h-10 rounded-[14px] bg-brand-500 flex items-center justify-center shadow-[0_0_20px_rgba(159,53,232,0.2)]">
                 <Zap size={22} className="text-black" />
             </div>
         </div>
@@ -316,7 +315,7 @@ export function OverviewTab() {
                 Complete your profile and link your social handles to increase your earnings potential.
             </p>
 
-            <button className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(22,229,162,0.3)] transition-all active:scale-[0.98]">
+            <button className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(159,53,232,0.3)] transition-all active:scale-[0.98]">
                 CONNECT NETWORK / HANDLE
             </button>
         </div>
@@ -615,7 +614,7 @@ function OnboardingPromptModal({ onClose, onContinue }) {
           <div className="space-y-4 w-full">
             <button 
               onClick={onContinue}
-              className="w-full py-4 rounded-2xl bg-brand-500 text-black font-black uppercase tracking-tighter hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(22,229,162,0.2)]"
+              className="w-full py-4 rounded-2xl bg-brand-500 text-black font-black uppercase tracking-tighter hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(159,53,232,0.2)]"
             >
               Finish Setup Now
               <ArrowRight size={20} />

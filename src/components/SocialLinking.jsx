@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Twitter, DiscIcon as Discord, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { MessageSquare, CheckCircle2, ChevronRight, ChevronLeft, Share2, Disc } from 'lucide-react';
 
 export default function SocialLinking({ onComplete, onBack }) {
   const { profile, updateProfile } = useApp();
@@ -10,6 +10,10 @@ export default function SocialLinking({ onComplete, onBack }) {
 
   const twitterLinked = profile.socials?.isTwitterVerified;
   const discordLinked = profile.socials?.isDiscordVerified;
+
+  // Use generic icons for branded ones to avoid missing export crashes
+  const TwitterIcon = Share2;
+  const DiscordIcon = MessageSquare;
 
   const cleanup = useCallback(() => {
     if (listenerRef.current) {
@@ -182,7 +186,7 @@ export default function SocialLinking({ onComplete, onBack }) {
         <div className="bg-surface-800/50 border border-surface-700 rounded-xl p-4 flex items-center justify-between transition-all hover:bg-surface-800">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${twitterLinked ? 'bg-blue-500/20 text-blue-400' : 'bg-surface-700 text-surface-400'}`}>
-              <Twitter size={24} />
+              <TwitterIcon size={24} />
             </div>
             <div>
               <p className="font-semibold">{twitterLinked ? (profile.socials?.twitter || '@verified') : 'X (Twitter)'}</p>
@@ -210,7 +214,7 @@ export default function SocialLinking({ onComplete, onBack }) {
         <div className="bg-surface-800/50 border border-surface-700 rounded-xl p-4 flex items-center justify-between transition-all hover:bg-surface-800">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${discordLinked ? 'bg-indigo-500/20 text-indigo-400' : 'bg-surface-700 text-surface-400'}`}>
-              <Discord size={24} />
+              <DiscordIcon size={24} />
             </div>
             <div>
               <p className="font-semibold">{discordLinked ? (profile.socials?.discord || 'verified') : 'Discord'}</p>

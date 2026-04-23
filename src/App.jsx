@@ -13,18 +13,15 @@ import WalletModal from './components/WalletModal';
 import LandingPage from './components/LandingPage';
 import CreatorPage from './components/CreatorPage';
 import Dashboard from './components/Dashboard';
+import { OverviewTab, TransactionHistoryTab } from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AppNavbar from './components/AppNavbar';
 import ResetPassword from './components/ResetPassword';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 
-// Lazy load components for performance
-const OverviewTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.OverviewTab })));
-const TransactionHistoryTab = lazy(() => import('./components/Dashboard').then(m => ({ default: m.TransactionHistoryTab })));
-
-const TermsOfService = lazy(() => import('./components/legal/TermsOfService'));
-const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./components/legal/TermsOfService.jsx'));
+const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy.jsx'));
 
 
 // Auto-scroll to top on navigation
@@ -69,8 +66,16 @@ function AppContent() {
   }, [update, navigate]);
 
   return (
-    <div className="min-h-screen bg-surface-950 text-white flex flex-col">
+    <div className="min-h-screen bg-surface-950 text-white flex flex-col relative overflow-hidden">
       <ScrollToTop />
+      
+      {/* --- Global Background Branding --- */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-[0.03]">
+          <img src="/logo.svg" className="absolute -top-20 -left-20 w-[600px] h-[600px] blur-[100px] rotate-12 bg-branding-watermark" alt="" />
+          <img src="/logo.svg" className="absolute top-1/2 -right-40 w-[800px] h-[800px] blur-[120px] -rotate-12 bg-branding-watermark" alt="" />
+          <img src="/logo.svg" className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] blur-[80px] bg-branding-watermark" alt="" />
+      </div>
+
       {/* Standard App Navbar - Hidden on White-Label Creator Pages */}
       {!location.pathname.match(/^\/[^/]+$/) || ['/terms', '/privacy', '/onboarding', '/dashboard'].some(p => location.pathname.startsWith(p)) ? (
         <AppNavbar
@@ -84,57 +89,54 @@ function AppContent() {
       ) : null}
 
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<LandingPage onGetStarted={handleGetStarted} />} />
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center bg-surface-950">
+            <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
+          <Routes>
+            <Route path="/" element={<LandingPage onGetStarted={handleGetStarted} />} />
 
-          <Route path="/onboarding" element={
-            <RequireAuth requiredRole="user">
-              <div className="min-h-[calc(100vh-80px)] mt-20 flex flex-col items-center justify-center p-6">
-                <StepIndicator current={onboardingStep} />
-                <div className="w-full max-w-3xl">
-                  {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
-                  {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
-                  {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} onBack={prevStep} />}
+            <Route path="/onboarding" element={
+              <RequireAuth requiredRole="user">
+                <div className="min-h-[calc(100vh-80px)] mt-20 flex flex-col items-center justify-center p-6">
+                  <StepIndicator current={onboardingStep} />
+                  <div className="w-full max-w-3xl">
+                    {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
+                    {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
+                    {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
+                    {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
+                    {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
+                    {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} onBack={prevStep} />}
+                  </div>
                 </div>
+              </RequireAuth>
+            } />
+
+            <Route path="/dashboard/*" element={
+              <RequireAuth requiredRole="creator">
+                <div className="mt-20">
+                  <Dashboard />
+                </div>
+              </RequireAuth>
+            } />
+
+            <Route path="/admin" element={
+              <div className="mt-20 min-h-screen">
+                <AdminDashboard />
               </div>
-            </RequireAuth>
-          } />
+            } />
 
-          <Route path="/dashboard/*" element={
-            <RequireAuth requiredRole="creator">
-              <div className="mt-20">
-                <Dashboard />
-              </div>
-            </RequireAuth>
-          } />
+            <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/:username" element={<CreatorPage />} />
 
-          <Route path="/admin" element={
-            <div className="mt-20 min-h-screen">
-              <AdminDashboard />
-            </div>
-          } />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
 
-          <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/:username" element={<CreatorPage />} />
-
-          <Route path="/terms" element={
-            <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
-              <TermsOfService />
-            </Suspense>
-          } />
-
-          <Route path="/privacy" element={
-            <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
-              <PrivacyPolicy />
-            </Suspense>
-          } />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </main>
 
       {/* --- Global Elite Overlays --- */}

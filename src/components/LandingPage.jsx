@@ -66,7 +66,7 @@ export default function LandingPage({ onGetStarted }) {
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] text-white">
       {/* Hero Section */}
       <section className="relative pt-32 md:pt-48 pb-24 px-4 flex flex-col items-center text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,210,101,0.05)_0%,transparent_50%)] z-0" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(159,53,232,0.08)_0%,transparent_50%)] z-0" />
 
         <div className="relative z-10 max-w-[800px] mx-auto w-full">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-medium mb-8 animate-fade-in">
@@ -77,7 +77,7 @@ export default function LandingPage({ onGetStarted }) {
             TipLnk is now in public beta
           </div>
 
-          <h1 className="animate-slide-up text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-8">
+          <h1 className="animate-slide-up text-4xl sm:text-5xl md:text-7xl font-black font-brand tracking-tighter leading-[1.1] mb-8">
             Fund your passion. <br />
             <span className="text-brand-500">Make it on-chain.</span>
           </h1>
@@ -126,7 +126,7 @@ export default function LandingPage({ onGetStarted }) {
       <section id="features" className="relative z-10 py-24 px-4">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Everything you need, <span className="text-brand-500">none of the fees.</span></h2>
+            <h2 className="text-3xl md:text-4xl font-black font-brand text-white mb-6">Everything you need, <span className="text-brand-500">none of the fees.</span></h2>
           </div>
 
           <div className="space-y-8 md:space-y-16">
@@ -176,8 +176,7 @@ export default function LandingPage({ onGetStarted }) {
       <footer className="relative z-10 border-t border-white/5 py-12 px-4 bg-[#080808]">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <img src="public/favicon.svg" className="w-6 h-6" alt="Tip Lnk" />
-            <span className="text-lg font-bold text-white tracking-tight">TipLnk</span>
+            <img src="/logo.svg" className="h-6" alt="TipLnk" />
           </div>
           <p className="text-white/40 text-sm">© 2026 TipLnk. All rights reserved.</p>
           <div className="flex gap-6">

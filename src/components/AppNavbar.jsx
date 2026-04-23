@@ -33,13 +33,12 @@ export default function AppNavbar({
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
       <nav className={`transition-all duration-300 ${scrolled || isDashboard || mobileMenuOpen
-          ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-[#00d265]/20'
+          ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-brand-500/20'
           : 'bg-transparent'
         }`}>
         <div className="max-w-[1300px] mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2 cursor-pointer" onClick={onViewProfile}>
-            <img src="/favicon.svg" className="w-8 h-8 " alt="Tip Lnk" />
-            <span className="text-2xl font-black tracking-tight text-white">TipLnk</span>
+            <img src="/logo.svg" className="h-8 max-w-[140px] md:max-w-none" alt="TipLnk" />
           </div>
 
           {/* Desktop Menu */}

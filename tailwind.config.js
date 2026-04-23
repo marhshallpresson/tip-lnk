@@ -5,16 +5,16 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f0fff4',
-          100: '#dcffe9',
-          200: '#bdffd6',
-          300: '#8affb8',
-          400: '#00f075', // Busha-style bright green
-          500: '#16e5a2', // Main Busha Green
-          600: '#00b356',
-          700: '#009447',
-          800: '#007538',
-          900: '#005729',
+          50: '#f5ebff',
+          100: '#ecdbff',
+          200: '#dbbbff',
+          300: '#c28bff',
+          400: '#a95bff',
+          500: '#9f35e8', // Electric Purple
+          600: '#8a2be2',
+          700: '#7b1fa2',
+          800: '#6a1b9a',
+          900: '#4a148c',
         },
         surface: {
           50: '#f8f9fa',
@@ -51,8 +51,9 @@ export default {
         'phantom-dark': '#5B21B6',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Link Sans"', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+        brand: ['"Link Sans"', 'sans-serif'],
       },
     },
   },
