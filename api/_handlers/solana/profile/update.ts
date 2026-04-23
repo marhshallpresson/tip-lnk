@@ -48,6 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         twitterHandle: profile.twitterHandle || null,
         discordHandle: profile.discordHandle || null,
         name: profile.displayName || profile.name,
+        onboardingComplete: profile.onboardingComplete === true,
         updated_at: new Date()
       })
     res.json({ success: true })

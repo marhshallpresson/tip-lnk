@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
-import { getSessionUser } from "../../../_lib/session.js"
+import { getSessionUser, createSession } from "../../../_lib/session.js"
 import { sha256Hex } from "../../../_lib/password.js"
 import { patchResponse } from "../_utils.js"
 
@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   patchResponse(res)
 
-  const { code, email } = req.body
+  const { code, email, name } = req.body
   const user = await getSessionUser(req as any)
   if (!user) return res.status(401).json({ error: 'Session required' })
 
@@ -30,9 +30,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid or expired verification code.' })
     }
 
-    // Success: Update User Profile
+    // Success Check: Is this email already in use?
+    const existingUser = await db('user').where({ email }).whereNot({ id: user.id }).first()
+    
+    if (existingUser) {
+      // If the existing user ALREADY has a wallet, we cannot merge
+      if (existingUser.walletAddress && existingUser.walletAddress !== user.walletAddress) {
+        return res.status(409).json({ 
+          error: 'This email is already linked to another wallet. Please login with that account instead.' 
+        })
+      }
+
+      // Merge: Update existing user with current walletAddress and name (if missing)
+      await db('user').where({ id: existingUser.id }).update({
+        walletAddress: user.walletAddress,
+        name: existingUser.name || name || user.name,
+        emailVerifiedAt: new Date(),
+        updated_at: new Date()
+      })
+
+      // Delete the temporary wallet-only account
+      await db('user').where({ id: user.id }).delete()
+      
+      // Cleanup tokens
+      await db('email_verification_token').where({ userId: user.id }).delete()
+
+      // Issue new session for the existing user
+      const session = await createSession(req as any, res as any, existingUser.id)
+
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Wallet successfully linked to your existing account.',
+        merged: true,
+        user: { 
+            id: existingUser.id, 
+            email: existingUser.email, 
+            name: existingUser.name || name || user.name, 
+            walletAddress: user.walletAddress, 
+            emailVerifiedAt: new Date() 
+        },
+        auth: {
+            accessToken: session.accessToken,
+            tokenType: 'Bearer',
+            expiresAt: session.expiresAt.toISOString(),
+        }
+      })
+    }
+
+    // Success: Update current User Profile
     await db('user').where({ id: user.id }).update({
       email,
+      name: name || user.name,
       emailVerifiedAt: new Date(),
       updated_at: new Date()
     })

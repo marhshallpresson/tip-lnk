@@ -62,9 +62,9 @@ export const issueEmailVerification = async (userId: string, email: string, name
   const tokenHash = sha256Hex(code)
   const expiresAt = new Date(Date.now() + emailVerifyTtlMs())
 
-  await db('emailverificationtoken').where({ userId }).delete()
+  await db('email_verification_token').where({ userId }).delete()
 
-  await db('emailverificationtoken').insert({
+  await db('email_verification_token').insert({
     id: randomUUID(),
     userId,
     tokenHash,

@@ -74,9 +74,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await db('user').insert({
         id: userId,
         email: null,
-        name: 'Phantom User',
+        name: null, // Force name collection in onboarding
         walletAddress,
-        profileData: JSON.stringify({ displayName: 'Phantom Creator' }),
+        profileData: JSON.stringify({}),
         created_at: new Date(),
         updated_at: new Date(),
       });
@@ -91,7 +91,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json({
       success: true,
-      user: { id: user.id, email: user.email, name: user.name, walletAddress, roles, emailVerifiedAt: user.emailVerifiedAt },
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        walletAddress, 
+        roles, 
+        emailVerifiedAt: user.emailVerifiedAt 
+      },
       auth: {
         accessToken: session.accessToken,
         tokenType: 'Bearer',

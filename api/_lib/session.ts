@@ -20,6 +20,7 @@ export interface SessionUser {
     name: string | null;
     roles: string[];
     emailVerifiedAt: Date | null;
+    onboardingComplete: boolean;
     sessionId: string;
     walletAddress?: string;
     profileData: any;
@@ -151,6 +152,7 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
         name: user.name,
         roles,
         emailVerifiedAt: user.emailVerifiedAt,
+        onboardingComplete: Boolean(user.onboardingComplete),
         sessionId: sid,
         walletAddress: user.walletAddress,
         profileData

@@ -70,6 +70,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
+    // Ensure we don't fallback to email as name if we want to enforce real names later
+    const validatedName = (name && name !== email) ? name : null
+
     let user = await db('user').where({ googleSub: sub }).whereNull('deletedAt').first()
     if (!user) {
       user = await findUserByEmailInsensitive(email)
@@ -80,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await db('user').insert({
           id: userId,
           email,
-          name: name || email,
+          name: validatedName,
           googleSub: sub,
           emailVerifiedAt: new Date(),
           profileData: JSON.stringify({ photo_url: picture }),

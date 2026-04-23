@@ -16,8 +16,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const password = typeof req.body?.password === 'string' ? req.body.password : ''
     const name = normalizeName(req.body?.name)
 
-    if (!email || !email.includes('@') || password.length < 8 || !name) {
-      res.status(400).json({ success: false, error: 'Invalid payload' })
+    if (!email || !email.includes('@') || password.length < 8 || !name || name.length < 2 || name.length > 100) {
+      res.status(400).json({ success: false, error: 'Invalid payload: Name must be 2-100 characters and password min 8 characters.' })
       return
     }
 

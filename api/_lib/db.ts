@@ -70,6 +70,7 @@ export async function initSchema() {
         table.string('walletAddress').unique();
         table.string('solDomain').unique();
         table.boolean('auto_convert_usdc').defaultTo(true); // Elite Default: Settle in Stables
+        table.boolean('onboardingComplete').defaultTo(false);
         table.dateTime('emailVerifiedAt');
         table.text('profileData');
         table.dateTime('lastLoginAt');
@@ -85,6 +86,14 @@ export async function initSchema() {
                 table.string('solDomain').unique();
             });
             console.log('🛡️ Migration: Added solDomain column to user table.');
+        }
+
+        const hasOnboardingComplete = await db.schema.hasColumn('user', 'onboardingComplete');
+        if (!hasOnboardingComplete) {
+            await db.schema.table('user', (table) => {
+                table.boolean('onboardingComplete').defaultTo(false);
+            });
+            console.log('🛡️ Migration: Added onboardingComplete column to user table.');
         }
     }
 

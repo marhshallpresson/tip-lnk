@@ -241,7 +241,7 @@ export function OverviewTab() {
       <div className="grass-banner">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="max-w-2xl">
-            <h2 className="text-xl font-bold mb-2">Welcome to TipLnk!</h2>
+            <h2 className="text-xl font-bold mb-2">Welcome, {profile.displayName || (authUser?.name ? authUser.name.split(' ')[0] : 'Creator')}!</h2>
             <p className="text-white/40 text-sm leading-relaxed">
               See your earnings at a glance.
             </p>

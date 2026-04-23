@@ -128,6 +128,7 @@ function AppContent() {
             } />
 
             <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
+            <Route path="/auth/complete" element={<AuthCompletion />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/:username" element={<CreatorPage />} />
 
@@ -156,7 +157,7 @@ function AppContent() {
 
 function RequireAuth({ children, requiredRole }) {
   const { role } = useApp();
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -169,6 +170,15 @@ function RequireAuth({ children, requiredRole }) {
 
   if (role === 'guest') {
     return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  // ─── ELITE AUTH ENFORCEMENT ───
+  // Every user MUST have a verified email and a FULL NAME before accessing ANY protected route
+  if (!user?.email || !user?.emailVerifiedAt || !user?.name) {
+    // Only allow them to see the landing page or the verification/link/name-capture flow
+    // But since this is RequireAuth, we are already on a protected route.
+    // We should redirect to a specialized "Auth Completion" view.
+    return <Navigate to="/auth/complete" state={{ from: location }} replace />;
   }
 
   // Dashboard now accepts both 'user' (incomplete) and 'creator' (complete) roles.

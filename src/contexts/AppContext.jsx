@@ -150,10 +150,12 @@ export function AppProvider({ children }) {
       localStorage.setItem(`${STORAGE_KEY}_${pubkeyStr}`, JSON.stringify(state));
 
       // ─── ELITE SYNC GUARD ───
-      // Only sync if we have a real auth session AND the wallet matches.
-      // This prevents 401s during the connection/login transition.
-      if (authUser && authUser.walletAddress === publicKey?.toBase58()) {
-        saveProfile(pubkeyStr, state);
+      // Only sync if we have a real auth session.
+      // If they have a wallet, ensure it matches the session.
+      if (authUser) {
+        if (!authUser.walletAddress || authUser.walletAddress === publicKey?.toBase58()) {
+          saveProfile(pubkeyStr, state);
+        }
       }
     }
   }, [state, pubkeyStr, authUser, publicKey]);
