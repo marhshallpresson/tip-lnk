@@ -23,11 +23,12 @@ import ReferralModal from './ReferralModal';
 import EmbedGenerator from './EmbedGenerator';
 import SettingsModal from './SettingsModal';
 import DashboardWalkthrough from './DashboardWalkthrough';
+import OnboardingPromptModal from './OnboardingPromptModal';
 
 export default function Dashboard() {
   const { publicKey, disconnect, connected } = useWallet();
   const { user: authUser, logout: authLogout } = useAuth();
-  const { profile, resetOnboarding, totalTipsUSDC } = useApp();
+  const { profile, resetOnboarding, totalTipsUSDC, role } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const port = useWalletPortfolio();
@@ -36,15 +37,26 @@ export default function Dashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
 
   // ─── ELITE WALKTHROUGH TRIGGER ───
   useEffect(() => {
     const hasSeenWalkthrough = localStorage.getItem(`walkthrough_seen_${authUser?.id}`);
-    // Show walkthrough if user just finished onboarding or hasn't seen it
-    if (!hasSeenWalkthrough && authUser) {
+    const onboardingFinishedJustNow = localStorage.getItem('onboarding_just_finished') === 'true';
+
+    if (onboardingFinishedJustNow && authUser) {
+        setShowWalkthrough(true);
+        localStorage.removeItem('onboarding_just_finished');
+        localStorage.setItem(`walkthrough_seen_${authUser?.id}`, 'true');
+    } else if (!hasSeenWalkthrough && authUser && role === 'creator') {
         setShowWalkthrough(true);
     }
-  }, [authUser]);
+
+    // ─── ONBOARDING PROMPT ───
+    if (role === 'user' && authUser) {
+        setShowOnboardingPrompt(true);
+    }
+  }, [authUser, role]);
 
   const handleWalkthroughComplete = () => {
     localStorage.setItem(`walkthrough_seen_${authUser?.id}`, 'true');
@@ -83,6 +95,13 @@ export default function Dashboard() {
     <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans relative">
       {showWalkthrough && (
         <DashboardWalkthrough onComplete={handleWalkthroughComplete} />
+      )}
+
+      {showOnboardingPrompt && (
+        <OnboardingPromptModal 
+            onClose={() => setShowOnboardingPrompt(false)} 
+            onContinue={() => navigate('/onboarding')} 
+        />
       )}
       <ReferralModal 
         isOpen={isReferralOpen} 
@@ -564,6 +583,52 @@ export function TransactionHistoryTab() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── Elite Onboarding Prompt Modal ─── */
+function OnboardingPromptModal({ onClose, onContinue }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div className="glass-card max-w-md w-full p-8 relative overflow-hidden shadow-2xl shadow-brand-500/10 border-brand-500/20">
+        {/* Subtle background glow */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/10 blur-[80px]" />
+        
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-white/20 hover:text-white transition-colors z-10"
+        >
+          <XCircle size={20} />
+        </button>
+
+        <div className="flex flex-col items-center text-center relative z-10">
+          <div className="w-20 h-20 rounded-[24px] bg-brand-500/10 flex items-center justify-center mb-8 border border-brand-500/20 shadow-inner">
+            <Zap className="text-brand-500" size={40} fill="currentColor" />
+          </div>
+          
+          <h3 className="text-3xl font-black mb-4 tracking-tighter text-white">IGNITE YOUR REACH</h3>
+          <p className="text-white/50 text-sm leading-relaxed mb-10 px-4">
+            You're connected, but your profile is incomplete. Claim your <span className="text-brand-400 font-bold">.tiplnk.sol</span> handle now to unlock verified status and real-time revenue analytics.
+          </p>
+
+          <div className="space-y-4 w-full">
+            <button 
+              onClick={onContinue}
+              className="w-full py-4 rounded-2xl bg-brand-500 text-black font-black uppercase tracking-tighter hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(22,229,162,0.2)]"
+            >
+              Finish Setup Now
+              <ArrowRight size={20} />
+            </button>
+            <button 
+              onClick={onClose}
+              className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors"
+            >
+              Explore Dashboard First
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

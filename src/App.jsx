@@ -43,12 +43,11 @@ function AppContent() {
   const location = useLocation();
 
   const handleGetStarted = () => {
-    if (role === 'creator') {
-      navigate('/dashboard');
-    } else if (role === 'user') {
-      navigate('/onboarding');
-    } else {
+    if (role === 'guest') {
       setShowWalletModal(true);
+    } else {
+      // Both 'user' and 'creator' roles go to dashboard
+      navigate('/dashboard');
     }
   };
 
@@ -86,18 +85,7 @@ function AppContent() {
 
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={
-            <>
-              <LandingPage onGetStarted={handleGetStarted} />
-              <WalletModal
-                isOpen={showWalletModal}
-                onClose={() => setShowWalletModal(false)}
-                onConnected={(addr, isAuth) => {
-                  if (addr || isAuth) navigate('/dashboard');
-                }}
-              />
-            </>
-          } />
+          <Route path="/" element={<LandingPage onGetStarted={handleGetStarted} />} />
 
           <Route path="/onboarding" element={
             <RequireAuth requiredRole="user">
@@ -154,9 +142,8 @@ function AppContent() {
         isOpen={showWalletModal} 
         onClose={() => setShowWalletModal(false)} 
         onConnected={(addr, isAuth) => {
+          setShowWalletModal(false);
           if (addr || isAuth) {
-             // If we are on landing, go to dashboard. 
-             // If we are already in dashboard (linking), stay there.
              if (location.pathname === '/') navigate('/dashboard');
           }
         }}
@@ -182,8 +169,15 @@ function RequireAuth({ children, requiredRole }) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  if (requiredRole === 'creator' && role === 'user') {
-    return <Navigate to="/onboarding" replace />;
+  // Dashboard now accepts both 'user' (incomplete) and 'creator' (complete) roles.
+  // This allows us to show a 'Complete Onboarding' modal inside the dashboard.
+  if (requiredRole === 'creator' && (role === 'user' || role === 'creator')) {
+    return children;
+  }
+
+  // Onboarding is for users who need to finish setup
+  if (requiredRole === 'user' && role === 'user') {
+    return children;
   }
 
   if (requiredRole === 'user' && role === 'creator') {
@@ -203,6 +197,19 @@ function AuthCallbackHandler() {
   const { updateProfile } = useApp();
   const [status, setStatus] = useState('loading'); // loading | success | error
   const [error, setError] = useState(null);
+
+  // Elite Handler: Phantom SDK uses this route as a redirect URL.
+  // We must not interfere with Phantom's own message passing if it's phantom-google.
+  if (platform === 'phantom-google') {
+    // Phantom SDK handles its own popup lifecycle here. We just render a loading state.
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface-950 text-center animate-fade-in">
+         <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+         <h2 className="text-2xl font-bold text-white">Authenticating Wallet...</h2>
+         <p className="text-surface-400 mt-2 italic">Securing link with Google infrastructure...</p>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -224,21 +231,17 @@ function AuthCallbackHandler() {
       return;
     }
 
-    if (code || params.get('publicKey')) {
+    if (code) {
       const exchangeCode = async () => {
         try {
           const isProd = import.meta.env.PROD;
           const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-
-          // Phantom Google specifically might return the publicKey directly in the URL
-          const publicKey = params.get('publicKey');
 
           const response = await fetch(`${API_BASE}/api/auth/${platform}/callback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               code,
-              publicKey,
               redirectUri: `${window.location.origin}/auth/callback/${platform}`
             })
           });
@@ -249,23 +252,6 @@ function AuthCallbackHandler() {
           } else {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || 'Identity provider rejected the authorization code.');
-          }
-
-          // Update profile with verified social data
-          if (platform === 'phantom-google') {
-            // ─── Elite Invisible Wallet Logic ───
-            if (window.opener) {
-              window.opener.postMessage({
-                type: 'OAUTH_SUCCESS',
-                platform: 'phantom-google',
-                publicKey: data.walletAddress
-              }, window.location.origin);
-              setTimeout(() => window.close(), 500);
-            } else {
-              // Direct browser fallback: Force login state and jump to dashboard
-              navigate('/dashboard');
-            }
-            return;
           }
 
           updateProfile({
@@ -312,6 +298,7 @@ function AuthCallbackHandler() {
       }
     }
   }, [platform, navigate, updateProfile]);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-950">

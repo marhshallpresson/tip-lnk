@@ -29,14 +29,18 @@ const STEPS = [
 ];
 
 export default function DashboardWalkthrough({ onComplete }) {
+  const { onboardingComplete } = useApp();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Only show walkthrough if onboarding is truly complete
+    if (!onboardingComplete) return;
+    
     // Slight delay for impact after dashboard load
     const timer = setTimeout(() => setIsVisible(true), 1000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [onboardingComplete]);
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
