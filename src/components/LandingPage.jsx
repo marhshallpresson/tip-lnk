@@ -69,13 +69,7 @@ export default function LandingPage({ onGetStarted }) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(159,53,232,0.08)_0%,transparent_50%)] z-0" />
 
         <div className="relative z-10 max-w-[800px] mx-auto w-full">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-medium mb-8 animate-fade-in">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
-            </span>
-            TipLnk is now in public beta
-          </div>
+          
 
           <h1 className="animate-slide-up text-4xl sm:text-5xl md:text-7xl font-black font-brand tracking-tighter leading-[1.1] mb-8">
             Fund your passion. <br />
@@ -176,7 +170,7 @@ export default function LandingPage({ onGetStarted }) {
       <footer className="relative z-10 border-t border-white/5 py-12 px-4 bg-[#080808]">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <img src="/logo.svg" className="h-6" alt="TipLnk" />
+            <img src="/logo.svg" className="h-14" alt="TipLnk" />
           </div>
           <p className="text-white/40 text-sm">© 2026 TipLnk. All rights reserved.</p>
           <div className="flex gap-6">

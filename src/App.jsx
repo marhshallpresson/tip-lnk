@@ -11,6 +11,7 @@ import ProfileEditor from './components/ProfileEditor';
 import OnboardingComplete from './components/OnboardingComplete';
 import WalletModal from './components/WalletModal';
 import LandingPage from './components/LandingPage';
+import AuthCompletion from './components/AuthCompletion';
 import CreatorPage from './components/CreatorPage';
 import Dashboard from './components/Dashboard';
 import { OverviewTab, TransactionHistoryTab } from './components/Dashboard';

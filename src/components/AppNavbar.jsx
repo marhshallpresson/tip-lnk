@@ -38,7 +38,7 @@ export default function AppNavbar({
         }`}>
         <div className="max-w-[1300px] mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2 cursor-pointer" onClick={onViewProfile}>
-            <img src="/logo.svg" className="h-8 max-w-[140px] md:max-w-none" alt="TipLnk" />
+            <img src="/logo.svg" className="h-10 max-w-[150px] md:max-w-none" alt="TipLnk" />
           </div>
 
           {/* Desktop Menu */}

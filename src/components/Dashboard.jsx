@@ -138,7 +138,7 @@ export default function Dashboard() {
         {/* Logo Section */}
         <div className="py-10">
           <div className="w-10 h-10 rounded-[14px] bg-brand-500 flex items-center justify-center shadow-[0_0_20px_rgba(159,53,232,0.2)]">
-            <Zap size={22} className="text-black" />
+            <img src="favicon.svg" alt="Tip Lnk" />
           </div>
         </div>
 
@@ -193,7 +193,7 @@ export default function Dashboard() {
               <div className="grass-pill bg-[#111111] !px-5 !py-2.5">
                 <span className="text-sm font-bold tracking-tight">Dashboard</span>
               </div>
-              
+
             </div>
 
             <div className="flex items-center gap-3">

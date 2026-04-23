@@ -97,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   
   // Base health check
   if (parts.length <= 1) {
-    return res.status(200).json({ service: 'tiplnk-unified-api', status: 'online' })
+    return res.status(200).json({ service: 'tiplnkapi', status: 'online' })
   }
 
   const moduleName = parts[1]
@@ -108,10 +108,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let routeKey = `${moduleName}/${action}`
   if (subAction) routeKey += `/${subAction}`
 
-  // ─── ELITE GATEWAY SECURITY ───
-  // Apply Ratelimit for sensitive modules
   const sensitiveModules = ['auth', 'payouts'];
-  const sensitiveActions = ['update', 'reset-password-start', 'reset-password-verify']; // e.g., solana/profile/update
+  const sensitiveActions = ['update', 'reset-password-start', 'reset-password-verify'];
   
   if (sensitiveModules.includes(moduleName) || sensitiveActions.includes(action)) {
     if (!rateLimit(req, res)) return
