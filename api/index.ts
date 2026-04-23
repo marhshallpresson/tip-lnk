@@ -112,7 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const sensitiveActions = ['update', 'reset-password-start', 'reset-password-verify'];
   
   if (sensitiveModules.includes(moduleName) || sensitiveActions.includes(action)) {
-    if (!rateLimit(req, res)) return
+    if (!(await rateLimit(req, res))) return
   }
 
   // ─── ELITE CSRF ENFORCEMENT ───
