@@ -32,6 +32,7 @@ import { default as solanaTipsLog } from './_handlers/solana/tips/log.js'
 import { default as solanaWebhookHelius } from './_handlers/solana/webhooks/helius.js'
 import { default as solanaDflowQuote } from './_handlers/solana/dflow/quote.js'
 import { default as solanaBirdeyePortfolio } from './_handlers/solana/birdeye/portfolio.js'
+import { default as solanaPrice } from './_handlers/solana/price.js'
 import { default as solanaRpc } from './_handlers/solana/rpc.js'
 
 import { default as payoutsWebhook } from './_handlers/payouts/webhook.js'
@@ -74,6 +75,7 @@ const ROUTES: Record<string, Function> = {
   'solana/webhooks/helius': solanaWebhookHelius,
   'solana/dflow/quote': solanaDflowQuote,
   'solana/birdeye/portfolio': solanaBirdeyePortfolio,
+  'solana/price': solanaPrice,
   'quicknode/rpc/solana': solanaRpc,
 
   // Payouts

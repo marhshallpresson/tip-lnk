@@ -241,9 +241,9 @@ export function OverviewTab() {
       <div className="grass-banner">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="max-w-2xl">
-            <h2 className="text-xl font-bold mb-2">Welcome to TipLnk Epoch 1!</h2>
+            <h2 className="text-xl font-bold mb-2">Welcome to TipLnk!</h2>
             <p className="text-white/40 text-sm leading-relaxed">
-              On your dashboard you will see your earnings for this epoch. To view your total number of points and rewards, simply navigate to the analytics tab on the left.
+              See your earnings at a glance.
             </p>
           </div>
           <div className="flex items-center gap-4">

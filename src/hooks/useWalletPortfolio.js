@@ -33,7 +33,7 @@ export default function useWalletPortfolio() {
       // ─── Parallel Elite Data Fetching ───
       const [balance, priceRes, assetRes] = await Promise.all([
         connection.getBalance(publicKey).catch(() => 0),
-        fetch('https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112,EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y').then(r => r.json()).catch(() => ({ data: {} })),
+        fetch(`${API_BASE_URL}/api/solana/price?ids=So11111111111111111111111111111111111111112,EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y`).then(r => r.json()).catch(() => ({ data: {} })),
         fetch(`${API_BASE_URL}/api/solana/assets/${publicKey.toBase58()}`).then(r => r.json()).catch(() => ({ assets: { items: [] } }))
       ]);
 

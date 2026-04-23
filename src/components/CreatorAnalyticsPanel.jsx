@@ -1,4 +1,4 @@
-import { BarChart3, TrendingUp, Users, DollarSign, Activity, PieChart, ArrowUpRight, Globe, ShieldCheck } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, DollarSign, Activity, PieChart, ArrowUpRight, Globe, ShieldCheck, Loader2 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useBirdeye } from '../hooks/useBirdeye';
 

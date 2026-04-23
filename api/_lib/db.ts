@@ -76,6 +76,16 @@ export async function initSchema() {
         table.dateTime('deletedAt');
         table.timestamps(true, true);
       });
+    } else {
+        // ─── ELITE AUTO-MIGRATION (Phase 2 Hardening) ───
+        // Ensure solDomain exists if table was created in early beta
+        const hasSolDomain = await db.schema.hasColumn('user', 'solDomain');
+        if (!hasSolDomain) {
+            await db.schema.table('user', (table) => {
+                table.string('solDomain').unique();
+            });
+            console.log('🛡️ Migration: Added solDomain column to user table.');
+        }
     }
 
     // 2. Tips Table
