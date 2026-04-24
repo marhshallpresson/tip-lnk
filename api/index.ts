@@ -31,6 +31,7 @@ import { default as solanaSendSmart } from './_handlers/solana/send-smart.js'
 import { default as solanaPriorityFee } from './_handlers/solana/priority-fee.js'
 import { default as solanaSnsCheck } from './_handlers/solana/sns-check.js'
 import { default as solanaTipsGet } from './_handlers/solana/tips/get.js'
+import { default as solanaTipsMessage } from './_handlers/solana/tips/message.js'
 import { default as solanaTipsStream } from './_handlers/solana/tips/stream.js'
 import { default as solanaWebhookHelius } from './_handlers/solana/webhooks/helius.js'
 import { default as solanaJupiterSwap } from './_handlers/solana/jupiter/swap.js'
@@ -131,7 +132,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'quicknode/rpc/solana',
     'solana/jupiter/swap',
     'solana/send',
-    'solana/priority-fee'
+    'solana/priority-fee',
+    'solana/tips/message'
   ].includes(routeKey)
   const hasAuth = !!req.headers['authorization']
   

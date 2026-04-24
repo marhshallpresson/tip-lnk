@@ -84,7 +84,7 @@ export function useTipping(creatorAddress) {
   }, []);
 
   const calculateRoute = useCallback(
-    async (tokenSymbol, tokenAmount) => {
+    async (tokenSymbol, tokenAmount, note = '') => {
       if (!tokenAmount || isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) {
         setRoute(null);
         setTipAmountUSDC('0');
@@ -110,6 +110,7 @@ export function useTipping(creatorAddress) {
           slippageBps: 50,
           userPublicKey: publicKey?.toBase58() || '',
           destinationWallet: creatorAddress,
+          memo: note // Attach the supporter message
         };
 
         const response = await fetch(`${API_BASE_URL}/api/solana/jupiter/swap`, {

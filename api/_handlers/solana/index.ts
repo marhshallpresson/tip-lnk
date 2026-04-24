@@ -19,6 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (action === 'tips') {
         if (subAction === 'get') module = await import('./tips/get.js')
         if (subAction === 'stream') module = await import('./tips/stream.js')
+        if (subAction === 'message') module = await import('./tips/message.js')
     } else if (action === 'webhooks' && subAction === 'helius') {
         module = await import('./webhooks/helius.js')
     } else {
