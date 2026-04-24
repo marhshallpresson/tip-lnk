@@ -6,7 +6,7 @@ import { Connection } from '@solana/web3.js';
  */
 
 const RPC_ENDPOINTS = [
-  process.env.VITE_RPC_URL || 'https://api.mainnet-beta.solana.com', // Primary (QuickNode / Helius)
+  process.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', // Primary (QuickNode / Helius)
   process.env.SECONDARY_RPC_URL || 'https://solana-mainnet.rpc.extnode.com', // Secondary
   'https://api.mainnet-beta.solana.com' // Tertiary (Public Fallback)
 ];
