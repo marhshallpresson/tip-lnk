@@ -42,14 +42,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ─── Elite Profile Sync ───
     const incomingName = profile.displayName || profile.name;
     const finalName = incomingName && incomingName.trim().length > 0 ? incomingName.trim() : authUser.name;
+    
+    // Extract social handles from either root or nested socials object
+    const twitterHandle = profile.twitterHandle || (profile.socials && profile.socials.twitter);
+    const discordHandle = profile.discordHandle || (profile.socials && profile.socials.discord);
+
+    // Clean up profile object before saving to profileData JSON column
+    const profileToSave = { ...profile };
+    delete profileToSave.twitterHandle;
+    delete profileToSave.discordHandle;
+    delete profileToSave.solDomain;
 
     await db('user')
       .where({ id: authUser.id })
       .update({ 
-        profileData: JSON.stringify(profile),
+        profileData: JSON.stringify(profileToSave),
         solDomain: solDomain || null,
-        twitterHandle: profile.twitterHandle || null,
-        discordHandle: profile.discordHandle || null,
+        twitterHandle: twitterHandle || null,
+        discordHandle: discordHandle || null,
         name: finalName,
         onboardingComplete: profile.onboardingComplete === true,
         updated_at: new Date()

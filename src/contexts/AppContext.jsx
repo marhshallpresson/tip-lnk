@@ -104,23 +104,23 @@ export function AppProvider({ children }) {
         try {
             const dbProfile = await getProfile(pubkeyStr);
             if (dbProfile) {
-            // Flatten/Merge handles from root into profile object
             setState(prev => {
-                const profileData = JSON.parse(dbProfile.profileData || '{}');
-                const newState = { ...prev, ...dbProfile, profile: { ...prev.profile, ...profileData } };
+                const newState = { ...prev, ...dbProfile, profile: { ...prev.profile, ...dbProfile } };
 
                 // ─── ELITE ONBOARDING RESOLUTION ───
-                // Check both the DB column and the nested profile JSON
-                if (dbProfile.onboardingComplete === true || profileData.onboardingComplete === true) {
+                if (dbProfile.onboardingComplete === true) {
                     newState.onboardingComplete = true;
                 }
 
+                // Restore socials correctly into the nested structure if they exist at root
                 if (dbProfile.twitterHandle || dbProfile.discordHandle) {
-                newState.profile = {
-                    ...newState.profile,
-                    twitterHandle: dbProfile.twitterHandle || newState.profile.twitterHandle,
-                    discordHandle: dbProfile.discordHandle || newState.profile.discordHandle
-                };
+                  newState.profile.socials = {
+                    ...newState.profile.socials,
+                    twitter: dbProfile.twitterHandle || newState.profile.socials.twitter,
+                    discord: dbProfile.discordHandle || newState.profile.socials.discord,
+                    isTwitterVerified: !!dbProfile.twitterHandle,
+                    isDiscordVerified: !!dbProfile.discordHandle,
+                  };
                 }
                 return newState;
             });
@@ -128,7 +128,6 @@ export function AppProvider({ children }) {
             setDbSynced(true);
         } catch (err) {
             console.error('🛡️ AppContext: Sync fault. Using local state.', err);
-            // Don't crash - allow user to use app with local state
             setDbSynced(true); 
         }
       }
@@ -151,10 +150,13 @@ export function AppProvider({ children }) {
 
       // ─── ELITE SYNC GUARD ───
       // Only sync if we have a real auth session.
-      // If they have a wallet, ensure it matches the session.
       if (authUser) {
         if (!authUser.walletAddress || authUser.walletAddress === publicKey?.toBase58()) {
-          saveProfile(pubkeyStr, state);
+          // Sync just the profile data and onboarding status
+          saveProfile(pubkeyStr, {
+            ...state.profile,
+            onboardingComplete: state.onboardingComplete
+          });
         }
       }
     }

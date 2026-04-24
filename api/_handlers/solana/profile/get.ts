@@ -89,7 +89,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ success: false, error: 'User profile not found' })
     }
 
-    const profile = JSON.parse(user.profileData || '{}')
+    // ─── ELITE DATA RESOLUTION ───
+    const rawData = JSON.parse(user.profileData || '{}')
+    
+    // Support both new flattened structure and legacy nested state structure
+    const profile = rawData.profile ? { ...rawData.profile } : { ...rawData }
+    
+    // Merge in high-priority root fields from the user table
     const socialMetrics = await aggregateSocialMetrics(user.twitterHandle, user.discordHandle)
     
     profile.socialMetrics = socialMetrics
@@ -97,13 +103,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.twitterHandle = user.twitterHandle
     profile.discordHandle = user.discordHandle
     profile.solDomain = user.solDomain
+    profile.onboardingComplete = Boolean(user.onboardingComplete)
 
     // ─── ELITE SEO METADATA ───
     const displayName = profile.displayName || user.name || 'Solana Creator'
+    const avatarUrl = profile.avatarUrl || `https://tiplnk.me/api/og/${user.walletAddress}`
+    
     const metadata = {
         title: `${displayName} (@${user.twitterHandle || 'tiplnk'})`,
         description: profile.bio || `Support ${displayName} with SOL/USDC on TipLnk. 0% platform fees.`,
-        image: profile.avatarUrl || `https://tiplnk.me/api/og/${user.walletAddress}`,
+        image: avatarUrl,
         card: 'summary_large_image'
     }
 
