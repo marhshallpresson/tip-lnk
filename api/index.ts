@@ -123,7 +123,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ─── ELITE CSRF ENFORCEMENT ───
   const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
-  const bypassCsrf = ['auth/csrf', 'payouts/webhook', 'solana/webhooks/helius', 'solana/profile/update', 'quicknode/rpc/solana'].includes(routeKey)
+  const bypassCsrf = [
+    'auth/csrf', 
+    'payouts/webhook', 
+    'solana/webhooks/helius', 
+    'solana/profile/update', 
+    'quicknode/rpc/solana',
+    'solana/jupiter/swap',
+    'solana/send',
+    'solana/priority-fee'
+  ].includes(routeKey)
   const hasAuth = !!req.headers['authorization']
   
   if (isMutation && !bypassCsrf && !hasAuth) {
