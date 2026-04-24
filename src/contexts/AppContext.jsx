@@ -162,7 +162,9 @@ export function AppProvider({ children }) {
 
   const role = useMemo(() => {
     if (authLoading) return 'guest'; // Hold until auth state is known
-    if (!connected && !authUser) return 'guest';
+
+    // Elite Fix: Wallet connection alone does not grant a backend session.
+    if (!authUser) return 'guest';
 
     // Elite Admin Shortcut: Admins are always creators
     const isAdmin = authUser?.roles?.includes('admin');
@@ -173,7 +175,7 @@ export function AppProvider({ children }) {
     if (isAdmin || state.onboardingComplete) return 'creator';
 
     return 'user';
-  }, [connected, authUser, authLoading, state.onboardingComplete]);
+  }, [authUser, authLoading, state.onboardingComplete]);
 
   const update = useCallback((partial) => {
     setState((prev) => ({ ...prev, ...partial }));

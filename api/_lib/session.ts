@@ -129,7 +129,14 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
       const parts = curr.trim().split('=')
       const key = parts[0]
       const value = parts.slice(1).join('=')
-      if (key) acc[key] = value
+      if (key && value) {
+        try {
+          // Attempt to decode URI component, fallback to raw value
+          acc[key] = decodeURIComponent(value)
+        } catch (e) {
+          acc[key] = value
+        }
+      }
       return acc
     }, {})
     sids.push(cookies[SESSION_COOKIE_NAME])
@@ -144,8 +151,19 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
     } catch (e) {}
   }
 
-  // Filter unique valid-looking SIDs
-  const uniqueSids = [...new Set(sids.filter(s => typeof s === 'string' && s.length > 20))]
+  // Filter unique valid-looking SIDs (handle signed cookie prefix s: if it sneaks in)
+  const uniqueSids = [...new Set(
+    sids
+      .filter(s => typeof s === 'string' && s.length > 20)
+      .map(s => {
+        const str = s as string;
+        // Strip Express signed cookie prefix if present during manual parse
+        if (str.startsWith('s:')) {
+          return str.slice(2).split('.')[0]
+        }
+        return str
+      })
+  )]
 
   for (const sid of uniqueSids) {
     try {
@@ -176,7 +194,7 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
           emailVerifiedAt: user.emailVerifiedAt,
           onboardingComplete: Boolean(user.onboardingComplete),
           onboarding_complete: Boolean(user.onboardingComplete),
-          sessionId: sid!,
+          sessionId: sid,
           walletAddress: user.walletAddress,
           profileData
       }

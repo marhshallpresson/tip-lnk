@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
 export default function AuthCompletion() {
-  const { user, refreshUser, logout } = useAuth();
+  const { user, loading: authLoading, refreshUser, logout } = useAuth();
   const [view, setView] = useState(() => {
     if (user?.email && user?.emailVerifiedAt && !user?.name) return 'name-prompt';
     return 'email-prompt';
@@ -17,12 +17,24 @@ export default function AuthCompletion() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // If user is already verified and has a name, redirect them away
+  // Redirect if unauthenticated or fully complete
   useEffect(() => {
-    if (user?.email && user?.emailVerifiedAt && user?.name) {
-      navigate('/onboarding');
+    if (!authLoading) {
+      if (!user) {
+        navigate('/');
+      } else if (user?.email && user?.emailVerifiedAt && user?.name) {
+        navigate('/onboarding');
+      }
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-surface-950 flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-brand-500" />
+      </div>
+    );
+  }
 
   const handleStartLinking = async (e) => {
     e.preventDefault();
@@ -230,6 +242,56 @@ export default function AuthCompletion() {
                 Resend Code
               </button>
             </div>
+          </div>
+        )}
+
+        {view === 'name-prompt' && (
+          <div className="glass-card p-8 sm:p-10 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-8 border border-brand-500/20">
+                <User size={32} className="text-brand-500" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">What's your name?</h2>
+            <p className="text-surface-400 text-sm mb-8 leading-relaxed">
+                We need your full name to complete your profile and comply with payout regulations.
+            </p>
+            
+            {error && (
+              <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-xl text-accent-red text-xs text-left animate-shake">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateName} className="space-y-4 text-left">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-black tracking-widest text-surface-500 ml-1">Full Name</label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-600" />
+                  <input 
+                    type="text" 
+                    required 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)}
+                    className="input-field w-full !pl-12 h-14" 
+                    placeholder="e.g. John Doe" 
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className="btn-primary w-full h-14 text-base font-bold flex items-center justify-center gap-2 group"
+              >
+                {loading ? <Loader2 size={20} className="animate-spin" /> : <>Finish Setup <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>}
+              </button>
+            </form>
+            
+            <button 
+              onClick={logout}
+              className="mt-8 text-surface-500 hover:text-white text-xs font-bold transition-colors uppercase tracking-widest"
+            >
+              Sign out
+            </button>
           </div>
         )}
 

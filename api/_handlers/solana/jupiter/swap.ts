@@ -73,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       destinationTokenAccount: destinationTokenAccount.toBase58(),
       dynamicComputeUnitLimit: true,
       prioritizationFeeLamports: 'auto',
+      wrapAndUnwrapSol: true,
       ...(feeAccount && { feeAccount: feeAccount.toBase58() })
     }
 

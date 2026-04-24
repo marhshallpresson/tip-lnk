@@ -380,7 +380,13 @@ export default function WalletConnect({ onConnected }) {
             <div className="bg-brand-500/10 border border-brand-500/20 rounded-xl p-6 text-center animate-scale-in">
                 <p className="text-brand-500 font-black text-xs uppercase tracking-widest mb-1">Wallet Linked</p>
                 <p className="text-white font-mono text-[10px] truncate mb-4">{publicKey?.toBase58()}</p>
-                <button onClick={() => onConnected(publicKey.toBase58(), true)} className="btn-primary w-full">Continue</button>
+                <button 
+                  onClick={() => { setAdvancing(true); performSiwsLogin(publicKey.toBase58(), 'adapter'); }} 
+                  disabled={advancing}
+                  className="btn-primary w-full"
+                >
+                  {advancing ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Continue'}
+                </button>
             </div>
         )}
       </div>
