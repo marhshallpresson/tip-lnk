@@ -76,6 +76,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const recipient = transfer.toUserAccount
         const amount = transfer.amount || transfer.tokenAmount
 
+        // ─── PHASE 5: MEMO EXTRACTION ───
+        // Check for Solana Memo Program (MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848)
+        let message = null;
+        const memoIx = tx.instructions?.find((ix: any) => ix.programId === 'MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848');
+        if (memoIx && memoIx.data) {
+           message = memoIx.data;
+        }
+
         // PHASE 6: FRAUD PREVENTION
         // Reject zero amounts and self-transfers
         if (amount <= 0 || sender === recipient) {
@@ -92,6 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           sender,
           recipient,
           amount,
+          message, // Save the supporter message
           tokenSymbol: tx.nativeTransfers?.length > 0 ? 'SOL' : (transfer.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'USDC' : 'TOKEN'),
           status: 'confirmed',
           type: 'webhook_indexed'

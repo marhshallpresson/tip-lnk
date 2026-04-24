@@ -31,14 +31,6 @@ export function SNSWarning({ snsName, walletAddress }: SNSWarningProps) {
           <ShieldAlert size={16} />
           <span className="text-sm font-bold tracking-tight">{snsName}{snsName.endsWith('.sol') ? '' : '.sol'}</span>
         </div>
-        {hasNonAscii && (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-            <AlertTriangle size={10} className="text-amber-500" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
-              Potential Lookalike
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="space-y-3">

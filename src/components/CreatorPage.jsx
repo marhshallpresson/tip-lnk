@@ -13,12 +13,12 @@ import {
   Share2,
   Twitter,
   User,
-  Zap,
   TrendingUp,
   Award,
   Clock,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Coffee
 } from 'lucide-react';
 
 export default function CreatorPage() {
@@ -66,69 +66,73 @@ export default function CreatorPage() {
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">Profile Not Found</h2>
           <p className="text-surface-400 mb-8 leading-relaxed">The creator <span className="text-brand-400 font-mono">@{username}</span> hasn't claimed their handle yet or the address is invalid.</p>
-          <a href="/" className="btn-primary w-full">Claim this handle</a>
+          <a href="/" className="btn-primary w-full text-center">Claim this handle</a>
         </div>
       </div>
     );
   }
-  
+
   return (
-    <div className="min-h-screen bg-surface-950 text-white font-sans selection:bg-brand-500 selection:text-black">
+    <div className="min-h-screen bg-surface-950 text-white font-sans selection:bg-brand-500 selection:text-black pb-20">
       <CreatorHeader profile={profile} supporterCount={supporterCount} totalVolume={totalVolume} />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col lg:flex-row gap-12">
-          
+
           {/* Main Content Area */}
-          <div className="flex-1 space-y-12">
+          <div className="flex-1 order-2 lg:order-1 space-y-12">
             <div className="bg-surface-900/40 border border-surface-800 rounded-[32px] overflow-hidden shadow-2xl">
-                <CreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-                <div className="p-8 sm:p-12">
-                    <TabContent activeTab={activeTab} profile={profile} tipsReceived={tipsReceived} />
-                </div>
+              <CreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+              <div className="p-8 sm:p-12">
+                <TabContent activeTab={activeTab} profile={profile} tipsReceived={tipsReceived} />
+              </div>
             </div>
 
-            {/* Featured Section - Like BMAC */}
+            {/* Featured Section - Membership & Goals */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div className="glass-card p-8 border-brand-500/10 group hover:border-brand-500/30 transition-all">
-                  <Award className="text-brand-500 mb-4" size={24} />
-                  <h4 className="font-bold text-lg mb-2 text-white">Membership Benefits</h4>
-                  <p className="text-surface-400 text-sm leading-relaxed mb-6">Support regularly to unlock exclusive content, Discord roles, and early access to drops.</p>
+              <div className="glass-card p-8 border-brand-500/10 group hover:border-brand-500/30 transition-all flex flex-col">
+                <Award className="text-brand-500 mb-4" size={24} />
+                <h4 className="font-bold text-lg mb-2 text-white">Supporter Tiers</h4>
+                <p className="text-surface-400 text-sm leading-relaxed mb-6">Support my journey and get exclusive perks, early access, and Discord roles.</p>
+                <div className="mt-auto">
                   <button className="text-brand-500 text-xs font-black uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
-                    Explore Tiers <ChevronRight size={14} />
+                    View Membership <ChevronRight size={14} />
                   </button>
-               </div>
-               <div className="glass-card p-8 border-emerald-500/10 group hover:border-emerald-500/30 transition-all">
-                  <Zap className="text-emerald-500 mb-4" size={24} />
-                  <h4 className="font-bold text-lg mb-2 text-white">Project Goals</h4>
-                  <p className="text-surface-400 text-sm leading-relaxed mb-6">Currently raising for a new studio setup and weekly community airdrops.</p>
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 w-[65%] shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                  </div>
-                  <div className="flex justify-between mt-2">
-                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">65% Reached</span>
-                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">$3,250 / $5,000</span>
-                  </div>
-               </div>
+                </div>
+              </div>
+              <div className="glass-card p-8 border-emerald-500/10 group hover:border-emerald-500/30 transition-all">
+                <TrendingUp className="text-emerald-500 mb-4" size={24} />
+                <h4 className="font-bold text-lg mb-2 text-white">Active Goal</h4>
+                <p className="text-surface-400 text-sm leading-relaxed mb-6">Raising for improved streaming hardware and a new series of Web3 tutorials.</p>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 w-[65%] shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                </div>
+                <div className="flex justify-between mt-3">
+                  <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">65% of $5,000</span>
+                  <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">$3,250 reached</span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Sticky Sidebar */}
-          <div className="lg:w-[400px] shrink-0">
+          <div className="lg:w-[420px] shrink-0 order-1 lg:order-2">
             <div className="sticky top-28 space-y-8">
-              <TipWidget fixedRecipient={{
-                username: profile.solDomain || profile.displayName,
-                address: profile.walletAddress
-              }} />
-              
-              <div className="glass-card p-8">
-                 <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/20 flex items-center gap-2">
-                        <TrendingUp size={14} className="text-brand-500" /> Recent Supporters
-                    </h2>
-                    <span className="text-[10px] font-bold text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded-full">{supporterCount} Total</span>
-                 </div>
-                 <SupporterFeed tips={tipsReceived} />
+              <div id="tip-widget" className="animate-slide-up">
+                <TipWidget fixedRecipient={{
+                  username: profile.solDomain || profile.displayName || profile.walletAddress.slice(0, 8),
+                  address: profile.walletAddress
+                }} />
+              </div>
+
+              <div className="glass-card p-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 flex items-center gap-2">
+                    <TrendingUp size={14} className="text-brand-500" /> Recent Supporters
+                  </h2>
+                  <span className="text-[10px] font-bold text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded-full">{supporterCount}</span>
+                </div>
+                <SupporterFeed tips={tipsReceived} />
               </div>
             </div>
           </div>
@@ -136,94 +140,100 @@ export default function CreatorPage() {
         </div>
       </main>
 
-      <footer className="py-20 border-t border-white/5 text-center">
-         <img src="/logo.svg" className="h-6 mx-auto mb-6 opacity-20 grayscale" alt="TipLnk" />
-         <p className="text-surface-500 text-xs font-bold uppercase tracking-[0.3em]">The New Standard for Creator Monetization</p>
+      <footer className="py-20 border-t border-white/5 text-center mt-20">
+        <img src="/logo.svg" className="h-6 mx-auto mb-6 opacity-20 grayscale" alt="TipLnk" />
+        <p className="text-surface-600 text-[10px] font-bold uppercase tracking-[0.4em]">Powered by TipLnk Protocol • Decentralized Support</p>
       </footer>
     </div>
   );
 }
 
 const CreatorHeader = ({ profile, supporterCount, totalVolume }) => {
-  const displayName = profile.displayName || profile.username || 'Anonymous Creator';
+  const displayName = profile.displayName || profile.name || 'Anonymous Creator';
   const avatarFallback = profile.walletAddress ? profile.walletAddress.slice(0, 2).toUpperCase() : '?';
 
   return (
     <div className="relative">
-      {/* Cover Image with Gradient Overlay */}
-      <div className="h-64 md:h-80 w-full bg-surface-900 border-b border-white/5 relative overflow-hidden">
+      {/* Cover Image - Large Hero Style */}
+      <div className="h-64 md:h-96 w-full bg-surface-900 border-b border-white/5 relative overflow-hidden">
         {profile.coverImageUrl ? (
-          <img src={profile.coverImageUrl} alt="Cover" className="w-full h-full object-cover animate-fade-in" />
+          <img
+            src={profile.coverImageUrl}
+            alt="Cover"
+            className="w-full h-full object-cover animate-fade-in"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-brand-600/20 via-surface-900 to-surface-950 flex items-center justify-center overflow-hidden">
-             <img src="/logo.svg" className="w-1/2 opacity-5 blur-3xl scale-150 rotate-12" alt="" />
+          <div className="w-full h-full bg-gradient-to-br from-brand-600/10 via-surface-900 to-surface-950 flex items-center justify-center">
+            <img src="/logo.svg" className="w-1/3 opacity-[0.03] blur-3xl scale-150 rotate-12" alt="" />
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-20" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-950 via-transparent to-transparent opacity-80" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row gap-8 relative mt-[-64px] md:mt-[-80px] items-end md:items-center">
-          
-          {/* Avatar Container */}
-          <div className="relative group">
-            <div className="w-32 h-32 md:w-44 md:h-44 rounded-[40px] bg-surface-900 border-[8px] border-surface-950 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:scale-105 group-hover:rotate-1">
+        <div className="flex flex-col items-center text-center relative mt-[-64px] md:mt-[-80px]">
+
+          {/* Avatar - Large & Centered like competitors */}
+          <div className="relative group mb-6">
+            <div className="w-32 h-32 md:w-48 md:h-44 rounded-[48px] bg-surface-900 border-[10px] border-surface-950 overflow-hidden shadow-2xl transition-all duration-700 group-hover:rounded-[32px] group-hover:rotate-1">
               {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={displayName} className="w-full h-full object-cover animate-fade-in" />
+                <img
+                  src={profile.avatarUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover animate-fade-in"
+                  onError={(e) => { e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center text-5xl font-black text-white/10 bg-surface-800">${avatarFallback}</div>`; }}
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white/10 bg-surface-800">
-                    {avatarFallback}
+                <div className="w-full h-full flex items-center justify-center text-5xl font-black text-white/10 bg-surface-800">
+                  {avatarFallback}
                 </div>
               )}
             </div>
             {profile.walletAddress && (
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-brand-500 text-black flex items-center justify-center shadow-xl border-4 border-surface-950 animate-bounce-slow" title="Verified Creator">
-                <ShieldCheck size={20} />
+              <div className="absolute bottom-2 right-2 w-12 h-12 rounded-2xl bg-brand-500 text-black flex items-center justify-center shadow-2xl border-4 border-surface-950 animate-bounce-slow" title="Verified Creator">
+                <ShieldCheck size={24} />
               </div>
             )}
           </div>
 
           {/* Info Section */}
-          <div className="flex-1 pb-2 md:pt-16">
-            <div className="flex flex-wrap items-center gap-4 mb-3">
-              <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">{profile.solDomain || displayName}</h1>
-              {profile.twitterHandle && (
-                <a 
-                  href={`https://x.com/${profile.twitterHandle}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-1 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-500 hover:bg-sky-500/20 transition-all shadow-lg shadow-sky-500/5"
-                >
-                  <Twitter size={14} fill="currentColor" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">@{profile.twitterHandle}</span>
-                </a>
-              )}
-            </div>
-            
-            {/* Stats Badges */}
-            <div className="flex flex-wrap items-center gap-4">
-               <div className="flex items-center gap-2 bg-white/[0.03] border border-white/5 px-4 py-1.5 rounded-2xl">
+          <div className="max-w-3xl px-4">
+            <div className="flex flex-col items-center gap-2 mb-4">
+              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-2">{profile.solDomain || displayName}</h1>
+              <div className="flex items-center gap-3">
+                {profile.twitterHandle && (
+                  <a
+                    href={`https://x.com/${profile.twitterHandle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/5 text-sky-400 hover:bg-sky-500/10 transition-all"
+                  >
+                    <Twitter size={14} fill="currentColor" />
+                    <span className="text-xs font-bold tracking-tight">@{profile.twitterHandle}</span>
+                  </a>
+                )}
+                <div className="flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 px-4 py-2 rounded-2xl">
                   <div className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
-                  <p className="text-xs font-bold text-surface-400 uppercase tracking-wider"><span className="text-white">{supporterCount}</span> Supporters</p>
-               </div>
-               <div className="flex items-center gap-2 bg-white/[0.03] border border-white/5 px-4 py-1.5 rounded-2xl">
-                  <TrendingUp size={12} className="text-emerald-500" />
-                  <p className="text-xs font-bold text-surface-400 uppercase tracking-wider"><span className="text-white">${totalVolume.toFixed(0)}</span> Total Tips</p>
-               </div>
+                  <p className="text-xs font-bold text-brand-500 uppercase tracking-wider">{supporterCount} Supporters</p>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3 pb-2 md:pt-16">
-            <button className="btn-secondary !rounded-2xl !px-6 !h-14 font-black uppercase tracking-widest text-xs flex items-center gap-2 group hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-               <Heart size={16} className="group-hover:fill-current group-hover:text-red-500 transition-colors" /> Follow
-            </button>
-            <button 
-              onClick={() => document.getElementById('tip-widget')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-              className="btn-primary !rounded-2xl !px-8 !h-14 font-black uppercase tracking-widest text-xs shadow-[0_15px_30px_rgba(159,53,232,0.3)] hover:scale-105 active:scale-95 transition-all"
-            >
-              Support Now
-            </button>
+            {/* Quick Actions */}
+            <div className="flex items-center justify-center gap-4 mt-10">
+              <button
+                onClick={() => {
+                  const el = document.getElementById('tip-widget');
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+                className="h-14 px-10 rounded-2xl bg-brand-500 text-black font-black uppercase tracking-widest text-xs hover:bg-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-brand-500/20 flex items-center gap-3"
+              >
+                <img src="/favicon.svg" alt="TipLnk" className="w-6 h-6" />
+                Support
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -234,29 +244,28 @@ const CreatorHeader = ({ profile, supporterCount, totalVolume }) => {
 const CreatorTabs = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'about', label: 'About', icon: User },
-    { id: 'posts', label: 'Posts', icon: MessageSquare },
+    { id: 'posts', label: 'Feed', icon: MessageSquare },
     { id: 'gallery', label: 'Gallery', icon: ImageIcon }
   ];
 
   return (
-    <div className="bg-surface-800/20 px-8">
-      <nav className="flex space-x-12" aria-label="Tabs">
+    <div className="bg-surface-800/20 px-8 border-b border-white/5">
+      <nav className="flex justify-center sm:justify-start space-x-12" aria-label="Tabs">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`whitespace-nowrap py-6 px-1 border-b-4 font-black text-xs uppercase tracking-[0.2em] transition-all relative ${
-              activeTab === tab.id
+            className={`whitespace-nowrap py-8 px-1 border-b-4 font-black text-[10px] uppercase tracking-[0.3em] transition-all relative ${activeTab === tab.id
                 ? 'border-brand-500 text-brand-500'
                 : 'border-transparent text-surface-500 hover:text-white'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2.5">
-               <tab.icon size={16} />
-               {tab.label}
+              <tab.icon size={14} />
+              {tab.label}
             </div>
             {activeTab === tab.id && (
-                <div className="absolute bottom-[-4px] left-0 right-0 h-4 bg-brand-500/10 blur-xl" />
+              <div className="absolute bottom-[-4px] left-0 right-0 h-4 bg-brand-500/10 blur-xl" />
             )}
           </button>
         ))}
@@ -294,57 +303,49 @@ const TabContent = ({ activeTab, profile }) => {
 
   if (activeTab === 'about') {
     return (
-      <div className="animate-fade-in space-y-12">
-        <div className="space-y-6">
-            <h3 className="text-xl font-bold flex items-center gap-3">
-                <FileText size={20} className="text-brand-500" /> 
-                Biography
-            </h3>
-            {profile.bio ? (
-                <p className="text-lg text-surface-300 leading-relaxed font-medium">
-                    {profile.bio}
-                </p>
-            ) : (
-                <div className="p-8 rounded-3xl bg-white/[0.02] border border-dashed border-white/10 text-center">
-                    <p className="italic text-white/20 font-medium">This creator is letting their work speak for itself (no bio yet).</p>
-                </div>
-            )}
+      <div className="animate-fade-in space-y-16">
+        <div className="space-y-8">
+          <h3 className="text-2xl font-black flex items-center gap-4 text-white">
+            <Coffee size={24} className="text-brand-500" />
+            The Story
+          </h3>
+          {profile.bio ? (
+            <p className="text-xl text-surface-300 leading-relaxed font-medium max-w-4xl">
+              {profile.bio}
+            </p>
+          ) : (
+            <div className="p-12 rounded-[40px] bg-white/[0.02] border border-dashed border-white/10 text-center">
+              <p className="italic text-white/20 font-medium">Sharing my creative journey on the blockchain.</p>
+            </div>
+          )}
         </div>
 
-        <div className="space-y-6 pt-12 border-t border-white/5">
-            <h3 className="text-xl font-bold flex items-center gap-3">
-                <Globe size={20} className="text-emerald-500" /> 
-                Connected Identity
-            </h3>
-            <div className="flex flex-wrap gap-4">
+        <div className="space-y-8 pt-16 border-t border-white/5">
+          <h3 className="text-lg font-black uppercase tracking-widest text-white/30">Verified Links</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {profile.twitterHandle && (
-                <a href={`https://x.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 px-6 py-4 rounded-[24px] bg-white/[0.03] border border-white/5 text-white/80 hover:bg-white/10 hover:border-brand-500/30 transition-all group">
-                <Twitter size={24} className="text-sky-400 group-hover:scale-110 transition-transform" fill="currentColor" /> 
-                <div>
-                    <span className="text-xs font-black uppercase tracking-widest text-white/20 block">X Profile</span>
-                    <span className="font-bold text-lg">@{profile.twitterHandle}</span>
+              <a href={`https://x.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-6 p-6 rounded-[32px] bg-white/[0.03] border border-white/5 text-white/80 hover:bg-brand-500/10 hover:border-brand-500/30 transition-all group">
+                <div className="w-14 h-14 rounded-2xl bg-sky-500/10 flex items-center justify-center text-sky-400">
+                  <Twitter size={28} fill="currentColor" />
                 </div>
-                </a>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-1">X Timeline</span>
+                  <span className="font-bold text-xl">@{profile.twitterHandle}</span>
+                </div>
+              </a>
             )}
             {profile.link && (
-                <a href={profile.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 px-6 py-4 rounded-[24px] bg-white/[0.03] border border-white/5 text-white/80 hover:bg-white/10 hover:border-brand-500/30 transition-all group">
-                <Globe size={24} className="text-emerald-400 group-hover:scale-110 transition-transform" /> 
+              <a href={profile.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-6 p-6 rounded-[32px] bg-white/[0.03] border border-white/5 text-white/80 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                  <Globe size={28} />
+                </div>
                 <div>
-                    <span className="text-xs font-black uppercase tracking-widest text-white/20 block">Personal Website</span>
-                    <span className="font-bold text-lg">{profile.link.replace(/^https?:\/\//, '')}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-1">Official Website</span>
+                  <span className="font-bold text-xl">{profile.link.replace(/^https?:\/\//, '')}</span>
                 </div>
-                </a>
+              </a>
             )}
-            {profile.walletAddress && (
-                <div className="flex items-center gap-4 px-6 py-4 rounded-[24px] bg-white/[0.03] border border-white/5 text-white/80 transition-all">
-                <ShieldCheck size={24} className="text-brand-500" /> 
-                <div>
-                    <span className="text-xs font-black uppercase tracking-widest text-white/20 block">Solana Wallet</span>
-                    <span className="font-mono text-xs">{profile.walletAddress.slice(0, 8)}...{profile.walletAddress.slice(-8)}</span>
-                </div>
-                </div>
-            )}
-            </div>
+          </div>
         </div>
       </div>
     );
@@ -354,17 +355,17 @@ const TabContent = ({ activeTab, profile }) => {
     if (loadingPosts) {
       return (
         <div className="py-24 text-center">
-            <Loader2 size={32} className="animate-spin text-brand-500 mx-auto mb-4" />
-            <p className="text-surface-500 font-bold uppercase tracking-widest text-[10px]">Syncing with X Ledger...</p>
+          <Loader2 size={40} className="animate-spin text-brand-500 mx-auto mb-4" />
+          <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Syncing Ledger...</p>
         </div>
       );
     }
     if (!posts?.data?.length) {
       return (
-        <div className="py-24 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] text-center">
-          <MessageSquare size={48} className="text-white/5 mx-auto mb-6" />
-          <h4 className="text-xl font-bold text-white mb-2">No updates yet</h4>
-          <p className="text-surface-500 text-sm max-w-xs mx-auto">This creator hasn't published any posts to their TipLnk timeline yet.</p>
+        <div className="py-24 bg-white/[0.02] border border-dashed border-white/10 rounded-[48px] text-center">
+          <MessageSquare size={64} className="text-white/5 mx-auto mb-6" />
+          <h4 className="text-2xl font-bold text-white mb-2">Private Feed</h4>
+          <p className="text-surface-500 text-sm max-w-xs mx-auto">This creator's feed is currently empty. Check back soon for updates!</p>
         </div>
       );
     }
@@ -376,92 +377,88 @@ const TabContent = ({ activeTab, profile }) => {
   }
 
   return (
-     <div className="py-24 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] text-center">
-        <ImageIcon size={48} className="text-white/5 mx-auto mb-6" />
-        <h4 className="text-xl font-bold text-white mb-2">Digital Gallery</h4>
-        <p className="text-surface-500 text-sm max-w-xs mx-auto">The creator's NFT portfolio and digital asset gallery will appear here soon.</p>
-      </div>
+    <div className="py-24 bg-white/[0.02] border border-dashed border-white/10 rounded-[48px] text-center">
+      <ImageIcon size={64} className="text-white/5 mx-auto mb-6" />
+      <h4 className="text-2xl font-bold text-white mb-2">Digital Gallery</h4>
+      <p className="text-surface-500 text-sm max-w-xs mx-auto">NFT collections and creative assets will be showcased here in our next update.</p>
+    </div>
   );
 };
 
 const PostCard = ({ post, profile }) => {
-    const avatarFallback = profile.displayName ? profile.displayName[0].toUpperCase() : 'C';
-    return (
-        <div className="bg-surface-900 border border-white/5 p-8 rounded-[32px] hover:border-brand-500/20 transition-all shadow-xl group">
-            <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-surface-800 overflow-hidden ring-2 ring-white/5 group-hover:ring-brand-500/30 transition-all">
-                    {profile.avatarUrl ? (
-                        <img src={profile.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center font-black text-white/20">{avatarFallback}</div>
-                    )}
-                </div>
-                <div>
-                    <p className="font-bold text-lg text-white leading-none mb-1">{profile.displayName}</p>
-                    <a href={`https://x.com/${profile.twitterHandle}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-white/20 hover:text-brand-400 transition-colors uppercase tracking-widest">
-                        @{profile.twitterHandle}
-                    </a>
-                </div>
-                <div className="ml-auto flex flex-col items-end">
-                    <Clock size={14} className="text-white/10 mb-1" />
-                    <span className="text-[10px] font-black text-white/20 uppercase">{new Date(post.created_at).toLocaleDateString()}</span>
-                </div>
-            </div>
-            <p className="text-surface-200 text-lg leading-relaxed whitespace-pre-wrap mb-8 font-medium">{post.text}</p>
-            <div className="flex items-center gap-8 text-white/40 text-xs font-bold uppercase tracking-widest">
-                <div className="flex items-center gap-2 hover:text-red-500 transition-colors cursor-pointer"><Heart size={16} /> {post.public_metrics.like_count}</div>
-                <div className="flex items-center gap-2 hover:text-brand-500 transition-colors cursor-pointer"><Repeat size={16} /> {post.public_metrics.retweet_count}</div>
-                <div className="flex items-center gap-2 hover:text-sky-500 transition-colors cursor-pointer"><MessageSquare size={16} /> {post.public_metrics.reply_count}</div>
-                <button className="ml-auto p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 transition-all">
-                    <Share2 size={16} />
-                </button>
-            </div>
+  const avatarFallback = profile.displayName ? profile.displayName[0].toUpperCase() : 'C';
+  return (
+    <div className="bg-surface-900 border border-white/5 p-8 sm:p-10 rounded-[48px] hover:border-brand-500/20 transition-all shadow-xl group">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-14 h-14 rounded-2xl bg-surface-800 overflow-hidden ring-4 ring-white/5 group-hover:ring-brand-500/20 transition-all">
+          {profile.avatarUrl ? (
+            <img src={profile.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center font-black text-white/20">{avatarFallback}</div>
+          )}
         </div>
-    );
+        <div>
+          <p className="font-bold text-xl text-white leading-none mb-1">{profile.displayName}</p>
+          <span className="text-xs font-bold text-white/20 uppercase tracking-widest">
+            {new Date(post.created_at).toLocaleDateString()}
+          </span>
+        </div>
+        <div className="ml-auto">
+          <Twitter size={20} className="text-white/10 group-hover:text-sky-500/40 transition-colors" fill="currentColor" />
+        </div>
+      </div>
+      <p className="text-surface-200 text-xl leading-relaxed whitespace-pre-wrap mb-10 font-medium">{post.text}</p>
+      <div className="flex items-center gap-10 text-white/40 text-xs font-black uppercase tracking-[0.2em]">
+        <div className="flex items-center gap-2.5 hover:text-red-500 transition-colors cursor-pointer"><Heart size={18} /> {post.public_metrics.like_count}</div>
+        <div className="flex items-center gap-2.5 hover:text-brand-500 transition-colors cursor-pointer"><Repeat size={18} /> {post.public_metrics.retweet_count}</div>
+        <div className="flex items-center gap-2.5 hover:text-sky-500 transition-colors cursor-pointer"><MessageSquare size={18} /> {post.public_metrics.reply_count}</div>
+        <button className="ml-auto p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white/60 transition-all">
+          <Share2 size={18} />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 const SupporterFeed = ({ tips }) => {
   if (tips.length === 0) {
     return (
-      <div className="py-12 text-center space-y-4">
-        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto">
-            <Heart size={20} className="text-white/10" />
+      <div className="py-16 text-center space-y-4">
+        <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-4 border border-white/5">
+          <Heart size={28} className="text-white/10" />
         </div>
-        <p className="text-xs text-white/20 font-bold uppercase tracking-[0.2em]">Be the first to tip!</p>
+        <p className="text-xs text-white/20 font-black uppercase tracking-[0.3em]">Be the first supporter!</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-       <div className="space-y-3">
-          {tips.slice(0, 10).map((tip, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-brand-500/20 transition-all group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-900 flex items-center justify-center text-xs text-white font-black shadow-lg">
-                {tip.sender_name ? tip.sender_name[0].toUpperCase() : 'A'}
+      <div className="space-y-4">
+        {tips.slice(0, 8).map((tip, i) => (
+          <div key={i} className="flex items-start gap-4 p-5 rounded-[28px] bg-white/[0.02] border border-white/5 hover:border-brand-500/20 transition-all group">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-900 flex items-center justify-center text-sm text-white font-black shadow-lg shrink-0">
+              {tip.sender_name ? tip.sender_name[0].toUpperCase() : 'A'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm font-black text-white truncate pr-2">{tip.sender_name || 'Anonymous'}</p>
+                <span className="text-[10px] font-black text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded-lg shrink-0">${parseFloat(tip.amountUSDC).toFixed(2)}</span>
               </div>
-              <div className="flex-1">
-                <p className="text-sm text-white/80">
-                  <span className="font-black text-white">{tip.sender_name || 'Anonymous'}</span>
-                </p>
-                {tip.message && (
-                    <p className="text-xs text-white/40 mt-0.5 line-clamp-1 italic">"{tip.message}"</p>
-                )}
-                <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[9px] font-black text-brand-500 uppercase tracking-tighter">${parseFloat(tip.amountUSDC).toFixed(2)}</span>
-                    <span className="w-1 h-1 rounded-full bg-white/10" />
-                    <span className="text-[8px] font-bold text-white/20 uppercase">{new Date(tip.timestamp).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ExternalLink size={12} className="text-white/20" />
+              {tip.message && (
+                <p className="text-sm text-white/50 mb-2 leading-relaxed italic">"{tip.message}"</p>
+              )}
+              <div className="flex items-center gap-2">
+                <Clock size={10} className="text-white/20" />
+                <span className="text-[9px] font-bold text-white/20 uppercase">{new Date(tip.timestamp).toLocaleDateString()}</span>
               </div>
             </div>
-          ))}
-       </div>
-       <button className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors border-t border-white/5 pt-6 mt-4">
-          View All Supporters
-       </button>
+          </div>
+        ))}
+      </div>
+      <button className="w-full py-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-white transition-colors border-t border-white/5 pt-8 mt-6">
+        Explore All Activity
+      </button>
     </div>
   );
 };
