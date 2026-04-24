@@ -252,6 +252,3 @@ export function useApp() {
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
 }
-seApp must be used within AppProvider');
-  return ctx;
-}

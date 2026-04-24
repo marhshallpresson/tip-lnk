@@ -97,7 +97,19 @@ export async function initSchema() {
         }
     }
 
-    // 2. Tips Table
+    // 1b. Event Sourcing: Raw Webhook Payloads (Append-Only)
+    if (!(await db.schema.hasTable('transactions_raw'))) {
+      await db.schema.createTable('transactions_raw', (table) => {
+        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.string('signature').unique().notNullable();
+        table.text('payload').notNullable();
+        table.string('source').defaultTo('helius_webhook');
+        table.string('status').defaultTo('pending');
+        table.timestamps(true, true);
+      });
+    }
+
+    // 2. Tips Table (Materialized View of Confirmed Tips)
     if (!(await db.schema.hasTable('tips'))) {
       await db.schema.createTable('tips', (table) => {
         table.string('signature').primary();

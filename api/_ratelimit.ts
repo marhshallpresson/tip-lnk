@@ -1,12 +1,35 @@
 import { kv } from '@vercel/kv'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const LIMIT = 100 
 const tracker = new Map<string, { count: number; lastReset: number }>()
 
+// ─── PHASE 2: SCALABLE RATE LIMITING ───
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
+
+// Multi-tiered rate limiters
+const authLimiter = redis ? new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '60 s'),
+  analytics: true,
+}) : null;
+
+const apiLimiter = redis ? new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(LIMIT, '60 s'),
+  analytics: true,
+}) : null;
+
 /**
  * Task 2.3: Professional Rate Limiter Utility
- * Elite Hardening: Vercel KV with Memory Fallback.
+ * Elite Hardening: Upstash Ratelimit with Memory Fallback.
  */
 export async function rateLimit(req: VercelRequest, res: VercelResponse): Promise<boolean> {
   const ip = (req.headers['x-forwarded-for'] as string) || (req.socket.remoteAddress) || 'anonymous'
@@ -20,15 +43,16 @@ export async function rateLimit(req: VercelRequest, res: VercelResponse): Promis
 
   // ─── ELITE DISTRIBUTED PATTERN ───
   try {
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      const currentCount = await kv.incr(key)
-      if (currentCount === 1) await kv.expire(key, windowSecs)
+    if (redis && (isAuth ? authLimiter : apiLimiter)) {
+      const limiter = isAuth ? authLimiter! : apiLimiter!;
+      const { success, limit: rLimit, remaining, reset } = await limiter.limit(ip);
+      
+      res.setHeader('X-RateLimit-Limit', rLimit)
+      res.setHeader('X-RateLimit-Remaining', remaining)
+      res.setHeader('X-RateLimit-Reset', reset)
   
-      res.setHeader('X-RateLimit-Limit', limit)
-      res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - currentCount))
-  
-      if (currentCount > limit) {
-        console.warn(`🛡️ KV RateLimit: Blocked excessive requests from ${ip} on ${route}`)
+      if (!success) {
+        console.warn(`🛡️ Upstash RateLimit: Blocked excessive requests from ${ip} on ${route}`)
         res.status(429).json({ 
             error: 'Too many requests', 
             message: 'Security threshold exceeded. Please slow down.' 
@@ -38,7 +62,7 @@ export async function rateLimit(req: VercelRequest, res: VercelResponse): Promis
       return true
     }
   } catch (err) {
-    console.error('KV Rate Limit Failure, falling back to memory:', err)
+    console.error('Upstash Rate Limit Failure, falling back to memory:', err)
   }
 
   // ─── MEMORY FALLBACK ───

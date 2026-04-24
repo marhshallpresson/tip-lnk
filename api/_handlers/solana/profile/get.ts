@@ -2,9 +2,18 @@ import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
 import { db } from "../../../_lib/db.js"
 import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.js"
+import { Redis } from '@upstash/redis'
+
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
 
 /**
- * Task 2.2: Standalone Vercel Function for Profile Fetching
+ * PHASE 2: SCALABLE BACKEND
+ * Cached Profile Fetching with Redis
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
@@ -15,6 +24,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // ─── ELITE CACHING LAYER ───
+    const cacheKey = `profile:${wallet}`;
+    if (redis) {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+            console.log(`🛡️ Cache Hit: Returned profile for ${wallet}`);
+            return res.json(cached);
+        }
+    }
+
     // Advanced Query: Search by walletAddress first, then googleSub, then solDomain, then id
     let user = await db('user').where({ walletAddress: wallet }).first()
     
@@ -25,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!user && wallet.includes('.sol')) {
         const onChainWallet = await resolveSnsDomain(wallet)
         if (onChainWallet) {
-            return res.json({ 
+            const responseData = { 
                 success: true, 
                 profile: { 
                     displayName: wallet.replace('.sol', ''),
@@ -38,7 +57,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     description: `Support this creator with direct SOL and USDC tips. Secure and instant.`,
                     image: `https://tiplnk.me/api/og/${wallet}`
                 }
-            })
+            };
+            if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 }); // Cache for 5 mins
+            return res.json(responseData)
         }
         user = await db('user').where({ solDomain: wallet }).first()
     }
@@ -86,7 +107,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         card: 'summary_large_image'
     }
 
-    return res.json({ success: true, profile, metadata })
+    const responseData = { success: true, profile, metadata };
+    
+    // Cache the final response
+    if (redis) {
+        await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 }); // Cache for 60 seconds
+    }
+
+    return res.json(responseData)
   } catch (err) {
     console.error('Profile Fetch Error:', err)
     res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' })

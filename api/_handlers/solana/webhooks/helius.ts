@@ -1,9 +1,17 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
+import { Redis } from '@upstash/redis'
+
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
 
 /**
- * PHASE 5: WEBHOOK-ONLY LEDGER
- * Secure Helius Webhook Receiver
+ * PHASE 5 & PHASE 1: SCALABLE WEBHOOK-ONLY LEDGER
+ * Implements Event Sourcing, Idempotent Processing, and Redis Queuing.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -26,12 +34,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (tx.transactionError) continue;
 
         const signature = tx.signature
+        
+        // ─── PHASE 1: WEBHOOK RELIABILITY & EVENT SOURCING ───
+        // Store raw payload first
+        try {
+            await db('transactions_raw').insert({
+                signature: signature,
+                payload: JSON.stringify(tx),
+                source: 'helius_webhook',
+                status: 'processing'
+            }).onConflict('signature').ignore();
+        } catch (dbErr) {
+            console.error('Failed to log raw transaction:', dbErr);
+            // If DB fails, push to Redis dead-letter queue as ultimate fallback
+            if (redis) {
+                await redis.lpush('dlq:webhooks', JSON.stringify(tx));
+            }
+            continue; // Skip processing if we can't guarantee raw state
+        }
+
+        // ─── IDEMPOTENCY CHECK ───
+        // Prevent duplicate processing via Redis lock (10 mins)
+        if (redis) {
+            const isDuplicate = await redis.set(`lock:tx:${signature}`, '1', { nx: true, ex: 600 });
+            if (!isDuplicate) {
+                console.log(`🛡️ Webhook: Skipped duplicate processing for ${signature}`);
+                continue;
+            }
+        }
+
         const sender = tx.feePayer
         const timestamp = new Date(tx.timestamp * 1000)
         
         // Extract native or token transfer
         const transfer = tx.nativeTransfers?.[0] || tx.tokenTransfers?.[0]
-        if (!transfer) continue
+        if (!transfer) {
+             await db('transactions_raw').where({ signature }).update({ status: 'skipped' });
+             continue;
+        }
 
         const recipient = transfer.toUserAccount
         const amount = transfer.amount || transfer.tokenAmount
@@ -40,10 +80,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Reject zero amounts and self-transfers
         if (amount <= 0 || sender === recipient) {
             console.warn(`🛡️ Webhook: Rejected invalid transfer for ${signature}`);
+            await db('transactions_raw').where({ signature }).update({ status: 'rejected_fraud' });
             continue;
         }
 
-        // Insert into ledger
+        // Insert into ledger (tips materialized view)
         await db('tips').insert({
           signature,
           slot: tx.slot,
@@ -56,7 +97,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           type: 'webhook_indexed'
         }).onConflict('signature').ignore() // Reject duplicate signatures
         
+        // Mark raw as processed
+        await db('transactions_raw').where({ signature }).update({ status: 'processed' });
         console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`)
+        
+        // ─── PHASE 3: REAL-TIME PUB/SUB NOTIFICATION ───
+        if (redis) {
+             await redis.publish('live-tips', JSON.stringify({
+                 signature,
+                 recipient,
+                 amount,
+                 timestamp
+             }));
+        }
     }
     res.status(200).json({ success: true })
   } catch (err) {
