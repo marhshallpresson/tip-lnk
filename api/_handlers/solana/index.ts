@@ -11,14 +11,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     let module;
 
-    if (action === 'dflow' && subAction === 'quote') {
-        module = await import('./dflow/quote.js')
+    if (action === 'jupiter' && subAction === 'swap') {
+        module = await import('./jupiter/swap.js')
     } else if (action === 'profile') {
         if (subAction === 'get') module = await import('./profile/get.js')
         if (subAction === 'update') module = await import('./profile/update.js')
     } else if (action === 'tips') {
         if (subAction === 'get') module = await import('./tips/get.js')
-        if (subAction === 'log') module = await import('./tips/log.js')
+        if (subAction === 'stream') module = await import('./tips/stream.js')
     } else if (action === 'webhooks' && subAction === 'helius') {
         module = await import('./webhooks/helius.js')
     } else {

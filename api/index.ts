@@ -72,6 +72,7 @@ const ROUTES: Record<string, Function> = {
   'solana/priority-fee': solanaPriorityFee,
   'solana/sns-check': solanaSnsCheck,
   'solana/tips/get': solanaTipsGet,
+  'solana/tips/stream': solanaTipsStream,
   'solana/webhooks/helius': solanaWebhookHelius,
   'solana/jupiter/swap': solanaJupiterSwap,
   'solana/birdeye/portfolio': solanaBirdeyePortfolio,
