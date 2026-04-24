@@ -118,6 +118,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const responseData = { success: true, profile, metadata };
     
+    // ─── ELITE SOCIAL PROOF: FETCH RECENT TIPS ───
+    if (user.walletAddress) {
+      const tips = await db('tips')
+        .where('recipient', user.walletAddress)
+        .orderBy('timestamp', 'desc')
+        .limit(20)
+      
+      responseData.profile.tipsReceived = tips.map(tip => ({
+        ...tip,
+        amount: Number(tip.amount),
+        amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount) : Number(tip.amount) * 125 // Mock SOL price if not USDC
+      }))
+    }
+
     // Cache the final response
     if (redis) {
         await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 }); // Cache for 60 seconds
