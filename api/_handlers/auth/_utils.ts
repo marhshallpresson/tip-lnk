@@ -85,23 +85,37 @@ export const issueEmailVerification = async (userId: string, email: string, name
 }
 
 /**
- * Professional Vercel Response Shim for res.cookie
+ * Professional Vercel Response Shim for res.cookie and res.clearCookie
  */
 export function patchResponse(res: VercelResponse) {
+  if ((res as any)._patched) return;
+  (res as any)._patched = true;
+
   const cookies: string[] = []
+  
   if (!(res as any).cookie) {
-    (res as any).cookie = (name: string, value: string, options: any) => {
+    (res as any).cookie = (name: string, value: string, options: any = {}) => {
       let cookieStr = `${name}=${value}; Path=${options.path || '/'}`
       if (options.httpOnly) cookieStr += '; HttpOnly'
       if (options.secure) cookieStr += '; Secure'
       if (options.sameSite) {
-        // Standardize SameSite
-        const ss = options.sameSite.toLowerCase()
+        const ss = String(options.sameSite).toLowerCase()
         cookieStr += `; SameSite=${ss.charAt(0).toUpperCase() + ss.slice(1)}`
       }
       if (options.maxAge) cookieStr += `; Max-Age=${Math.floor(options.maxAge / 1000)}`
+      
+      // Filter out existing cookie with same name to avoid duplicates in the same response
+      const index = cookies.findIndex(c => c.startsWith(`${name}=`))
+      if (index !== -1) cookies.splice(index, 1)
+      
       cookies.push(cookieStr)
       res.setHeader('Set-Cookie', cookies)
+    }
+  }
+
+  if (!(res as any).clearCookie) {
+    (res as any).clearCookie = (name: string, options: any = {}) => {
+      (res as any).cookie(name, '', { ...options, maxAge: 0 })
     }
   }
 }

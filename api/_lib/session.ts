@@ -114,57 +114,76 @@ export const getUserRoles = async (userId: string) => {
 }
 
 export const getSessionUser = async (req: Request): Promise<SessionUser | null> => {
-  const cookieSid = (req.signedCookies || {})[SESSION_COOKIE_NAME] as string | undefined
-  let sid = cookieSid
-
-  if (!sid) {
-    const bearer = extractBearerToken(req)
-    if (bearer) {
-      try {
-        const payload = await verifySessionToken(bearer)
-        if (payload?.sid) sid = payload.sid
-      } catch (tokenErr) {
-        console.warn('🛡️ Auth: Invalid Bearer token detected.');
-      }
-    }
+  const sids: (string | undefined)[] = []
+  
+  // 1. Try Signed Cookies
+  sids.push((req.signedCookies || {})[SESSION_COOKIE_NAME])
+  
+  // 2. Try Regular Cookies
+  sids.push((req.cookies || {})[SESSION_COOKIE_NAME])
+  
+  // 3. Try Manual Parsing
+  const cookieHeader = req.headers.cookie || ''
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';').reduce((acc: any, curr) => {
+      const parts = curr.trim().split('=')
+      const key = parts[0]
+      const value = parts.slice(1).join('=')
+      if (key) acc[key] = value
+      return acc
+    }, {})
+    sids.push(cookies[SESSION_COOKIE_NAME])
   }
 
-  if (!sid) return null
-
-  try {
-    const session = await db('session').where({ id: sid }).first()
-    if (!session || session.revokedAt || new Date(session.expiresAt).getTime() < Date.now()) {
-        return null;
-    }
-
-    const user = await db('user').where({ id: session.userId }).first()
-    if (!user || user.deletedAt) {
-        return null;
-    }
-
-    const roles = await getUserRoles(user.id)
-    
-    let profileData = {};
+  // 4. Try Bearer Token
+  const bearer = extractBearerToken(req)
+  if (bearer) {
     try {
-        profileData = typeof user.profileData === 'string' ? JSON.parse(user.profileData) : (user.profileData || {});
-    } catch (parseErr) {}
-
-    return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        full_name: user.name,
-        first_name: user.name ? user.name.split(' ')[0] : null,
-        roles,
-        emailVerifiedAt: user.emailVerifiedAt,
-        onboardingComplete: Boolean(user.onboardingComplete),
-        onboarding_complete: Boolean(user.onboardingComplete),
-        sessionId: sid,
-        walletAddress: user.walletAddress,
-        profileData
-    }
-  } catch (e: any) {
-      console.error('🛡️ Auth CRITICAL: getSessionUser crashed:', e.message);
-      return null
+      const payload = await verifySessionToken(bearer)
+      if (payload?.sid) sids.push(payload.sid)
+    } catch (e) {}
   }
+
+  // Filter unique valid-looking SIDs
+  const uniqueSids = [...new Set(sids.filter(s => typeof s === 'string' && s.length > 20))]
+
+  for (const sid of uniqueSids) {
+    try {
+      const session = await db('session').where({ id: sid }).first()
+      if (!session || session.revokedAt || new Date(session.expiresAt).getTime() < Date.now()) {
+          continue;
+      }
+
+      const user = await db('user').where({ id: session.userId }).first()
+      if (!user || user.deletedAt) {
+          continue;
+      }
+
+      const roles = await getUserRoles(user.id)
+      
+      let profileData = {};
+      try {
+          profileData = typeof user.profileData === 'string' ? JSON.parse(user.profileData) : (user.profileData || {});
+      } catch (parseErr) {}
+
+      return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          full_name: user.name,
+          first_name: user.name ? user.name.split(' ')[0] : null,
+          roles,
+          emailVerifiedAt: user.emailVerifiedAt,
+          onboardingComplete: Boolean(user.onboardingComplete),
+          onboarding_complete: Boolean(user.onboardingComplete),
+          sessionId: sid!,
+          walletAddress: user.walletAddress,
+          profileData
+      }
+    } catch (e) {
+      console.error('🛡️ Auth: session SID lookup failed:', sid, e);
+    }
+  }
+
+  return null
 }

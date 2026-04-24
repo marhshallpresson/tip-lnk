@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { applyCors } from './_cors.js'
 import { rateLimit } from './_ratelimit.js'
 import { verifyCsrfToken } from './_lib/csrf.js'
+import { patchResponse } from './_handlers/auth/_utils.js'
 
 // Import Handlers
 import { default as authMe } from './_handlers/auth/me.js'
@@ -89,6 +90,7 @@ const ROUTES: Record<string, Function> = {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  patchResponse(res)
   if (!applyCors(req, res)) return
 
   const path = req.url?.split('?')[0] || ''
