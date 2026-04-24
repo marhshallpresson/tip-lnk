@@ -243,7 +243,7 @@ export function AppProvider({ children }) {
   }, [pubkeyStr]);
 
   return (
-    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, claimHandle, addTip, resetOnboarding, publicKey, connected }}>
+    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, claimHandle, addTip, resetOnboarding, publicKey, connected, authUser, authLoading }}>
       {children}
     </AppContext.Provider>
   );

@@ -233,6 +233,7 @@ export default function Dashboard() {
 /* ─── Overview Tab (Grass Style Rebuild) ─── */
 export function OverviewTab() {
   const { totalTipsUSDC, tipsReceived, profile } = useApp();
+  const { user: authUser } = useAuth();
   const portfolio = useWalletPortfolio();
 
   return (
