@@ -8,14 +8,21 @@ export default function AuthCompletion() {
   const { user, loading: authLoading, refreshUser, logout } = useAuth();
   const [view, setView] = useState(() => {
     if (user?.email && user?.emailVerifiedAt && !user?.name) return 'name-prompt';
+    if (user?.email && !user?.emailVerifiedAt) return 'email-verify';
     return 'email-prompt';
   });
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
+  const [name, setName] = useState(user?.name || '');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // Sync state if user loads after mount
+  useEffect(() => {
+    if (user?.email && !email) setEmail(user.email);
+    if (user?.name && !name) setName(user.name);
+  }, [user]);
 
   // Redirect if unauthenticated or fully complete
   useEffect(() => {
