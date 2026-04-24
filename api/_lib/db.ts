@@ -242,12 +242,30 @@ export async function initSchema() {
     }
 
     // ─── ELITE DATA CLEANUP ───
-    // Remove legacy dummy emails and prompt users for real addresses.
-    const cleanupCount = await db('user')
+    // 1. Remove legacy dummy emails
+    await db('user')
       .where('email', 'like', '%@phantom.local')
       .update({ email: null });
-    if (cleanupCount > 0) {
+
+    // 2. Recover 'Reset' Accounts: Sync onboarding status from profileData JSON to root column
+    try {
+        const usersToFix = await db('user')
+            .where({ onboardingComplete: false })
+            .whereNotNull('profileData');
+        
+        for (const user of usersToFix) {
+            try {
+                const profile = JSON.parse(user.profileData);
+                if (profile.onboardingComplete === true) {
+                    await db('user').where({ id: user.id }).update({ onboardingComplete: true });
+                    console.log(`🛡️ Recovery: Restored onboarding status for ${user.id}`);
+                }
+            } catch (e) {}
+        }
+    } catch (e) {
+        console.error('🛡️ Recovery: Failed to execute automated account restoration:', e.message);
     }
+
   } catch (err) {
   }
 }

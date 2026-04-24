@@ -16,8 +16,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { walletAddress, profile, signature, message } = req.body
 
+  // ─── ELITE ID RESOLUTION ───
+  let resolvedTargetId = walletAddress;
+  if (walletAddress.startsWith('auth_')) {
+      resolvedTargetId = walletAddress.replace('auth_', '');
+  }
+
   // Elite Hardening: Ensure users can only update their OWN profile
-  if (authUser.walletAddress && walletAddress !== authUser.walletAddress && walletAddress !== authUser.id) {
+  // Check against authUser.id (raw UUID) or authUser.walletAddress (base58)
+  const isOwner = (resolvedTargetId === authUser.id) || 
+                  (authUser.walletAddress && resolvedTargetId === authUser.walletAddress);
+
+  if (!isOwner) {
+      console.warn(`🛡️ Auth: Blocked unauthorized profile update attempt on ${resolvedTargetId} by user ${authUser.id}`);
       return res.status(403).json({ success: false, error: 'Unauthorized: Profile ownership mismatch' })
   }
 

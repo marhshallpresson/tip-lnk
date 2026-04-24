@@ -24,6 +24,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // ─── ELITE ID RESOLUTION ───
+    let resolvedId = wallet;
+    let isInternalId = false;
+
+    if (wallet.startsWith('auth_')) {
+        resolvedId = wallet.replace('auth_', '');
+        isInternalId = true;
+    } else if (wallet.length === 36 && wallet.includes('-')) {
+        isInternalId = true;
+    }
+
     // ─── ELITE CACHING LAYER ───
     const cacheKey = `profile:${wallet}`;
     if (redis) {
@@ -34,8 +45,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     }
 
-    // Advanced Query: Search by walletAddress first, then googleSub, then solDomain, then id
-    let user = await db('user').where({ walletAddress: wallet }).first()
+    // Advanced Query: Search by internal ID first if identified, else by walletAddress, etc.
+    let user;
+    
+    if (isInternalId) {
+        user = await db('user').where({ id: resolvedId }).first();
+    }
+
+    if (!user) {
+        user = await db('user').where({ walletAddress: wallet }).first()
+    }
     
     if (!user) {
         user = await db('user').where({ googleSub: wallet }).first()
@@ -64,12 +83,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user = await db('user').where({ solDomain: wallet }).first()
     }
     
-    if (!user && wallet.length === 36 && wallet.includes('-')) {
-        user = await db('user').where({ id: wallet }).first()
-    }
-    
-    if (!user) {
-        const isAddress = wallet.length >= 32 && wallet.length <= 44 && !wallet.includes('.')
+    if (!user && !isInternalId) {
+        const isAddress = wallet.length >= 32 && wallet.length <= 44 && !wallet.includes('.') && !wallet.startsWith('auth_')
         if (isAddress) {
             const userId = randomUUID()
             await db('user').insert({
