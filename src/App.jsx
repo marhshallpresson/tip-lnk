@@ -239,9 +239,11 @@ function AuthCallbackHandler() {
     if (code) {
       const exchangeCode = async () => {
         try {
+          const codeVerifier = sessionStorage.getItem(`pkce_verifier_${platform}`);
           const res = await api.post(`/auth/${platform}/callback`, {
             code,
-            redirectUri: `${window.location.origin}/auth/callback/${platform}`
+            redirectUri: `${window.location.origin}/auth/callback/${platform}`,
+            codeVerifier
           });
 
           if (res.ok) {

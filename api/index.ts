@@ -19,6 +19,8 @@ import { default as authLinkEmailStart } from './_handlers/auth/link-email/start
 import { default as authLinkEmailVerify } from './_handlers/auth/link-email/verify.js'
 import { default as authResetPasswordStart } from './_handlers/auth/reset-password-start.js'
 import { default as authResetPasswordVerify } from './_handlers/auth/reset-password-verify.js'
+import { default as authTwitterCallback } from './_handlers/auth/twitter/callback.js'
+import { default as authDiscordCallback } from './_handlers/auth/discord/callback.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
 import { default as solanaProfileGet } from './_handlers/solana/profile/get.js'
@@ -61,6 +63,8 @@ const ROUTES: Record<string, Function> = {
   'auth/link-email/verify': authLinkEmailVerify,
   'auth/reset-password-start': authResetPasswordStart,
   'auth/reset-password-verify': authResetPasswordVerify,
+  'auth/twitter/callback': authTwitterCallback,
+  'auth/discord/callback': authDiscordCallback,
 
   // Solana
   'solana/profile': solanaProfile,

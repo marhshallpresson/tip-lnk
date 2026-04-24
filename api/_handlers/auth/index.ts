@@ -16,6 +16,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action === 'google') {
         if (subAction === 'start') module = await import('./google/start.js')
         if (subAction === 'callback') module = await import('./google/callback.js')
+    } else if (action === 'twitter') {
+        if (subAction === 'callback') module = await import('./twitter/callback.js')
+    } else if (action === 'discord') {
+        if (subAction === 'callback') module = await import('./discord/callback.js')
     } else if (action === 'link-email') {
         if (subAction === 'start') module = await import('./link-email/start.js')
         if (subAction === 'verify') module = await import('./link-email/verify.js')
