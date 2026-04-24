@@ -12,15 +12,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!ids) return res.status(400).json({ error: 'IDs parameter required' })
 
   try {
-    const response = await axios.get(`https://api.jup.ag/price/v2?ids=${ids}`)
+    const JUP_API_KEY = process.env.JUPITER_API_KEY
+    const response = await axios.get(`https://api.jup.ag/price/v3?ids=${ids}`, {
+      headers: JUP_API_KEY ? { 'x-api-key': JUP_API_KEY } : {}
+    })
     
-    // Forward the Jupiter response
     res.status(200).json(response.data)
   } catch (err: any) {
-    console.error('🛡️ Price Proxy Fault:', err.message)
-    res.status(500).json({ 
+    console.error('🛡️ Price Proxy Fault:', err.response?.status, err.message)
+    res.status(err.response?.status || 500).json({ 
         error: 'Price Fetch Error', 
-        message: 'Could not retrieve market prices.' 
+        message: 'Could not retrieve market prices.',
+        details: err.response?.data
     })
   }
 }
