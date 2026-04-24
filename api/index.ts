@@ -28,9 +28,8 @@ import { default as solanaSendSmart } from './_handlers/solana/send-smart.js'
 import { default as solanaPriorityFee } from './_handlers/solana/priority-fee.js'
 import { default as solanaSnsCheck } from './_handlers/solana/sns-check.js'
 import { default as solanaTipsGet } from './_handlers/solana/tips/get.js'
-import { default as solanaTipsLog } from './_handlers/solana/tips/log.js'
 import { default as solanaWebhookHelius } from './_handlers/solana/webhooks/helius.js'
-import { default as solanaDflowQuote } from './_handlers/solana/dflow/quote.js'
+import { default as solanaJupiterSwap } from './_handlers/solana/jupiter/swap.js'
 import { default as solanaBirdeyePortfolio } from './_handlers/solana/birdeye/portfolio.js'
 import { default as solanaPrice } from './_handlers/solana/price.js'
 import { default as solanaRpc } from './_handlers/solana/rpc.js'
@@ -71,9 +70,8 @@ const ROUTES: Record<string, Function> = {
   'solana/priority-fee': solanaPriorityFee,
   'solana/sns-check': solanaSnsCheck,
   'solana/tips/get': solanaTipsGet,
-  'solana/tips/log': solanaTipsLog,
   'solana/webhooks/helius': solanaWebhookHelius,
-  'solana/dflow/quote': solanaDflowQuote,
+  'solana/jupiter/swap': solanaJupiterSwap,
   'solana/birdeye/portfolio': solanaBirdeyePortfolio,
   'solana/price': solanaPrice,
   'quicknode/rpc/solana': solanaRpc,

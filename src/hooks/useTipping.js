@@ -101,19 +101,32 @@ export function useTipping(creatorAddress) {
 
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-        const params = new URLSearchParams({
+        
+        // ─── PHASE 4: SECURE JUPITER ROUTING ───
+        const payload = {
           inputMint: token.mint,
           outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
           amount: amountInLamports.toString(),
-          slippageBps: '50',
+          slippageBps: 50,
           userPublicKey: publicKey?.toBase58() || '',
-        });
+          destinationWallet: creatorAddress,
+        };
 
-        // Use our Professional Backend Proxy to avoid CORS
-        const response = await fetch(`${API_BASE_URL}/api/solana/dflow/quote?${params}`);
+        const response = await fetch(`${API_BASE_URL}/api/solana/jupiter/swap`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
         if (!response.ok) throw new Error('Professional routing engine failed');
 
-        const order = await response.json();
+        const swapData = await response.json();
+        const order = {
+          outAmount: swapData.quote.outAmount,
+          transaction: swapData.transaction,
+          executionMode: swapData.executionMode,
+          dflowAnalytics: swapData.dflowAnalytics
+        };
 
         // ─── Phase 2: Dynamic Sender-Pays Fee Calculation ───
         const baseOutAmount = BigInt(order.outAmount);
@@ -186,16 +199,49 @@ export function useTipping(creatorAddress) {
             throw new Error(submitData.error?.message || 'Transaction submission failed.');
           }
 
-          // Wait for confirmation
-          const latestBlockhash = await connection.getLatestBlockhash();
-          await connection.confirmTransaction({
+          // ─── Phase 9: UX Truth Enforcement - Show Pending State ───
+          setTxResult({
+            success: false,
+            status: 'pending',
             signature,
-            ...latestBlockhash
-          }, 'confirmed');
+            executionMode: route.executionMode,
+            outAmount: parseFloat(fromLamports(BigInt(route.baseAmount), 6)),
+            feeAmount: parseFloat(fromLamports(BigInt(route.feeAmount), 6)),
+            totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
+            timestamp: Date.now(),
+            sender: senderName || 'Anonymous',
+            recipientAddress: creatorAddress,
+            treasuryAddress: TREASURY_WALLET
+          });
+
+          // ─── ELITE RETRY & FAILOVER LOGIC ───
+          const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+          
+          try {
+            await connection.confirmTransaction({
+              signature,
+              ...latestBlockhash
+            }, 'confirmed');
+          } catch (e) {
+            await new Promise(r => setTimeout(r, 2000));
+            await connection.confirmTransaction({
+              signature,
+              ...latestBlockhash
+            }, 'confirmed');
+          }
+
+          // ─── Phase 3: Wait for 'Finalized' on High-Value Tips (>$50) ───
+          if (parseFloat(totalChargedUSDC) > 50) {
+            await connection.confirmTransaction({
+              signature,
+              ...latestBlockhash
+            }, 'finalized');
+          }
         }
 
         const result = {
           success: true,
+          status: 'confirmed',
           signature,
           executionMode: route.executionMode,
           outAmount: parseFloat(fromLamports(BigInt(route.baseAmount), 6)),

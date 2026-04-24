@@ -20,11 +20,3 @@ export async function getProfile(walletAddress) {
   return res.data?.profile || null;
 }
 
-export async function logTip(walletAddress, tipData, isSent = false) {
-  // Silent background log to our local indexer
-  await api.post('/solana/tips/log', { 
-    walletAddress, 
-    tip: tipData, 
-    isSent 
-  }).catch(() => null);
-}

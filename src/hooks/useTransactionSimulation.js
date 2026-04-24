@@ -17,25 +17,33 @@ export function useTransactionSimulation() {
       const isProd = import.meta.env.PROD;
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
-      // We route through our hardened backend proxy to keep keys secure
-      const response = await fetch(`${API_BASE_URL}/api/quicknode/rpc/solana`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'simulateTransaction',
-          params: [
-            transactionBase64,
-            {
-              encoding: 'base64',
-              commitment: 'confirmed',
-              replaceRecentBlockhash: true,
-              innerInstructions: true
-            }
-          ]
-        })
-      });
+      // ─── ELITE RPC FAILOVER ───
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/api/quicknode/rpc/solana`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'simulateTransaction',
+            params: [transactionBase64, { encoding: 'base64', commitment: 'confirmed', replaceRecentBlockhash: true, innerInstructions: true }]
+          })
+        });
+      } catch (e) {
+        console.warn('🛡️ Secondary RPC attempting failover...', e);
+        // If QuickNode fails, try Helius (solana/rpc)
+        response = await fetch(`${API_BASE_URL}/api/solana/rpc`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'simulateTransaction',
+            params: [transactionBase64, { encoding: 'base64', commitment: 'confirmed', replaceRecentBlockhash: true, innerInstructions: true }]
+          })
+        });
+      }
 
       const data = await response.json();
 

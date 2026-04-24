@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@bonfida/spl-name-service": "2.5.4",
+    "@jup-ag/api": "^6.0.48",
     "@phantom/browser-sdk": "2.0.1",
     "@solana-mobile/wallet-adapter-mobile": "2.2.8",
+    "@solana/spl-token": "^0.4.14",
     "@solana/wallet-adapter-react": "0.15.39",
     "@solana/wallet-adapter-react-ui": "0.9.39",
     "@solana/wallet-adapter-wallets": "0.19.33",

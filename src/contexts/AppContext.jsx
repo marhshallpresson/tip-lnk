@@ -212,9 +212,6 @@ export function AppProvider({ children }) {
       }
       return newState;
     });
-    if (pubkeyStr) {
-      logTip(pubkeyStr, tip, isSent);
-    }
   }, [pubkeyStr]);
 
   const claimHandle = useCallback(async (handle) => {
@@ -253,5 +250,8 @@ export function AppProvider({ children }) {
 export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');
+  return ctx;
+}
+seApp must be used within AppProvider');
   return ctx;
 }

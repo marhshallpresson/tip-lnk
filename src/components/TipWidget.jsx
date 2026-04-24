@@ -173,15 +173,16 @@ export default function TipWidget({ fixedRecipient = null }) {
     setTxStep('configure');
   };
 
-  if (txResult?.success) {
+  if (txResult) {
+    const isPending = txResult.status === 'pending';
     return (
       <div className="glass-card p-8 max-w-lg mx-auto text-center animate-scale-in">
-        <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
-          <Check size={24} className="text-emerald-500" />
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6 ${isPending ? 'bg-brand-500/10' : 'bg-emerald-500/10'}`}>
+          {isPending ? <Loader2 size={24} className="text-brand-500 animate-spin" /> : <Check size={24} className="text-emerald-500" />}
         </div>
-        <h3 className="text-2xl font-bold mb-2">Payment Sent</h3>
+        <h3 className="text-2xl font-bold mb-2">{isPending ? 'Payment Pending...' : 'Payment Confirmed'}</h3>
         <p className="text-white/40 mb-8 text-sm">
-          Successfully sent {amount} {selectedToken.symbol} to {recipientInput}
+          {isPending ? `Confirming ${amount} ${selectedToken.symbol} on-chain...` : `Successfully sent ${amount} ${selectedToken.symbol} to ${recipientInput}`}
         </p>
 
         <div className="bg-white/[0.02] rounded-xl p-5 mb-8 text-left border border-white/5">
@@ -189,7 +190,11 @@ export default function TipWidget({ fixedRecipient = null }) {
           <div className="space-y-3">
             <div className="flex justify-between text-xs">
               <span className="text-white/40">Status</span>
-              <span className="text-emerald-500 font-semibold uppercase text-[10px]">Confirmed</span>
+              {isPending ? (
+                <span className="text-brand-500 font-semibold uppercase text-[10px] animate-pulse">Confirming...</span>
+              ) : (
+                <span className="text-emerald-500 font-semibold uppercase text-[10px]">Confirmed</span>
+              )}
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-white/40">Signature</span>
@@ -210,10 +215,12 @@ export default function TipWidget({ fixedRecipient = null }) {
           </a>
         </div>
 
-        <button onClick={handleReset} className="btn-primary w-full">
-          <RefreshCw size={16} />
-          Send another tip
-        </button>
+        {!isPending && (
+          <button onClick={handleReset} className="btn-primary w-full">
+            <RefreshCw size={16} />
+            Send another tip
+          </button>
+        )}
       </div>
     );
   }
@@ -307,7 +314,7 @@ export default function TipWidget({ fixedRecipient = null }) {
           </div>
         )}
 
-        {/* --- DFlow Execution Metrics --- */}
+        {/* --- Jupiter Execution Metrics --- */}
         {route && (
           <div className="mb-6 p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3">
              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/40">
@@ -315,7 +322,7 @@ export default function TipWidget({ fixedRecipient = null }) {
                     <Zap size={12} className="text-brand-500" />
                     Optimal Route Found
                 </div>
-                <span className="text-brand-500">DFlow Protocol</span>
+                <span className="text-brand-500">Jupiter Aggregator</span>
              </div>
              <div className="flex items-center justify-between text-xs">
                 <span className="text-white/60">Execution Speed</span>
