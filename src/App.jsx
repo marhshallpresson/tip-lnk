@@ -18,6 +18,7 @@ import { OverviewTab, TransactionHistoryTab } from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AppNavbar from './components/AppNavbar';
 import ResetPassword from './components/ResetPassword';
+import api from './lib/api';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 
