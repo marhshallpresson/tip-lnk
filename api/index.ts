@@ -38,6 +38,7 @@ import { default as solanaJupiterSwap } from './_handlers/solana/jupiter/swap.js
 import { default as solanaBirdeyePortfolio } from './_handlers/solana/birdeye/portfolio.js'
 import { default as solanaPrice } from './_handlers/solana/price.js'
 import { default as solanaRpc } from './_handlers/solana/rpc.js'
+import { default as socialXPosts } from './_handlers/social/x-posts.js'
 
 import { default as payoutsWebhook } from './_handlers/payouts/webhook.js'
 import { default as payoutsHistory } from './_handlers/payouts/history.js'
@@ -82,6 +83,7 @@ const ROUTES: Record<string, Function> = {
   'solana/jupiter/swap': solanaJupiterSwap,
   'solana/birdeye/portfolio': solanaBirdeyePortfolio,
   'solana/price': solanaPrice,
+  'social/x-posts': socialXPosts,
   'quicknode/rpc/solana': solanaRpc,
 
   // Payouts

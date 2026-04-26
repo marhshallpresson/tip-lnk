@@ -352,11 +352,20 @@ const TabContent = ({ activeTab, profile }) => {
   }
 
   if (activeTab === 'posts') {
+    if (!profile?.twitterHandle) {
+      return (
+        <div className="py-24 bg-white/[0.02] border border-dashed border-white/10 rounded-[48px] text-center">
+          <Twitter size={64} className="text-white/5 mx-auto mb-6" />
+          <h4 className="text-2xl font-bold text-white mb-2">No Feed Connected</h4>
+          <p className="text-surface-500 text-sm max-w-xs mx-auto">This creator hasn't linked their X (Twitter) account yet.</p>
+        </div>
+      );
+    }
     if (loadingPosts) {
       return (
         <div className="py-24 text-center">
           <Loader2 size={40} className="animate-spin text-brand-500 mx-auto mb-4" />
-          <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Syncing Ledger...</p>
+          <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Fetching Live Feed...</p>
         </div>
       );
     }
@@ -364,13 +373,19 @@ const TabContent = ({ activeTab, profile }) => {
       return (
         <div className="py-24 bg-white/[0.02] border border-dashed border-white/10 rounded-[48px] text-center">
           <MessageSquare size={64} className="text-white/5 mx-auto mb-6" />
-          <h4 className="text-2xl font-bold text-white mb-2">Private Feed</h4>
-          <p className="text-surface-500 text-sm max-w-xs mx-auto">This creator's feed is currently empty. Check back soon for updates!</p>
+          <h4 className="text-2xl font-bold text-white mb-2">Empty Feed</h4>
+          <p className="text-surface-500 text-sm max-w-xs mx-auto">This creator hasn't posted anything on X yet. Check back soon!</p>
         </div>
       );
     }
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 animate-fade-in">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+            <Twitter size={14} className="text-sky-400" fill="currentColor" /> Live X Timeline
+          </h3>
+          <span className="text-[10px] font-bold text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded-full">LIVE</span>
+        </div>
         {posts.data.map(post => <PostCard key={post.id} post={post} profile={profile} />)}
       </div>
     );

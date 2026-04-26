@@ -6,8 +6,17 @@ import axios from "axios"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { username } = req.query
-  if (typeof username !== 'string') return res.status(400).json({ error: 'Username required' })
+  let { username } = req.query
+  
+  // Extract from URL parts if not in query (e.g. /api/social/x-posts/USERNAME)
+  if (!username) {
+    const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []
+    username = parts[parts.length - 1]
+  }
+
+  if (typeof username !== 'string' || username === 'x-posts') {
+    return res.status(400).json({ error: 'Username required' })
+  }
     
   // Task 1.2: Strict username validation to prevent SSRF
   if (!/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
