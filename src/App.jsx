@@ -248,17 +248,32 @@ function AuthCallbackHandler() {
 
           if (res.ok) {
             const data = res.data;
-            updateProfile({
+            const updates = {
               socials: {
                 [platform === 'twitter' ? 'twitter' : 'discord']: data.username,
                 [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true
               }
-            });
+            };
+
+            // If we got extra details (especially for X), apply them for instant setup
+            if (platform === 'twitter' && data.details) {
+              updates.displayName = data.details.name;
+              updates.bio = data.details.bio;
+              updates.avatarUrl = data.details.avatar;
+              updates.avatarType = 'social';
+            }
+
+            updateProfile(updates);
 
             setStatus('success');
 
             if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_SUCCESS', platform, username: data.username }, window.location.origin);
+              window.opener.postMessage({ 
+                type: 'OAUTH_SUCCESS', 
+                platform, 
+                username: data.username,
+                details: data.details
+              }, window.location.origin);
               setTimeout(() => window.close(), 500);
             } else {
               navigate(`/onboarding?step=3&oauth_success=${platform}`);

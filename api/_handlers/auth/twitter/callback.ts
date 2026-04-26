@@ -49,20 +49,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const accessToken = tokenResponse.data.access_token
 
-    // 2. Fetch User Profile
+    // 2. Fetch User Profile with detailed fields
     const userResponse = await axios.get('https://api.twitter.com/2/users/me', {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+      params: {
+        'user.fields': 'profile_image_url,description,name'
+      }
     })
 
-    const twitterUsername = userResponse.data.data.username
+    const twitterData = userResponse.data.data
+    const twitterUsername = twitterData.username
+    const twitterName = twitterData.name
+    const twitterBio = twitterData.description
+    const twitterAvatar = twitterData.profile_image_url?.replace('_normal', '_400x400')
 
-    // 3. Link to User Profile in DB
-    await db('user').where({ id: sessionUser.id }).update({
+    // 3. Link to User Profile in DB and pre-fill if empty
+    const currentUser = await db('user').where({ id: sessionUser.id }).first()
+    const currentProfile = JSON.parse(currentUser.profileData || '{}')
+    
+    const updates: any = {
       twitterHandle: twitterUsername,
       updated_at: new Date()
-    })
+    }
 
-    res.status(200).json({ success: true, username: twitterUsername })
+    // Pre-fill name and bio if not already set
+    if (!currentUser.name) updates.name = twitterName
+    
+    const newProfileData = {
+      ...currentProfile,
+      displayName: currentProfile.displayName || twitterName,
+      bio: currentProfile.bio || twitterBio,
+      avatarUrl: currentProfile.avatarUrl || twitterAvatar,
+      avatarType: currentProfile.avatarType === 'none' ? 'social' : currentProfile.avatarType
+    }
+    updates.profileData = JSON.stringify(newProfileData)
+
+    await db('user').where({ id: sessionUser.id }).update(updates)
+
+    res.status(200).json({ 
+      success: true, 
+      username: twitterUsername,
+      details: {
+        name: twitterName,
+        bio: twitterBio,
+        avatar: twitterAvatar
+      }
+    })
   } catch (err: any) {
     console.error('🛡️ Twitter OAuth Error:', err.response?.data || err.message)
     res.status(500).json({ 

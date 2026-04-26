@@ -107,17 +107,28 @@ export default function SocialLinking({ onComplete, onBack }) {
       if (event.origin !== window.location.origin) return;
 
       if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.platform === platform) {
-        // Update the parent window's profile state directly
         const handleKey = platform === 'twitter' ? 'twitterHandle' : 'discordHandle';
         const verifyKey = platform === 'twitter' ? 'isTwitterVerified' : 'isDiscordVerified';
         
-        updateProfile({
+        const updates = {
           [handleKey]: event.data.username || 'verified_user',
           socials: {
             ...(profile.socials || {}),
             [verifyKey]: true,
+            [platform]: event.data.username || 'verified_user',
           }
-        });
+        };
+
+        // If we got extra details (especially for X), pre-fill the profile instantly
+        if (platform === 'twitter' && event.data.details) {
+          const { name, bio, avatar } = event.data.details;
+          updates.displayName = profile.displayName || name;
+          updates.bio = profile.bio || bio;
+          updates.avatarUrl = profile.avatarUrl || avatar;
+          if (profile.avatarType === 'none') updates.avatarType = 'social';
+        }
+        
+        updateProfile(updates);
 
         // Cleanup
         if (listenerRef.current) {

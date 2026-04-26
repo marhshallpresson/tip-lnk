@@ -187,6 +187,14 @@ export function AppProvider({ children }) {
     setState((prev) => {
       const newProfile = { ...prev.profile, ...partial };
 
+      // ─── Deep Social Merging ───
+      if (partial.socials) {
+        newProfile.socials = {
+          ...prev.profile.socials,
+          ...partial.socials
+        };
+      }
+
       // Auto-generate referralId from username/domain if missing
       if (!newProfile.referralId) {
         const baseName = newProfile.solDomain
