@@ -232,7 +232,7 @@ export default function Dashboard() {
 
 /* ─── Overview Tab (Grass Style Rebuild) ─── */
 export function OverviewTab() {
-  const { totalTipsUSDC, tipsReceived, profile } = useApp();
+  const { totalTipsUSDC, tipsReceived, profile, onboardingComplete } = useApp();
   const { user: authUser } = useAuth();
   const portfolio = useWalletPortfolio();
 
@@ -262,7 +262,7 @@ export function OverviewTab() {
       </div>
 
       {/* Main Stats Grid (Grass Style) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={`grid grid-cols-1 ${onboardingComplete ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} gap-8`}>
         {/* Earnings Card */}
         <div className="grass-card flex flex-col justify-between min-h-[220px]">
           <div className="flex items-center justify-between">
@@ -295,31 +295,33 @@ export function OverviewTab() {
         </div>
 
         {/* Status Card */}
-        <div className="grass-card flex flex-col justify-between min-h-[220px]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
-                <Shield size={20} />
+        {!onboardingComplete && (
+          <div className="grass-card flex flex-col justify-between min-h-[220px]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                  <Shield size={20} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm tracking-tight text-white">Onboarding Completion</h4>
+                  <p className="text-[10px] text-orange-500 font-semibold uppercase tracking-wider italic">Action Required</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-sm tracking-tight text-white">Onboarding Completion</h4>
-                <p className="text-[10px] text-orange-500 font-semibold uppercase tracking-wider italic">Action Required</p>
-              </div>
+              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
             </div>
-            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+
+            <p className="text-xs text-white/40 leading-relaxed py-4">
+              Complete your profile and link your social handles to increase your earnings potential.
+            </p>
+
+            <button 
+              onClick={() => navigate('/onboarding')}
+              className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(159,53,232,0.3)] transition-all active:scale-[0.98]"
+            >
+              Complete Profile
+            </button>
           </div>
-
-          <p className="text-xs text-white/40 leading-relaxed py-4">
-            Complete your profile and link your social handles to increase your earnings potential.
-          </p>
-
-          <button 
-            onClick={() => navigate('/onboarding')}
-            className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(159,53,232,0.3)] transition-all active:scale-[0.98]"
-          >
-            Complete Profile
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Large Statistics Area (Grass Style Chart Simulator) */}
