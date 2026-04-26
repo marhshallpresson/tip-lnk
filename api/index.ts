@@ -146,8 +146,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ─── PERFORMANCE: CACHE CONTROL ───
   if (req.method === 'GET') {
-    // Shared cache for 60s, client cache for 10s
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30')
+    const isRealTime = [
+      'solana/price', 
+      'solana/assets', 
+      'solana/birdeye/portfolio',
+      'solana/tips/get',
+      'solana/priority-fee'
+    ].includes(routeKey) || (moduleName === 'solana' && ['price', 'assets', 'tips'].includes(action));
+
+    if (isRealTime) {
+      // Real-time data: Short cache for CDN (5s), very short stale period
+      res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=5')
+    } else {
+      // Shared cache for 60s, client cache for 10s
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30')
+    }
   }
 
   try {

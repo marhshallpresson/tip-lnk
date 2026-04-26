@@ -35,7 +35,7 @@ function useIsPhantom() {
 
 export default function WalletConnect({ onConnected }) {
   const { publicKey, connected, connect, select, wallets, signMessage } = useWallet();
-  const { login, register, user, loginWithWallet } = useAuth();
+  const { login, register, user, loginWithWallet, refreshUser } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   
@@ -174,12 +174,22 @@ export default function WalletConnect({ onConnected }) {
         if (res.ok && res.data.success) setView('email-reset-sent');
         else setAuthError(res.data.error || 'Failed to send reset email.');
       } else if (view === 'email-prompt') {
-          const res = await api.post('/auth/link-email/start', { email: formData.email });
+          if (!formData.name || formData.name.trim().length < 2) {
+            setAuthError('Please enter your full name (at least 2 characters).');
+            setLoadingProvider(null);
+            return;
+          }
+          const res = await api.post('/auth/link-email/start', { email: formData.email, name: formData.name });
           if (res.ok && res.data.success) setView('email-verify');
           else setAuthError(res.data.error || 'Failed to send verification email.');
       } else if (view === 'email-verify') {
-          const res = await api.post('/auth/link-email/verify', { email: formData.email, code: formData.code });
+          const res = await api.post('/auth/link-email/verify', { 
+            email: formData.email, 
+            code: formData.code,
+            name: formData.name 
+          });
           if (res.ok && res.data.success) {
+              await refreshUser();
               setView('email-success');
           } else {
               setAuthError(res.data.error || 'Invalid or expired verification code.');
@@ -241,6 +251,7 @@ export default function WalletConnect({ onConnected }) {
 
   if (view === 'email-prompt' || view === 'email-register') {
     const isRegister = view === 'email-register';
+    const isPrompt = view === 'email-prompt';
     return (
         <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
             <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
@@ -248,11 +259,11 @@ export default function WalletConnect({ onConnected }) {
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">{isRegister ? 'Create Account' : 'Finalize Profile'}</h2>
             <p className="text-white/40 text-sm mb-8">
-                {isRegister ? 'Join TipLnk to start earning.' : 'To secure your account, please provide a valid email.'}
+                {isRegister ? 'Join TipLnk to start earning.' : 'To secure your account, please provide your name and email.'}
             </p>
             {authError && <div className="mb-6 p-4 bg-red-500/5 border border-red-500/10 rounded-lg text-red-500 text-xs text-left">{authError}</div>}
             <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
-                {isRegister && (
+                {(isRegister || isPrompt) && (
                   <div className="relative mt-1">
                       <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
                       <input type="text" name="name" required value={formData.name} onChange={handleInputChange} className="input-field w-full !pl-12" placeholder="Full Name" />

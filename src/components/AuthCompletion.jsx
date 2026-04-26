@@ -8,8 +8,7 @@ export default function AuthCompletion() {
   const { user, loading: authLoading, refreshUser, logout } = useAuth();
   const [view, setView] = useState(() => {
     if (user?.email && user?.emailVerifiedAt && !user?.name) return 'name-prompt';
-    if (user?.email && !user?.emailVerifiedAt) return 'email-verify';
-    return 'email-prompt';
+    return 'email-verify';
   });
   const [email, setEmail] = useState(user?.email || '');
   const [name, setName] = useState(user?.name || '');
@@ -123,75 +122,11 @@ export default function AuthCompletion() {
       </div>
 
       <div className="relative w-full max-w-md animate-fade-in">
-        {view === 'email-prompt' && (
-          <div className="glass-card p-8 sm:p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-8 border border-brand-500/20">
-                <ShieldCheck size={32} className="text-brand-500" />
-            </div>
-            <h2 className="text-3xl font-bold text-white mb-4">Secure your Profile</h2>
-            <p className="text-surface-400 text-sm mb-8 leading-relaxed">
-                TipLnk requires a verified email and full name to protect your earnings and ensure account recovery.
-            </p>
-            
-            {error && (
-              <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-xl text-accent-red text-xs text-left animate-shake">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleStartLinking} className="space-y-4 text-left">
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-black tracking-widest text-surface-500 ml-1">Full Name</label>
-                <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-600" />
-                  <input 
-                    type="text" 
-                    required 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
-                    className="input-field w-full !pl-12 h-14" 
-                    placeholder="e.g. John Doe" 
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-black tracking-widest text-surface-500 ml-1">Email Address</label>
-                <div className="relative">
-                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-600" />
-                  <input 
-                    type="email" 
-                    required 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-field w-full !pl-12 h-14" 
-                    placeholder="name@example.com" 
-                  />
-                </div>
-              </div>
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="btn-primary w-full h-14 text-base font-bold flex items-center justify-center gap-2 group"
-              >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : <>Continue <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>}
-              </button>
-            </form>
-            
-            <button 
-              onClick={logout}
-              className="mt-8 text-surface-500 hover:text-white text-xs font-bold transition-colors uppercase tracking-widest"
-            >
-              Sign out and try again
-            </button>
-          </div>
-        )}
-
         {view === 'email-verify' && (
           <div className="glass-card p-8 sm:p-10 text-center">
             <div className="flex items-center justify-between mb-8">
               <button 
-                onClick={() => setView('email-prompt')} 
+                onClick={logout} 
                 className="p-2 rounded-xl bg-surface-900 border border-white/5 text-surface-400 hover:text-white transition-all"
               >
                 <ChevronLeft size={20} />

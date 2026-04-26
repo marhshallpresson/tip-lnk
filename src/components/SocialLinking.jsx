@@ -76,6 +76,13 @@ export default function SocialLinking({ onComplete, onBack }) {
 
     if (!url) return;
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      window.location.href = url;
+      return;
+    }
+
     const width = 600;
     const height = 750;
     const left = Math.floor(window.screen.width / 2 - width / 2);

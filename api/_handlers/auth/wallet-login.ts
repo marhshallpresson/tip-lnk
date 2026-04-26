@@ -57,11 +57,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (sessionUser) {
         const existingWalletUser = await db('user').where({ walletAddress }).whereNot({ id: sessionUser.id }).first();
         if (existingWalletUser) {
-          return res.status(409).json({ success: false, error: 'Wallet already linked to another account.' });
+          // ELITE MERGE: If the existing account is just a "phantom" wallet account (no email/pass), we can absorb it
+          if (!existingWalletUser.email && !existingWalletUser.passwordHash && !existingWalletUser.googleSub) {
+            await db('user').where({ id: existingWalletUser.id }).delete();
+            // Proceed to link
+          } else {
+            return res.status(409).json({ success: false, error: 'Wallet already linked to another account.' });
+          }
         }
         await db('user').where({ id: sessionUser.id }).update({ walletAddress, updated_at: new Date() });
-        const updatedUser = await getSessionUser(req as any); // Re-fetch
-        return res.status(200).json({ success: true, user: updatedUser });
+        const updatedUser = await db('user').where({ id: sessionUser.id }).first(); // Re-fetch directly from DB
+        const roles = await getUserRoles(sessionUser.id);
+        return res.status(200).json({ 
+          success: true, 
+          user: {
+            ...updatedUser,
+            roles,
+            onboardingComplete: Boolean(updatedUser.onboardingComplete)
+          } 
+        });
       }
     } catch (sessionErr) {
       // Ignore session errors

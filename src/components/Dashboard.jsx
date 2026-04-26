@@ -313,8 +313,11 @@ export function OverviewTab() {
             Complete your profile and link your social handles to increase your earnings potential.
           </p>
 
-          <button className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(159,53,232,0.3)] transition-all active:scale-[0.98]">
-            CONNECT NETWORK / HANDLE
+          <button 
+            onClick={() => navigate('/onboarding')}
+            className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(159,53,232,0.3)] transition-all active:scale-[0.98]"
+          >
+            Complete Profile
           </button>
         </div>
       </div>
