@@ -11,3 +11,4 @@ dist
 backend/final-mail-test.ts
 .env*.local
 dev.db
+.claude
