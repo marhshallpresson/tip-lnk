@@ -144,27 +144,8 @@ export default function TipWidget({ fixedRecipient = null }) {
     }
 
     setTxStep('processing');
-    const result = await executeTip(profile?.displayName || 'Anonymous');
+    const result = await executeTip(profile?.displayName || 'Anonymous', note);
     if (result?.success) {
-      // ─── Phase 5: Persist Supporter Message ───
-      if (note && note.trim().length > 0) {
-        try {
-            const isProd = import.meta.env.PROD;
-            const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-            await fetch(`${API_BASE}/api/solana/tips/message`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    signature: result.signature,
-                    message: note,
-                    senderName: profile?.displayName || 'Anonymous'
-                })
-            });
-        } catch (e) {
-            console.warn('Failed to save message metadata:', e);
-        }
-      }
-
       addTip({
         recipient: recipientInput,
         recipientAddress: resolvedAddress,

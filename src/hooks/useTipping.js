@@ -156,7 +156,7 @@ export function useTipping(creatorAddress) {
   );
 
   const executeTip = useCallback(
-    async (senderName) => {
+    async (senderName, note = '') => {
       if (!route || !publicKey || !signTransaction || !connection) {
         setError('Missing transaction data or wallet connection.');
         return;
@@ -189,7 +189,8 @@ export function useTipping(creatorAddress) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              transaction: Buffer.from(signedTx.serialize()).toString('base64')
+              transaction: Buffer.from(signedTx.serialize()).toString('base64'),
+              note: note // Pass the note to the backend for potential on-chain recording
             }),
           });
 
@@ -198,6 +199,24 @@ export function useTipping(creatorAddress) {
 
           if (!signature) {
             throw new Error(submitData.error?.message || 'Transaction submission failed.');
+          }
+
+          // ─── ELITE OPTIMISTIC RELAY: Notify backend immediately ───
+          try {
+              await fetch(`${API_BASE_URL}/api/solana/tips/confirm`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      signature,
+                      recipient: creatorAddress,
+                      amount: fromLamports(BigInt(route.baseAmount), 6),
+                      tokenSymbol: 'USDC', 
+                      senderName: senderName || 'Anonymous',
+                      message: note
+                  })
+              });
+          } catch (relayErr) {
+              console.warn('🛡️ Relay: Optimistic update failed.', relayErr);
           }
 
           // ─── Phase 9: UX Truth Enforcement - Show Pending State ───

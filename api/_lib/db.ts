@@ -40,6 +40,40 @@ export const db = dbInstance;
 export { dbInstance as knex };
 export default dbInstance;
 
+/**
+ * Professional Ledger Utility
+ * Calculates current spendable balance for a wallet address.
+ */
+export async function getCreatorBalance(walletAddress: string) {
+    if (!walletAddress) return { totalTips: 0, totalWithdrawn: 0, balance: 0 };
+
+    try {
+        const tips = await db('tips')
+            .where({ recipient: walletAddress, status: 'confirmed' })
+            .sum('amount as total');
+        
+        const payouts = await db('payouts')
+            .where({ wallet_address: walletAddress })
+            .whereIn('status', ['pending', 'completed'])
+            .sum('amount_ngn as total');
+
+        const totalTips = Number(tips[0]?.total || 0);
+        // Convert NGN back to a rough USD equivalent for the ledger internal check
+        // Ideally we'd track the USD amount requested during payout in the table
+        const totalWithdrawnNGN = Number(payouts[0]?.total || 0);
+        const totalWithdrawnUSD = totalWithdrawnNGN / 1250; 
+
+        return {
+            totalTips,
+            totalWithdrawnUSD,
+            balance: totalTips - totalWithdrawnUSD
+        };
+    } catch (err) {
+        console.error('🛡️ Ledger Fault:', err);
+        return { totalTips: 0, totalWithdrawn: 0, balance: 0 };
+    }
+}
+
 // ─── ELITE AUTOMATION ───
 // Automatically ensure schema is provisioned on boot.
 // In serverless, this runs on cold start. In local dev, it runs once.

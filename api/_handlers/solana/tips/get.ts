@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
+import { getSolPrice } from "../../../_lib/price.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Tip History Fetching
@@ -20,13 +21,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .limit(50)
     
     // ─── ELITE DATA INTELLIGENCE: USD VALUATION ───
+    const solPrice = await getSolPrice()
     const enhancedTips = tips.map(tip => {
         const amount = Number(tip.amount)
         const isStable = tip.tokenSymbol === 'USDC' || tip.tokenSymbol === 'USDT'
         
         return {
             ...tip,
-            valueUsd: isStable ? amount : amount * 125, // Mock valuation for SOL if not stable
+            valueUsd: isStable ? amount : amount * solPrice,
             isStable
         }
     })

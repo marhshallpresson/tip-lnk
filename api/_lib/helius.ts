@@ -104,7 +104,7 @@ export async function backfillTransactions(address: string, limit = 100) {
 
     const parsedTips: HeliusTip[] = data.result.map((tx: any) => {
       const isTipLnkTx = tx.instructions?.some((ix: any) => 
-        ix.programId === 'MemoSq4gqABAXDe96necyBDe9necyBDe9necyBDe9ne' || 
+        ix.programId === 'MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848' || 
         (ix.data && ix.data.includes('tiplnk'))
       );
 

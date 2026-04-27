@@ -75,6 +75,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         onboardingComplete: profile.onboardingComplete === true,
         updated_at: new Date()
       })
+    
+    // 🛡️ Webhook Guard: Ensure the wallet is registered for Helius monitoring
+    if (authUser.walletAddress) {
+        registerWebhookAddress(authUser.walletAddress).catch(err => 
+            console.error('🛡️ Webhook Sync Failure:', err.message)
+        );
+    }
+
     res.json({ success: true })
   } catch (err) {
     console.error('Profile Update Error:', err)

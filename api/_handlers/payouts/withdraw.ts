@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { randomUUID } from 'crypto'
 import axios from 'axios'
-import { db } from '../../_lib/db.js'
+import { db, getCreatorBalance } from '../../_lib/db.js'
 import { getSessionUser } from '../../_lib/session.js'
 
 /**
@@ -19,16 +19,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { amountUSDC } = req.body
-    if (!amountUSDC || isNaN(Number(amountUSDC)) || Number(amountUSDC) <= 0) {
+    const withdrawAmount = Number(amountUSDC)
+    
+    if (!withdrawAmount || isNaN(withdrawAmount) || withdrawAmount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' })
     }
 
-    const amountNGN = Number(amountUSDC) * 1250 // Fixed exchange rate for demo
+    // ─── ELITE BALANCE ENFORCEMENT ───
+    const ledger = await getCreatorBalance(user.walletAddress)
+    if (withdrawAmount > ledger.balance) {
+        return res.status(400).json({ 
+            error: 'Insufficient Balance', 
+            message: `You attempted to withdraw $${withdrawAmount} but only have $${ledger.balance.toFixed(2)} available.` 
+        })
+    }
+
+    const amountNGN = withdrawAmount * 1250 // Fixed exchange rate for demo
     const reference = `PAJ-${randomUUID().replace(/-/g, '').slice(0, 16)}`
 
     // ─── ELITE PAJCASH INTEGRATION ───
     const PAJCASH_API_KEY = process.env.PAJCASH_API_KEY
     const PAJCASH_BASE_URL = process.env.PAJCASH_BASE_URL || 'https://api.pajcash.com'
+
+    if (!PAJCASH_API_KEY || PAJCASH_API_KEY === 'NEVER_COMMIT_THIS') {
+        return res.status(503).json({ 
+            error: 'Payouts Disabled', 
+            message: 'Pajcash integration is not configured for this environment.' 
+        })
+    }
 
     // Create a pending payout record
     await db('payouts').insert({
@@ -41,40 +59,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       // Direct integration call to Pajcash
-      if (PAJCASH_API_KEY && PAJCASH_API_KEY !== 'NEVER_COMMIT_THIS') {
-        const response = await axios.post(`${PAJCASH_BASE_URL}/api/v1/offramp/initiate`, {
-          amount: amountNGN,
-          currency: 'NGN',
-          reference,
-          walletAddress: user.walletAddress,
-          webhookUrl: 'https://tip-lnk.vercel.app/api/payouts/webhook'
-        }, {
-          headers: { 'Authorization': `Bearer ${PAJCASH_API_KEY}` }
-        })
-        
-        return res.status(200).json({ 
-          success: true, 
-          checkoutUrl: response.data?.checkoutUrl || 'https://checkout.pajcash.com/' + reference,
-          reference 
-        })
-      } else {
-        // Fallback for hackathon demo mode: auto-confirm after a few seconds via a mock
-        console.warn('🛡️ Pajcash: Using simulation mode. No real API key found.')
-        
-        // Simulate a webhook callback after 5 seconds to mark it 'completed'
-        setTimeout(async () => {
-          try {
-            await db('payouts').where({ pajcash_reference: reference }).update({ status: 'completed', updated_at: new Date() })
-          } catch (e) {}
-        }, 5000);
-
-        return res.status(200).json({ 
-            success: true, 
-            checkoutUrl: 'https://demo.pajcash.com/checkout/' + reference,
-            reference,
-            isSimulation: true 
-        })
-      }
+      const response = await axios.post(`${PAJCASH_BASE_URL}/api/v1/offramp/initiate`, {
+        amount: amountNGN,
+        currency: 'NGN',
+        reference,
+        walletAddress: user.walletAddress,
+        webhookUrl: 'https://tip-lnk.vercel.app/api/payouts/webhook'
+      }, {
+        headers: { 'Authorization': `Bearer ${PAJCASH_API_KEY}` }
+      })
+      
+      return res.status(200).json({ 
+        success: true, 
+        checkoutUrl: response.data?.checkoutUrl || 'https://checkout.pajcash.com/' + reference,
+        reference 
+      })
     } catch (apiErr: any) {
       console.error('Pajcash API Error:', apiErr.response?.data || apiErr.message)
       await db('payouts').where({ pajcash_reference: reference }).update({ status: 'failed', updated_at: new Date() })

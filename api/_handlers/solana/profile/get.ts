@@ -140,10 +140,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .orderBy('timestamp', 'desc')
         .limit(20)
       
+      const solPrice = await getSolPrice()
       responseData.profile.tipsReceived = tips.map(tip => ({
         ...tip,
         amount: Number(tip.amount),
-        amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount) : Number(tip.amount) * 125 // Mock SOL price if not USDC
+        amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount) : Number(tip.amount) * solPrice
       }))
     }
 
@@ -156,5 +157,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err) {
     console.error('Profile Fetch Error:', err)
     res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' })
+  }
+}
+ or provision profile' })
   }
 }
