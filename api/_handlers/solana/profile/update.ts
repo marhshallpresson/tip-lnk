@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
 import { getSessionUser } from "../../../_lib/session.js"
 import { verifySignature } from "../../../_lib/crypto.js"
+import { registerWebhookAddress } from "../../../_lib/helius.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Profile Updates

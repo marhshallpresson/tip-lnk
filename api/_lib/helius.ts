@@ -17,9 +17,47 @@ const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
 
 // ─── Elite Network Routing ───
 const getRpcUrl = () => {
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
+    const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
     if (NETWORK === 'devnet') return 'https://api.devnet.solana.com';
     return `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 };
+
+/**
+ * registerWebhookAddress
+ * Dynamically adds a wallet address to the existing Helius Webhook.
+ */
+export async function registerWebhookAddress(address: string) {
+  const WEBHOOK_ID = process.env.HELIUS_WEBHOOK_ID;
+  const API_KEY = process.env.HELIUS_API_KEY;
+
+  if (!WEBHOOK_ID || !API_KEY) {
+    console.warn('🛡️ Webhook: Missing HELIUS_WEBHOOK_ID or API_KEY. Auto-registration skipped.');
+    return;
+  }
+
+  try {
+    // 1. Fetch existing webhook config
+    const { data: webhook } = await axios.get(
+      `https://api.helius.xyz/v0/webhooks/${WEBHOOK_ID}?api-key=${API_KEY}`
+    );
+
+    // 2. Add address if not already present
+    if (!webhook.accountAddresses.includes(address)) {
+      const newAddresses = [...webhook.accountAddresses, address];
+      await axios.put(
+        `https://api.helius.xyz/v0/webhooks/${WEBHOOK_ID}?api-key=${API_KEY}`,
+        {
+          ...webhook,
+          accountAddresses: newAddresses,
+        }
+      );
+      console.log(`🛡️ Webhook: Successfully registered ${address}`);
+    }
+  } catch (err: any) {
+    console.error('🛡️ Webhook Registration Fault:', err.response?.data || err.message);
+  }
+}
 
 /**
  * Professional SNS Resolver

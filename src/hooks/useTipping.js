@@ -131,8 +131,10 @@ export function useTipping(creatorAddress) {
 
         // ─── Phase 2: Dynamic Sender-Pays Fee Calculation ───
         const baseOutAmount = BigInt(order.outAmount);
-        // 0% on direct stablecoin/sol donations, 1% on complex routes to cover infrastructure
-        const dynamicFeeBps = (tokenSymbol === 'USDC' || tokenSymbol === 'SOL') ? 0n : 100n;
+        // Hybrid Fee Model: 0% direct, 5% swap
+        const inputMint = token.mint;
+        const outputMint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // USDC
+        const dynamicFeeBps = (inputMint === outputMint) ? 0n : 500n;
         const platformFee = (baseOutAmount * dynamicFeeBps) / 10000n;
         const totalAuthorization = baseOutAmount + platformFee;
 

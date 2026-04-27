@@ -40,6 +40,8 @@ export const db = dbInstance;
 export { dbInstance as knex };
 export default dbInstance;
 
+import { getSolPrice } from './price.js';
+
 /**
  * Professional Ledger Utility
  * Calculates current spendable balance for a wallet address.
@@ -48,29 +50,38 @@ export async function getCreatorBalance(walletAddress: string) {
     if (!walletAddress) return { totalTips: 0, totalWithdrawn: 0, balance: 0 };
 
     try {
+        // Fetch all confirmed tips
         const tips = await db('tips')
-            .where({ recipient: walletAddress, status: 'confirmed' })
-            .sum('amount as total');
+            .where({ recipient: walletAddress, status: 'confirmed' });
+        
+        const solPrice = await getSolPrice();
+
+        // Normalize all tips to USD
+        const totalTipsUSD = tips.reduce((acc, tip) => {
+            const amount = Number(tip.amount);
+            if (tip.tokenSymbol === 'SOL') {
+                return acc + (amount * solPrice);
+            }
+            return acc + amount; // Assume USDC/Stable
+        }, 0);
         
         const payouts = await db('payouts')
             .where({ wallet_address: walletAddress })
             .whereIn('status', ['pending', 'completed'])
             .sum('amount_ngn as total');
 
-        const totalTips = Number(tips[0]?.total || 0);
         // Convert NGN back to a rough USD equivalent for the ledger internal check
-        // Ideally we'd track the USD amount requested during payout in the table
         const totalWithdrawnNGN = Number(payouts[0]?.total || 0);
         const totalWithdrawnUSD = totalWithdrawnNGN / 1250; 
 
         return {
-            totalTips,
+            totalTipsUSD,
             totalWithdrawnUSD,
-            balance: totalTips - totalWithdrawnUSD
+            balance: totalTipsUSD - totalWithdrawnUSD
         };
     } catch (err) {
         console.error('🛡️ Ledger Fault:', err);
-        return { totalTips: 0, totalWithdrawn: 0, balance: 0 };
+        return { totalTipsUSD: 0, totalWithdrawnUSD: 0, balance: 0 };
     }
 }
 

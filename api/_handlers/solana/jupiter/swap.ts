@@ -1,5 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { PublicKey, VersionedTransaction, TransactionMessage, TransactionInstruction } from '@solana/web3.js'
+import { 
+  PublicKey, 
+  VersionedTransaction, 
+  TransactionMessage, 
+  TransactionInstruction,
+  Connection
+} from '@solana/web3.js'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 
 /**
@@ -18,19 +24,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
+    const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
+    const RPC_URL = NETWORK === 'devnet' 
+        ? 'https://api.devnet.solana.com' 
+        : `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+    
+    const connection = new Connection(RPC_URL, 'confirmed');
+
     // 1. Quote Intelligence (DFlow pre-routing analytics)
     const dflowQuoteResponse = await fetch(
       `https://quote-api.dflow.net/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}`
     ).then((r) => r.json()).catch(() => null)
     
     // 2. Execution Layer (Jupiter V6)
-    let feeBps = 0;
+    const isDirect = inputMint === outputMint;
+    let feeBps = isDirect ? 0 : 500; // 0% direct, 5% swap
     const TREASURY_WALLET = process.env.VITE_TREASURY_WALLET;
     
-    // Applying fee based on token
-    if (TREASURY_WALLET && inputMint !== outputMint) {
-        feeBps = 100; // 1% platform fee for complex swaps
-    }
+    if (!TREASURY_WALLET) feeBps = 0;
 
     const quoteUrl = new URL('https://quote-api.jup.ag/v6/quote');
     quoteUrl.searchParams.append('inputMint', inputMint);
@@ -94,23 +106,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const swapTxBuf = Buffer.from(swapResponse.swapTransaction, 'base64');
             const transaction = VersionedTransaction.deserialize(swapTxBuf);
             
-            // Decompile the message to add our memo instruction
-            const addressLookupTableAccounts = []; // We'd need to fetch these if Jupiter uses them, which it does.
-            // Note: Decompiling a V0 message without full lookup table accounts is complex.
-            // Alternative: Return the memo separately and add it on the client side.
-            // But for a production SaaS, we should handle this.
+            // Fetch LUT accounts referenced in the transaction
+            const addressLookupTableAccounts = await Promise.all(
+                transaction.message.addressTableLookups.map(async (lookup) => {
+                    return connection.getAddressLookupTable(lookup.accountKey)
+                        .then((res) => res.value);
+                })
+            );
+
+            // Decompile the message into instructions
+            const decompiledMessage = TransactionMessage.decompile(transaction.message, {
+                addressLookupTableAccounts: addressLookupTableAccounts.filter(Boolean) as any,
+            });
+
+            // Prepend Memo Instruction
+            decompiledMessage.instructions.unshift(
+                new TransactionInstruction({
+                    keys: [],
+                    programId: new PublicKey('MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848'),
+                    data: Buffer.from(memo),
+                })
+            );
+
+            // Re-compile
+            transaction.message = decompiledMessage.compileToV0Message(
+                addressLookupTableAccounts.filter(Boolean) as any
+            );
             
-            // Simplified approach for now: return the memo so frontend can log it, 
-            // but the REAL way is to add the instruction.
-            // Let's stick to the protocol: the blockchain is the source of truth.
-        } catch (e) {
-            console.warn('Failed to inject memo into transaction:', e);
+            finalTxBase64 = Buffer.from(transaction.serialize()).toString('base64');
+            console.log('🛡️ Transaction: Injected on-chain memo successfully.');
+        } catch (e: any) {
+            console.warn('🛡️ Memo Injection Fault:', e.message);
         }
     }
 
     // 5. Return Serialized Transaction
     res.status(200).json({
-      transaction: swapResponse.swapTransaction,
+      transaction: finalTxBase64,
       quote: quoteResponse,
       dflowAnalytics: dflowQuoteResponse,
       executionMode: 'sync'
@@ -121,4 +153,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: 'Transaction building failed' })
   }
 }
-

@@ -11,7 +11,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const HELIUS_API_KEY = process.env.HELIUS_API_KEY 
-    const response = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
+    const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta'
+    const RPC_URL = NETWORK === 'devnet' 
+        ? 'https://api.devnet.solana.com' 
+        : `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
+
+    const response = await axios.post(RPC_URL, {
       jsonrpc: '2.0',
       id: 'send-tx',
       method: 'sendTransaction',

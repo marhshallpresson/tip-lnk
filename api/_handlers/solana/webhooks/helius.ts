@@ -74,7 +74,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const recipient = transfer.toUserAccount
-        const amount = transfer.amount || transfer.tokenAmount
+        const isNative = tx.nativeTransfers?.length > 0
+        const amount = isNative ? (transfer.amount / 1e9) : transfer.tokenAmount
 
         // ─── PHASE 5: MEMO EXTRACTION ───
         // Check for Solana Memo Program (MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848)

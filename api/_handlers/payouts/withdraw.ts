@@ -34,7 +34,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
     }
 
-    const amountNGN = withdrawAmount * 1250 // Fixed exchange rate for demo
+    // ─── ELITE EXCHANGE RATE INTELLIGENCE ───
+    // In production, fetch from Pajcash rate API or reliable oracle
+    let ngnRate = 1600; // Updated fallback for current market conditions
+    try {
+        const rateRes = await axios.get('https://api.exchangerate-api.com/v4/latest/USD');
+        if (rateRes.data?.rates?.NGN) {
+            ngnRate = rateRes.data.rates.NGN;
+        }
+    } catch (e) {
+        console.warn('🛡️ Payouts: Failed to fetch live NGN rate, using fallback.');
+    }
+
+    const amountNGN = withdrawAmount * ngnRate 
     const reference = `PAJ-${randomUUID().replace(/-/g, '').slice(0, 16)}`
 
     // ─── ELITE PAJCASH INTEGRATION ───
