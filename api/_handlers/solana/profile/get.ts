@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
 import { db } from "../../../_lib/db.js"
+import { getSolPrice } from "../../../_lib/price.js"
 import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.js"
 import { Redis } from '@upstash/redis'
 
@@ -157,8 +158,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err) {
     console.error('Profile Fetch Error:', err)
     res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' })
-  }
-}
- or provision profile' })
   }
 }
