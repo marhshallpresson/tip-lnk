@@ -82,31 +82,29 @@ export default function RoleSelection({ onComplete }) {
   const currentPlatforms = selectedRoleId ? ROLE_PLATFORMS[selectedRoleId] : [];
 
   return (
-    <div className="glass-card p-6 md:p-10 max-w-3xl mx-auto animate-slide-up">
-      <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
-        <div className="text-center md:text-left flex-1">
-          <h2 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">Setup your profile</h2>
-          <p className="text-white/40 text-sm md:text-base">
-            Tell us how you'll use TipLnk to customize your experience.
-          </p>
-        </div>
+    <div className="animate-fade-in">
+      <div className="mb-8">
+        <h2 className="text-2xl md:text-3xl font-black mb-2 tracking-tight">Setup your profile</h2>
+        <p className="text-white/40 text-sm md:text-base">
+          Tell us how you'll use TipLnk to customize your experience.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 md:mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-8">
         {roles.map((role) => (
           <button
             key={role.id}
             onClick={() => handleRoleSelect(role.id)}
-            className={`flex flex-col items-center text-center p-5 md:p-6 rounded-2xl border transition-all ${selectedRoleId === role.id
-                ? 'border-brand-500 bg-brand-500/5 ring-1 ring-brand-500/20'
+            className={`flex flex-col items-start p-5 rounded-2xl border transition-all text-left ${selectedRoleId === role.id
+                ? 'border-brand-500 bg-brand-500/10 ring-1 ring-brand-500/20'
                 : 'border-white/5 bg-white/5 hover:border-white/10 opacity-60 hover:opacity-100'
               }`}
           >
-            <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl flex items-center justify-center mb-4 transition-transform ${selectedRoleId === role.id ? 'scale-110' : ''}`}>
-              <role.icon size={selectedRoleId === role.id ? 32 : 28} className={selectedRoleId === role.id ? role.color : 'text-white/40'} />
+            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-4 transition-transform ${selectedRoleId === role.id ? 'bg-brand-500 text-black' : 'bg-white/5 text-white/40'}`}>
+              <role.icon size={20} />
             </div>
-            <h3 className={`text-sm md:text-lg font-bold mb-1 ${selectedRoleId === role.id ? 'text-white' : 'text-white/40'}`}>{role.title}</h3>
-            <p className="text-[10px] md:text-xs text-white/30 leading-relaxed">
+            <h3 className={`text-base md:text-lg font-bold mb-1 ${selectedRoleId === role.id ? 'text-white' : 'text-white/40'}`}>{role.title}</h3>
+            <p className="text-xs text-white/30 leading-relaxed">
               {role.description}
             </p>
           </button>
@@ -114,40 +112,39 @@ export default function RoleSelection({ onComplete }) {
       </div>
 
       {selectedRoleId && (
-        <div className="animate-fade-in">
-          <div className="h-px bg-white/5 mb-10" />
+        <div className="animate-slide-up">
+          <div className="h-px bg-white/5 mb-8" />
 
-          <div className="text-center mb-8">
-            <h3 className="text-xl md:text-2xl font-bold mb-2 text-white">Which platforms do you use?</h3>
-            <p className="text-white/30 text-xs md:text-sm">Multi-selection: Select all that apply.</p>
+          <div className="mb-6">
+            <h3 className="text-lg md:text-xl font-bold mb-1 text-white">Which platforms do you use?</h3>
+            <p className="text-white/30 text-xs">Select all that apply.</p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-10">
+          <div className="flex flex-wrap gap-2 mb-8">
             {currentPlatforms.map((platform) => {
               const isSelected = selectedPlatforms.includes(platform.id);
               return (
                 <button
                   key={platform.id}
                   onClick={() => togglePlatform(platform.id)}
-                  className={`flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 rounded-xl border transition-all ${isSelected
-                      ? 'bg-white text-black border-white font-bold'
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${isSelected
+                      ? 'bg-brand-500 text-black border-brand-500 font-bold'
                       : 'border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:text-white'
                     }`}
                 >
-                  <platform.icon size={16} />
+                  <platform.icon size={14} />
                   <span className="text-xs md:text-sm">{platform.label}</span>
-                  {isSelected && <Check size={12} className="ml-1" />}
                 </button>
               );
             })}
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-6 border-t border-white/5">
+          <div className="pt-6 border-t border-white/5">
             <button
               onClick={handleContinue}
-              className="btn-primary w-full md:w-auto md:px-12 py-4"
+              className="btn-primary w-full py-4 rounded-2xl text-lg group"
             >
-              Confirm Selection <ChevronRight size={20} />
+              Continue <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         </div>

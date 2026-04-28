@@ -5,102 +5,87 @@ export default function OnboardingComplete({ onFinish, onBack }) {
   const { profile } = useApp();
 
   return (
-    <div className="glass-card glow-brand p-8 sm:p-10 max-w-lg mx-auto animate-slide-up">
+    <div className="animate-fade-in">
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={onBack}
-          className="p-2 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition-all"
+          className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={18} />
         </button>
-        <div className="text-left flex-1 pr-10">
-          <h2 className="text-3xl font-bold">You're <span className="text-brand-400">Ready!</span></h2>
-          <p className="text-surface-400 text-sm italic">
+        <div className="text-left flex-1">
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight">You're <span className="text-brand-500">Ready!</span></h2>
+          <p className="text-white/40 text-sm md:text-base italic">
             Your creator profile is live on Solana.
           </p>
         </div>
       </div>
 
-      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent-green/30 to-accent-green/10 flex items-center justify-center mx-auto mb-6">
-        <PartyPopper size={36} className="text-accent-green" />
+      <div className="flex flex-col items-center mb-8">
+        <div className="w-20 h-20 rounded-[24px] bg-brand-500/20 flex items-center justify-center mb-6 relative">
+          <PartyPopper size={36} className="text-brand-500" />
+          <div className="absolute -top-1 -right-1 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center text-black shadow-lg">
+             <CheckCircle2 size={14} strokeWidth={3} />
+          </div>
+        </div>
       </div>
 
       {/* Profile summary — real data only */}
-      <div className="bg-surface-800/50 rounded-xl p-5 mb-6 space-y-3 text-left">
-        {profile.avatarUrl && (
-          <div className="flex justify-between items-center">
-            <span className="text-surface-500 text-sm">Avatar</span>
-            <span className="font-medium text-sm capitalize">{profile.avatarType || 'Custom'}</span>
-          </div>
-        )}
-        {profile.solDomain && (
-          <div className="flex justify-between items-center">
-            <span className="text-surface-500 text-sm">Domain</span>
-            <span className="font-medium text-sm text-brand-400">{profile.solDomain}</span>
-          </div>
-        )}
-        {profile.bio && (
-          <div className="flex justify-between items-start">
-            <span className="text-surface-500 text-sm">Bio</span>
-            <span className="font-medium text-sm text-right max-w-[200px] truncate">{profile.bio}</span>
-          </div>
-        )}
-        {profile.roleTitle && (
-          <div className="flex justify-between items-center">
-            <span className="text-surface-500 text-sm">Role</span>
-            <span className="font-medium text-sm">{profile.roleTitle}</span>
-          </div>
-        )}
-        {profile.socials?.isTwitterVerified && (
-          <div className="flex justify-between items-center">
-            <span className="text-surface-500 text-sm">X (Twitter)</span>
-            <span className="flex items-center gap-1 text-sm text-brand-400"><CheckCircle2 size={12} /> Verified</span>
-          </div>
-        )}
-        {profile.socials?.isDiscordVerified && (
-          <div className="flex justify-between items-center">
-            <span className="text-surface-500 text-sm">Discord</span>
-            <span className="flex items-center gap-1 text-sm text-brand-400"><CheckCircle2 size={12} /> Verified</span>
-          </div>
-        )}
-        {!profile.avatarUrl && !profile.solDomain && !profile.bio && !profile.roleTitle && (
-          <div className="flex justify-between items-center">
-            <span className="text-surface-500 text-sm">Network</span>
-            <span className="text-xs font-mono bg-surface-700 px-2 py-1 rounded">Mainnet-Beta</span>
-          </div>
-        )}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 space-y-4 text-left">
+        <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Profile Summary</h3>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {profile.solDomain && (
+            <div className="flex flex-col gap-1">
+              <span className="text-white/30 text-[10px] uppercase font-bold tracking-wider">Handle</span>
+              <span className="font-bold text-sm text-brand-400">{profile.solDomain}</span>
+            </div>
+          )}
+          {profile.roleTitle && (
+            <div className="flex flex-col gap-1">
+              <span className="text-white/30 text-[10px] uppercase font-bold tracking-wider">Identity</span>
+              <span className="font-bold text-sm text-white">{profile.roleTitle}</span>
+            </div>
+          )}
+          {profile.socials?.isTwitterVerified && (
+            <div className="flex flex-col gap-1">
+              <span className="text-white/30 text-[10px] uppercase font-bold tracking-wider">X (Twitter)</span>
+              <span className="flex items-center gap-1 text-sm text-brand-400 font-bold"><CheckCircle2 size={12} /> Verified</span>
+            </div>
+          )}
+          {profile.socials?.isDiscordVerified && (
+            <div className="flex flex-col gap-1">
+              <span className="text-white/30 text-[10px] uppercase font-bold tracking-wider">Discord</span>
+              <span className="flex items-center gap-1 text-sm text-brand-400 font-bold"><CheckCircle2 size={12} /> Verified</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* What's next */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
-          <Share2 size={16} className="text-brand-400" />
-          <span className="text-surface-400 text-[10px] uppercase font-bold">Share Link</span>
+      <div className="grid grid-cols-3 gap-3 mb-10">
+        <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 transition-all hover:bg-white/10">
+          <Share2 size={18} className="text-brand-500" />
+          <span className="text-white/40 text-[9px] uppercase font-black tracking-tighter">Share Link</span>
         </div>
-        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
-          <QrCode size={16} className="text-accent-cyan" />
-          <span className="text-surface-400 text-[10px] uppercase font-bold">QR Code</span>
+        <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 transition-all hover:bg-white/10">
+          <QrCode size={18} className="text-brand-500" />
+          <span className="text-white/40 text-[9px] uppercase font-black tracking-tighter">QR Code</span>
         </div>
-        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-surface-900/40">
-          <Zap size={16} className="text-accent-green" />
-          <span className="text-surface-400 text-[10px] uppercase font-bold">Earn Tips</span>
+        <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 transition-all hover:bg-white/10">
+          <Zap size={18} className="text-brand-500" />
+          <span className="text-white/40 text-[9px] uppercase font-black tracking-tighter">Earn Tips</span>
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-8 border-t border-surface-800 mt-4">
-        <button
-          onClick={onBack}
-          className="text-surface-500 hover:text-white transition-colors text-xs font-black uppercase tracking-widest"
-        >
-          Previous
-        </button>
+      <div className="pt-8 border-t border-white/5">
         <button
           onClick={onFinish}
-          className="btn-primary flex items-center gap-2 group shadow-xl shadow-brand-500/10"
+          className="btn-primary w-full py-5 rounded-2xl text-xl font-black group shadow-2xl shadow-brand-500/20 flex items-center justify-center gap-3"
         >
-          <Zap size={16} />
+          <Zap size={24} fill="currentColor" />
           Launch Dashboard
-          <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

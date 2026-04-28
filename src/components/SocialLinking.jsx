@@ -183,88 +183,106 @@ export default function SocialLinking({ onComplete, onBack }) {
   };
 
   return (
-    <div className="glass-card glow-brand p-10 max-w-2xl mx-auto animate-slide-up">
+    <div className="animate-fade-in">
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={onBack}
-          className="p-2 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition-all"
+          className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={18} />
         </button>
-        <div className="text-left flex-1 pr-10">
-          <h2 className="text-3xl font-bold">Link Your Socials</h2>
-          <p className="text-surface-400 text-sm">
-            Verify your identity to show supporters you are authentic. 
+        <div className="text-left flex-1">
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight">Verify <span className="text-brand-500">Socials</span></h2>
+          <p className="text-white/40 text-sm md:text-base">
+            Build trust with your supporters by linking your verified accounts. 
           </p>
         </div>
       </div>
 
-      <div className="space-y-4 mb-8">
+      <div className="space-y-3 mb-10">
         {/* Twitter Link */}
-        <div className="bg-surface-800/50 border border-surface-700 rounded-xl p-4 flex items-center justify-between transition-all hover:bg-surface-800">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${twitterLinked ? 'bg-blue-500/20 text-blue-400' : 'bg-surface-700 text-surface-400'}`}>
-              <TwitterIcon size={24} />
+        <div className={`p-5 rounded-2xl border transition-all ${twitterLinked ? 'border-brand-500/30 bg-brand-500/5' : 'border-white/5 bg-white/5 hover:border-white/10'}`}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${twitterLinked ? 'bg-brand-500 text-black' : 'bg-white/5 text-white/40'}`}>
+                <TwitterIcon size={24} />
+              </div>
+              <div>
+                <p className="font-bold text-base md:text-lg">{twitterLinked ? (profile.socials?.twitter || '@verified') : 'X (Twitter)'}</p>
+                <p className="text-xs text-white/30">
+                  {twitterLinked ? 'Identity Verified' : 'Connect your X profile'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold">{twitterLinked ? (profile.socials?.twitter || '@verified') : 'X (Twitter)'}</p>
-              <p className="text-sm text-surface-400">
-                {twitterLinked ? 'Verified Identity' : 'Connect to verify your identity'}
-              </p>
-            </div>
+            {twitterLinked ? (
+              <div className="hidden sm:flex items-center gap-2 text-brand-500 bg-brand-500/10 px-3 py-1.5 rounded-lg border border-brand-500/20">
+                <CheckCircle2 size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">Linked</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => startOAuth('twitter')}
+                disabled={verifying === 'twitter'}
+                className="bg-white text-black hover:bg-brand-50 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+              >
+                {verifying === 'twitter' ? '...' : 'Connect'}
+              </button>
+            )}
           </div>
-          {twitterLinked ? (
-            <div className="flex items-center gap-2 text-green-400 bg-green-400/10 px-3 py-1.5 rounded-lg border border-green-400/20">
-              <CheckCircle2 size={16} />
-              <span className="text-sm font-medium">Connected</span>
-            </div>
-          ) : (
-            <button
-              onClick={() => startOAuth('twitter')}
-              className="btn flex items-center gap-2 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white border-0"
-            >
-              {verifying === 'twitter' ? 'Verifying...' : 'Connect X'}
-            </button>
+          {twitterLinked && (
+             <div className="mt-3 sm:hidden flex items-center gap-2 text-brand-500 bg-brand-500/10 px-3 py-1.5 rounded-lg border border-brand-500/20 w-fit">
+                <CheckCircle2 size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Linked</span>
+             </div>
           )}
         </div>
 
         {/* Discord Link */}
-        <div className="bg-surface-800/50 border border-surface-700 rounded-xl p-4 flex items-center justify-between transition-all hover:bg-surface-800">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${discordLinked ? 'bg-indigo-500/20 text-indigo-400' : 'bg-surface-700 text-surface-400'}`}>
-              <DiscordIcon size={24} />
+        <div className={`p-5 rounded-2xl border transition-all ${discordLinked ? 'border-brand-500/30 bg-brand-500/5' : 'border-white/5 bg-white/5 hover:border-white/10'}`}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${discordLinked ? 'bg-brand-500 text-black' : 'bg-white/5 text-white/40'}`}>
+                <DiscordIcon size={24} />
+              </div>
+              <div>
+                <p className="font-bold text-base md:text-lg">{discordLinked ? (profile.socials?.discord || 'verified') : 'Discord'}</p>
+                <p className="text-xs text-white/30">
+                  {discordLinked ? 'Identity Verified' : 'Connect your Discord'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold">{discordLinked ? (profile.socials?.discord || 'verified') : 'Discord'}</p>
-              <p className="text-sm text-surface-400">
-                {discordLinked ? 'Verified Identity' : 'Connect to verify your identity'}
-              </p>
-            </div>
+            {discordLinked ? (
+              <div className="hidden sm:flex items-center gap-2 text-brand-500 bg-brand-500/10 px-3 py-1.5 rounded-lg border border-brand-500/20">
+                <CheckCircle2 size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">Linked</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => startOAuth('discord')}
+                disabled={verifying === 'discord'}
+                className="bg-white text-black hover:bg-brand-50 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+              >
+                {verifying === 'discord' ? '...' : 'Connect'}
+              </button>
+            )}
           </div>
-          {discordLinked ? (
-            <div className="flex items-center gap-2 text-green-400 bg-green-400/10 px-3 py-1.5 rounded-lg border border-green-400/20">
-              <CheckCircle2 size={16} />
-              <span className="text-sm font-medium">Connected</span>
-            </div>
-          ) : (
-            <button
-              onClick={() => startOAuth('discord')}
-              className="btn flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white border-0"
-            >
-              {verifying === 'discord' ? 'Verifying...' : 'Connect Discord'}
-            </button>
+          {discordLinked && (
+             <div className="mt-3 sm:hidden flex items-center gap-2 text-brand-500 bg-brand-500/10 px-3 py-1.5 rounded-lg border border-brand-500/20 w-fit">
+                <CheckCircle2 size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Linked</span>
+             </div>
           )}
         </div>
       </div>
 
-      <div className="flex justify-end items-center pt-8 border-t border-surface-800 mt-4">
+      <div className="pt-8 border-t border-white/5">
         <button
           onClick={handleContinue}
           disabled={!twitterLinked && !discordLinked}
-          className="btn-primary flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary w-full py-4 rounded-2xl text-lg font-bold group disabled:opacity-50 disabled:grayscale transition-all"
         >
-          {(!twitterLinked && !discordLinked) ? 'Please Link a Social Account' : 'Continue'} 
-          <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          {(!twitterLinked && !discordLinked) ? 'Link at least one social' : 'Continue'} 
+          <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

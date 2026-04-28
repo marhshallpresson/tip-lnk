@@ -60,39 +60,42 @@ export default function CategorySelection({ onComplete, onBack }) {
   };
 
   return (
-    <div className="glass-card glow-brand p-10 max-w-3xl mx-auto animate-slide-up">
+    <div className="animate-fade-in">
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={onBack}
-          className="p-2 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition-all"
+          className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
         <div>
-          <h2 className="text-3xl font-black">Tell us more...</h2>
-          <p className="text-surface-400">What's your primary niche as a {role}?</p>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight">Tell us more...</h2>
+          <p className="text-white/40 text-sm md:text-base">What's your primary niche as a {role}?</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         {rolesCategories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => handleSelect(cat.id)}
-            className={`flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border border-surface-700 bg-surface-800/40 hover:bg-surface-800 hover:border-brand-500/50 transition-all group`}
+            className={`flex flex-col items-start gap-4 p-5 md:p-6 rounded-2xl border border-white/5 bg-white/5 hover:bg-brand-500/10 hover:border-brand-500/50 transition-all group`}
           >
-            <div className="w-12 h-12 rounded-xl bg-surface-700 flex items-center justify-center group-hover:bg-brand-500/20 transition-colors">
-              <cat.icon size={24} className="text-surface-400 group-hover:text-brand-400" />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-brand-500 group-hover:text-black transition-all">
+              <cat.icon size={20} className="text-white/40 group-hover:text-inherit" />
             </div>
-            <span className="font-bold text-sm text-surface-200 group-hover:text-white transition-colors">{cat.title}</span>
+            <span className="font-bold text-sm md:text-base text-white/60 group-hover:text-white transition-colors">{cat.title}</span>
           </button>
         ))}
       </div>
 
-      <div className="mt-10 flex justify-between items-center text-xs text-surface-500">
-        <p>This helps us recommend the best tools for your niche.</p>
-        <button onClick={onComplete} className="hover:text-brand-400 font-bold uppercase tracking-widest transition-colors">
-          Skip <ChevronRight size={12} className="inline ml-1" />
+      <div className="mt-10 pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p className="text-xs text-white/30 text-center md:text-left">This helps us recommend the best tools for your niche.</p>
+        <button 
+          onClick={onComplete} 
+          className="text-white/40 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2 group"
+        >
+          Skip for now <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

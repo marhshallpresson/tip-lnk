@@ -102,15 +102,24 @@ function AppContent() {
 
             <Route path="/onboarding" element={
               <RequireAuth requiredRole="user">
-                <div className="min-h-[calc(100vh-80px)] mt-20 flex flex-col items-center justify-center p-6">
-                  <StepIndicator current={onboardingStep} />
-                  <div className="w-full max-w-3xl">
-                    {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
-                    {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
-                    {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
-                    {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
-                    {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
-                    {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} onBack={prevStep} />}
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-surface-950/80 backdrop-blur-sm animate-fade-in">
+                  <div className="w-full max-w-2xl bg-surface-900 border border-white/10 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] animate-slide-up">
+                    {/* Header with Step Indicator */}
+                    <div className="px-6 py-4 md:px-10 md:py-6 border-b border-white/5 bg-surface-800/50">
+                      <StepIndicator current={onboardingStep} />
+                    </div>
+
+                    {/* Content Area - Scrollable for mobile */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
+                      <div className="mx-auto w-full">
+                        {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
+                        {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
+                        {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
+                        {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
+                        {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
+                        {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} onBack={prevStep} />}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </RequireAuth>

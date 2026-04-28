@@ -44,39 +44,40 @@ export default function DomainRegistration({ onComplete, onBack }) {
 
 
   return (
-    <div className="glass-card glow-brand p-8 sm:p-10 max-w-lg mx-auto animate-slide-up">
+    <div className="animate-fade-in">
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={onBack}
-          className="p-2 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition-all"
+          className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={18} />
         </button>
         <div className="text-left">
-          <h2 className="text-3xl font-bold">Claim <span className="text-brand-400">$your.tiplnk.sol</span></h2>
-          <p className="text-surface-400 text-sm leading-relaxed">
-            Register your SNS subdomain as your on-chain creator identity. 
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight">Claim your <span className="text-brand-500">handle</span></h2>
+          <p className="text-white/40 text-sm md:text-base leading-relaxed">
+            Your unique on-chain identity and payment URL. 
           </p>
         </div>
       </div>
 
       {registered ? (
-        <div className="bg-accent-green/10 border border-accent-green/30 rounded-xl p-6 text-center animate-scale-in">
-          <Check size={32} className="text-accent-green mx-auto mb-3" />
-          <p className="text-accent-green font-semibold text-lg">
+        <div className="bg-accent-green/10 border border-accent-green/30 rounded-2xl p-8 text-center animate-scale-in">
+          <div className="w-16 h-16 bg-accent-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check size={32} className="text-accent-green" />
+          </div>
+          <p className="text-accent-green font-bold text-xl mb-1">
             ${domain.trim().toLowerCase()}.tiplnk.sol claimed!
           </p>
-          <p className="text-surface-400 text-sm mt-1">Setting up your dashboard...</p>
+          <p className="text-white/40 text-sm">Your profile is being prepared...</p>
         </div>
       ) : (
         <>
-          {/* Domain search */}
-          <div className="flex gap-3 mb-4">
-            <div className="flex-1 relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-400 font-mono text-sm font-semibold">$</span>
+          <div className="space-y-4">
+            <div className="relative group">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-500 font-mono text-lg font-bold select-none group-focus-within:scale-110 transition-transform">$</span>
               <input
                 type="text"
-                className="input-field w-full pl-8 pr-28"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-28 py-4 text-lg md:text-xl font-bold focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all placeholder:text-white/10"
                 placeholder="yourname"
                 value={domain}
                 onChange={(e) => {
@@ -85,58 +86,78 @@ export default function DomainRegistration({ onComplete, onBack }) {
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && checkAvailability()}
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-surface-500 font-mono text-xs">
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 font-mono text-sm font-medium tracking-tight pointer-events-none hidden sm:inline">
                 .tiplnk.sol
               </span>
             </div>
+            
             <button
               onClick={checkAvailability}
               disabled={!domain.trim() || checking}
-              className="btn-primary flex items-center gap-2 !px-5"
+              className="btn-primary w-full py-4 rounded-2xl text-lg font-bold group shadow-lg shadow-brand-500/5"
             >
-              {checking ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-              Check
+              {checking ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <Search size={20} className="group-hover:scale-110 transition-transform" />
+                  Check Availability
+                </>
+              )}
             </button>
           </div>
 
-          {/* Available */}
           {available === true && (
-            <div className="bg-accent-green/10 border border-accent-green/30 rounded-xl p-4 mb-4 animate-scale-in">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Check size={16} className="text-accent-green" />
-                  <span className="text-accent-green font-medium">
-                    ${domain.toLowerCase()}.tiplnk.sol is available!
-                  </span>
+            <div className="mt-6 bg-brand-500/10 border border-brand-500/20 rounded-2xl p-6 animate-slide-up">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-black">
+                    <Check size={16} strokeWidth={3} />
+                  </div>
+                  <div>
+                    <span className="text-brand-400 font-bold block leading-none">
+                      Available
+                    </span>
+                    <span className="text-white/40 text-xs">
+                      ${domain.toLowerCase()}.tiplnk.sol
+                    </span>
+                  </div>
                 </div>
-                <span className="badge-brand">~0.01 SOL</span>
+                <div className="bg-white/10 px-3 py-1 rounded-lg border border-white/5 text-[10px] font-bold uppercase tracking-wider">
+                  SNS Subdomain
+                </div>
               </div>
+              
               <button
                 onClick={registerDomain}
                 disabled={registering}
-                className="btn-primary w-full flex items-center justify-center gap-2"
+                className="w-full bg-white text-black hover:bg-brand-50 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 {registering ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Registering on SNS...
+                    <Loader2 size={18} className="animate-spin" />
+                    Securing on-chain...
                   </>
                 ) : (
                   <>
-                    <Zap size={16} />
-                    Claim Domain
+                    <Zap size={18} fill="currentColor" />
+                    Claim Now
                   </>
                 )}
               </button>
             </div>
           )}
 
-          {/* Taken */}
           {available === false && (
-            <div className="bg-accent-red/10 border border-accent-red/30 rounded-xl p-4 flex items-center gap-2">
-              <AlertCircle size={16} className="text-accent-red shrink-0" />
-              <span className="text-accent-red text-sm">
-                ${domain.toLowerCase()}.tiplnk.sol is already taken. Try another name.
+            <div className="mt-6 bg-accent-red/10 border border-accent-red/20 rounded-2xl p-4 flex items-center gap-3 animate-shake">
+              <div className="w-8 h-8 rounded-full bg-accent-red/20 flex items-center justify-center text-accent-red">
+                <AlertCircle size={18} />
+              </div>
+              <span className="text-accent-red font-medium text-sm">
+                That name is already taken. Try something else!
               </span>
             </div>
           )}

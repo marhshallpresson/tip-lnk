@@ -1,43 +1,40 @@
-import { Check } from 'lucide-react';
-
-const STEPS = ['Choose Role', 'Identify Niche', 'Claim URL', 'Verify Socials', 'Customize', 'Ready!'];
+const STEPS = ['Role', 'Niche', 'URL', 'Socials', 'Profile', 'Done'];
 
 export default function StepIndicator({ current }) {
+  const progress = ((current) / (STEPS.length - 1)) * 100;
+
   return (
-    <div className="flex items-center justify-center gap-2 mb-10">
-      {STEPS.map((label, i) => {
-        const done = i < current;
-        const active = i === current;
-        return (
-          <div key={label} className="flex items-center gap-2">
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
-                  done
-                    ? 'bg-brand-500 text-white'
-                    : active
-                    ? 'bg-brand-600 text-white ring-4 ring-brand-600/25'
-                    : 'bg-surface-800 text-surface-500'
-                }`}
-              >
-                {done ? <Check size={16} strokeWidth={3} /> : i + 1}
-              </div>
-              <span
-                className={`text-xs font-medium whitespace-nowrap ${
-                  done ? 'text-brand-400' : active ? 'text-brand-400' : 'text-surface-600'
-                }`}
-              >
-                {label}
-              </span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div
-                className={`w-12 h-0.5 mb-5 transition-colors duration-300 ${done ? 'bg-brand-500' : 'bg-surface-800'}`}
-              />
-            )}
-          </div>
-        );
-      })}
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-1">
+            Step {current + 1} of {STEPS.length}
+          </span>
+          <h3 className="text-lg font-bold text-white tracking-tight">
+            {STEPS[current]}
+          </h3>
+        </div>
+        <div className="flex gap-1.5">
+          {STEPS.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                i <= current 
+                  ? 'w-6 bg-brand-500' 
+                  : 'w-1.5 bg-white/10'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Progress Bar Background */}
+      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-brand-500 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(159,53,232,0.5)]"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
     </div>
   );
 }
