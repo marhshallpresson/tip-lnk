@@ -77,6 +77,7 @@ const ROUTES: Record<string, Function> = {
   'solana/send-smart': solanaSendSmart,
   'solana/priority-fee': solanaPriorityFee,
   'solana/sns-check': solanaSnsCheck,
+  'solana/tips': solanaTipsGet,
   'solana/tips/get': solanaTipsGet,
   'solana/tips/stream': solanaTipsStream,
   'solana/webhooks/helius': solanaWebhookHelius,

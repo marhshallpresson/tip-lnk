@@ -19,8 +19,14 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const wallet = req.query.wallet as string
-  if (typeof wallet !== 'string' || wallet.length === 0) {
+  // Extract from query OR from URL parts (for /api/solana/profile/WALLET)
+  let wallet = req.query.wallet as string
+  if (!wallet) {
+    const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []
+    wallet = parts[parts.length - 1]
+  }
+
+  if (!wallet || wallet === 'profile' || wallet === 'get') {
     return res.status(400).json({ error: 'Valid wallet string required' })
   }
 

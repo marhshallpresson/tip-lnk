@@ -8,8 +8,14 @@ import { getSolPrice } from "../../../_lib/price.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const address = req.query.address as string
-  if (typeof address !== 'string' || address.length < 32 || address.length > 44) {
+  // Extract from query OR from URL parts (for /api/solana/tips/WALLET)
+  let address = req.query.address as string
+  if (!address) {
+    const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []
+    address = parts[parts.length - 1]
+  }
+
+  if (!address || address === 'tips' || address === 'get') {
     return res.status(400).json({ error: 'Valid wallet address string required' })
   }
 

@@ -15,11 +15,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         module = await import('./jupiter/swap.js')
     } else if (action === 'profile') {
         if (subAction === 'get') module = await import('./profile/get.js')
-        if (subAction === 'update') module = await import('./profile/update.js')
+        else if (subAction === 'update') module = await import('./profile/update.js')
+        else module = await import('./profile/get.js')
     } else if (action === 'tips') {
         if (subAction === 'get') module = await import('./tips/get.js')
-        if (subAction === 'stream') module = await import('./tips/stream.js')
-        if (subAction === 'message') module = await import('./tips/message.js')
+        else if (subAction === 'stream') module = await import('./tips/stream.js')
+        else if (subAction === 'message') module = await import('./tips/message.js')
+        else module = await import('./tips/get.js')
     } else if (action === 'webhooks' && subAction === 'helius') {
         module = await import('./webhooks/helius.js')
     } else {
