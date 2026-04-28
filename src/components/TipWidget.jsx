@@ -421,8 +421,12 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
             className="w-full h-14 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-xl px-4 flex items-center justify-between transition-all group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold text-[10px] border border-brand-500/10">
-                {selectedToken.symbol[0]}
+              <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold text-[10px] border border-brand-500/10 overflow-hidden">
+                {selectedToken.logoURI ? (
+                   <img src={selectedToken.logoURI} alt="" className="w-full h-full object-cover" />
+                ) : (
+                   selectedToken.symbol[0]
+                )}
               </div>
               <div className="text-left">
                 <span className="text-sm font-semibold block leading-none text-white">{selectedToken.symbol}</span>
@@ -631,13 +635,22 @@ function TokenListItem({ token, isSelected, onClick }) {
         }`}
     >
       <div className="flex items-center gap-4">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] border ${isSelected ? 'bg-brand-500 text-black border-brand-500' : 'bg-white/5 text-white/40 border-white/5'
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] border overflow-hidden ${isSelected ? 'bg-brand-500 text-black border-brand-500 font-bold' : 'bg-white/5 text-white/40 border-white/5 font-bold'
           }`}>
-          {token.symbol[0]}
+          {token.logoURI ? (
+             <img src={token.logoURI} alt="" className="w-full h-full object-cover" />
+          ) : (
+             token.symbol[0]
+          )}
         </div>
         <div className="text-left">
           <span className="font-semibold text-sm block leading-none text-white">{token.symbol}</span>
-          <span className="text-[10px] font-medium text-white/20 uppercase tracking-tight">{token.name}</span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] font-medium text-white/20 uppercase tracking-tight">{token.name}</span>
+            {token.balance > 0 && (
+              <span className="text-[9px] px-1.5 py-0.5 bg-brand-500/10 text-brand-500 rounded font-bold">{token.balance.toFixed(2)}</span>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-2">

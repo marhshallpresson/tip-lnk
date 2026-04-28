@@ -39,6 +39,7 @@
     "lucide-react": "0.460.0",
     "nodemailer": "8.0.5",
     "openid-client": "6.3.3",
+    "paj_ramp": "^1.5.4",
     "pg": "8.20.0",
     "postcss": "8.4.49",
     "postgres": "3.4.9",

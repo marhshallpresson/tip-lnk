@@ -48,3 +48,4 @@ TipLnk orchestrates the best-in-class tools across the Solana and Web3 ecosystem
 - **Jupiter:** The core execution engine for non-custodial swaps, token routing, and fee extraction.
 - **Helius:** Enterprise-grade RPCs and Webhooks serving as the absolute source of truth for on-chain events.
 - **Fossa Pay / Dynamic Funding:** Integrated fiat onramps to allow credit card and bank transfer payments.
+- **Fossa Pay / Dynamic Funding:** Integrated fiat onramps to allow credit card and bank transfer payments.
