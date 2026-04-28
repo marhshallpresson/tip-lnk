@@ -356,13 +356,17 @@ function AuthCallbackHandler() {
 }
 
 export default function App() {
-  const dynamicEnvId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID || 'sandbox'; // Fallback for dev
+  const dynamicEnvId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID;
+
+  if (!dynamicEnvId) {
+    console.warn('VITE_DYNAMIC_ENVIRONMENT_ID is not defined. Dynamic wallet connection may fail.');
+  }
 
   return (
     <DynamicContextProvider
       theme="dark"
       settings={{
-        environmentId: dynamicEnvId,
+        environmentId: dynamicEnvId || 'sandbox',
         walletConnectors: [SolanaWalletConnectors],
       }}
     >

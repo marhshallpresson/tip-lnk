@@ -10,6 +10,11 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: {
+    include: [
+      '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/solana',
+      '@dynamic-labs/wallet-connector-core'
+    ],
     exclude: ['@solana/web3.js', 'tweetnacl']
   },
   build: {
