@@ -14,20 +14,31 @@ export function useTipping(creatorAddress) {
   const { publicKey, signTransaction } = useWallet();
   const { connection } = useConnection();
 
-  const SUPPORTED_TOKENS = [
-    { symbol: 'USDC', name: 'USD Coin', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
-    { symbol: 'SOL', name: 'Solana', mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
-    { symbol: 'BONK', name: 'Bonk', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5 },
+  const DEFAULT_TOKENS = [
+    { symbol: 'USDC', name: 'USD Coin', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6, logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png' },
+    { symbol: 'SOL', name: 'Solana', mint: 'So11111111111111111111111111111111111111112', decimals: 9, logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png' },
+    { symbol: 'BONK', name: 'Bonk', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5, logoURI: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I' },
   ];
 
-  const [tokens, setTokens] = useState(SUPPORTED_TOKENS);
-  const [selectedToken, setSelectedToken] = useState(SUPPORTED_TOKENS[0]);
+  const [tokens, setTokens] = useState(DEFAULT_TOKENS);
+  const [selectedToken, setSelectedToken] = useState(DEFAULT_TOKENS[0]);
 
-  // ─── Elite Balance Detection ───
+  // ─── Elite Balance Detection & Dynamic Asset Fetching ───
   useEffect(() => {
     const detectBalances = async () => {
         if (!publicKey || !connection) return;
         try {
+            // 1. Fetch Jupiter Strict List
+            let jupTokens = [];
+            try {
+              const res = await fetch('https://tokens.jup.ag/tokens?tags=strict');
+              jupTokens = await res.json();
+            } catch (err) {
+              console.warn('Failed to fetch Jupiter strict list, falling back to defaults', err);
+              jupTokens = DEFAULT_TOKENS;
+            }
+
+            // 2. Fetch User Token Accounts
             const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
                 programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
             });
@@ -35,25 +46,60 @@ export function useTipping(creatorAddress) {
             const balances = {};
             tokenAccounts.value.forEach(acc => {
                 const info = acc.account.data.parsed.info;
-                balances[info.mint] = info.tokenAmount.uiAmount;
+                if (info.tokenAmount.uiAmount > 0) {
+                  balances[info.mint] = info.tokenAmount.uiAmount;
+                }
             });
 
             // Add SOL balance
             const solBalance = await connection.getBalance(publicKey);
-            balances[SUPPORTED_TOKENS[1].mint] = solBalance / 1e9;
+            balances['So11111111111111111111111111111111111111112'] = solBalance / 1e9;
 
-            const updatedTokens = SUPPORTED_TOKENS.map(t => ({
-                ...t,
-                balance: balances[t.mint] || 0
-            })).sort((a, b) => (b.balance > 0 ? 1 : -1));
+            // 3. Intersect and Map
+            const dynamicTokens = [];
+            
+            // Always try to include SOL first if they have balance or as default
+            if (balances['So11111111111111111111111111111111111111112'] > 0) {
+              const solData = jupTokens.find(t => t.address === 'So11111111111111111111111111111111111111112') || DEFAULT_TOKENS[1];
+              dynamicTokens.push({
+                symbol: solData.symbol,
+                name: solData.name,
+                mint: 'So11111111111111111111111111111111111111112',
+                decimals: solData.decimals,
+                logoURI: solData.logoURI,
+                balance: balances['So11111111111111111111111111111111111111112']
+              });
+            }
 
-            setTokens(updatedTokens);
-            // Auto-select first token with balance
-            const withBalance = updatedTokens.find(t => t.balance > 0);
-            if (withBalance) setSelectedToken(withBalance);
+            Object.entries(balances).forEach(([mint, balance]) => {
+               if (mint === 'So11111111111111111111111111111111111111112') return; // Already handled
+               const tokenData = jupTokens.find(t => t.address === mint);
+               if (tokenData) {
+                  dynamicTokens.push({
+                    symbol: tokenData.symbol,
+                    name: tokenData.name,
+                    mint: mint,
+                    decimals: tokenData.decimals,
+                    logoURI: tokenData.logoURI,
+                    balance: balance
+                  });
+               }
+            });
+
+            // Sort by balance (descending)
+            dynamicTokens.sort((a, b) => (b.balance || 0) - (a.balance || 0));
+
+            // Fallback to default tokens if wallet is empty
+            const finalTokens = dynamicTokens.length > 0 ? dynamicTokens : DEFAULT_TOKENS;
+
+            setTokens(finalTokens);
+            // Auto-select first token
+            setSelectedToken(finalTokens[0]);
             
         } catch (e) {
             console.warn('Balance detection failed:', e);
+            setTokens(DEFAULT_TOKENS);
+            setSelectedToken(DEFAULT_TOKENS[0]);
         }
     };
     detectBalances();

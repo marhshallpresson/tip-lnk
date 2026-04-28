@@ -37,14 +37,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(401).json({ success: false, error: 'Invalid signature. Please ensure your wallet date/time is correct.' });
       }
 
-      // Replay Protection: Verify timestamp
-      const timestampMatch = message.match(/Timestamp: (\d+)/);
-      if (!timestampMatch) return res.status(400).json({ success: false, error: 'Missing timestamp in message.' });
-      const timestamp = parseInt(timestampMatch[1]);
+      // Replay Protection: Verify Issued At timestamp
+      const timestampMatch = message.match(/Issued At: (.*)/);
+      if (!timestampMatch) return res.status(400).json({ success: false, error: 'Missing Issued At timestamp in message.' });
+      const issuedAt = new Date(timestampMatch[1]).getTime();
       const now = Date.now();
-      const TEN_MINUTES = 10 * 60 * 1000; // Increased tolerance for slow connections
-      if (Math.abs(now - timestamp) > TEN_MINUTES) {
-        return res.status(401).json({ success: false, error: 'Signature expired. Please try again.' });
+      const TEN_MINUTES = 10 * 60 * 1000;
+      if (isNaN(issuedAt) || Math.abs(now - issuedAt) > TEN_MINUTES) {
+        return res.status(401).json({ success: false, error: 'Signature expired or invalid timestamp. Please try again.' });
       }
     } catch (e) {
         logError('siws_signature_verification_error', { error: serializeError(e), walletAddress });

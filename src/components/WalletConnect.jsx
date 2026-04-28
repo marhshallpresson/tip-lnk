@@ -50,8 +50,23 @@ export default function WalletConnect({ onConnected }) {
 
   const performSiwsLogin = useCallback(async (addr, providerType = 'adapter') => {
     try {
-      const timestamp = Date.now();
-      const message = `Welcome to TipLnk!\n\nSign this message to authenticate your wallet. This is a secure, off-chain action that will not cost any gas.\n\nWallet: ${addr}\nTimestamp: ${timestamp}`;
+      const timestamp = new Date().toISOString();
+      const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const requestId = crypto.randomUUID();
+      const domain = window.location.hostname;
+      const uri = window.location.origin + '/';
+
+      const message = `${domain} wants you to sign in with your Solana account:
+${addr}
+
+Welcome to TipLnk. Signing is the only way we can truly know that you are the owner of the wallet you are connecting. Signing is a safe, gas-less transaction that does not in any way give TipLnk permission to perform any transactions with your wallet.
+
+URI: ${uri}
+Version: 1
+Nonce: ${nonce}
+Issued At: ${timestamp}
+Request ID: ${requestId}`;
+
       const messageBytes = new TextEncoder().encode(message);
       let signatureStr;
 

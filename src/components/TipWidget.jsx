@@ -138,9 +138,15 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
     // ─── Professional MWA / Deep Link Trigger ───
     if (isMobile() && !hasSolanaProvider()) {
         setTxStep('processing');
-        // Choose best link for the device
-        const deepLink = getPhantomDeepLink(window.location.href);
-        window.location.href = deepLink;
+        // Use Solana Pay Transaction Request standard
+        const solanaUri = getSolanaPayUri(resolvedAddress, amount, selectedToken.mint);
+        window.location.href = solanaUri;
+        
+        // Setup a small timeout to fallback to phantom browse if solana: doesn't trigger
+        setTimeout(() => {
+             const deepLink = getPhantomDeepLink(window.location.href);
+             window.location.href = deepLink;
+        }, 2500);
         return;
     }
 
