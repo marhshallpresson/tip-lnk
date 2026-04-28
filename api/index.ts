@@ -38,6 +38,8 @@ import { default as solanaJupiterSwap } from './_handlers/solana/jupiter/swap.js
 import { default as solanaBirdeyePortfolio } from './_handlers/solana/birdeye/portfolio.js'
 import { default as solanaPrice } from './_handlers/solana/price.js'
 import { default as solanaRpc } from './_handlers/solana/rpc.js'
+import { default as solanaActionsConfig } from './_handlers/solana/actions/config.js'
+import { default as solanaActionsTip } from './_handlers/solana/actions/tip.js'
 import { default as socialXPosts } from './_handlers/social/x-posts.js'
 
 import { default as payoutsWebhook } from './_handlers/payouts/webhook.js'
@@ -77,6 +79,8 @@ const ROUTES: Record<string, Function> = {
   'solana/send-smart': solanaSendSmart,
   'solana/priority-fee': solanaPriorityFee,
   'solana/sns-check': solanaSnsCheck,
+  'solana/actions/config': solanaActionsConfig,
+  'solana/actions/tip': solanaActionsTip,
   'solana/tips': solanaTipsGet,
   'solana/tips/get': solanaTipsGet,
   'solana/tips/stream': solanaTipsStream,

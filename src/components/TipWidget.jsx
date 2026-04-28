@@ -35,7 +35,7 @@ import { QRCodeSVG } from 'qrcode.react';
  * Advanced Creator-to-Creator Tipping Widget
  * Features: Mobile Deep Linking, Transaction Simulation, Sender-Pays 5% Fee.
  */
-export default function TipWidget({ fixedRecipient = null }) {
+export default function TipWidget({ fixedRecipient = null, theme = 'dark', accent = '#00D265', onSuccess }) {
   const { publicKey } = useWallet();
   const { addTip, profile } = useApp();
   const { connection } = useConnection();
@@ -146,6 +146,7 @@ export default function TipWidget({ fixedRecipient = null }) {
     setTxStep('processing');
     const result = await executeTip(profile?.displayName || 'Anonymous', note);
     if (result?.success) {
+      if (onSuccess) onSuccess(result);
       addTip({
         recipient: recipientInput,
         recipientAddress: resolvedAddress,

@@ -13,6 +13,7 @@ import WalletModal from './components/WalletModal';
 import LandingPage from './components/LandingPage';
 import AuthCompletion from './components/AuthCompletion';
 import CreatorPage from './components/CreatorPage';
+import CheckoutPage from './components/CheckoutPage';
 import Dashboard from './components/Dashboard';
 import { OverviewTab, TransactionHistoryTab } from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
@@ -132,6 +133,7 @@ function AppContent() {
             <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
             <Route path="/auth/complete" element={<AuthCompletion />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/checkout/:wallet" element={<CheckoutPage />} />
             <Route path="/:username" element={<CreatorPage />} />
 
             <Route path="/terms" element={<TermsOfService />} />

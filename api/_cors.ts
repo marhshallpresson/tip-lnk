@@ -17,7 +17,7 @@ export function applyCors(req: any, res: any): boolean {
   // Allow requests with no origin (like same-origin or server-to-server)
   res.setHeader('Access-Control-Allow-Origin', origin || '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-csrf-token')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-csrf-token, Content-Encoding, Accept-Encoding, X-Accept-Blockchain-IDs, X-Accept-Action-Version')
   res.setHeader('Access-Control-Allow-Credentials', 'true')
 
   if (req.method === 'OPTIONS') {

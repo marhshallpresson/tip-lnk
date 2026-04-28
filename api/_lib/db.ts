@@ -255,8 +255,34 @@ export async function initSchema() {
       });
     }
 
+    // 10. OAuth Clients
+    if (!(await db.schema.hasTable('oauth_clients'))) {
+      await db.schema.createTable('oauth_clients', (table) => {
+        table.string('id').primary();
+        table.string('userId').references('id').inTable('user').onDelete('CASCADE');
+        table.string('name').notNullable();
+        table.string('secretHash').notNullable();
+        table.string('redirectUris').notNullable(); // Comma-separated
+        table.timestamps(true, true);
+      });
+    }
+
+    // 11. OAuth Tokens
+    if (!(await db.schema.hasTable('oauth_tokens'))) {
+      await db.schema.createTable('oauth_tokens', (table) => {
+        table.string('id').primary();
+        table.string('clientId').references('id').inTable('oauth_clients').onDelete('CASCADE');
+        table.string('userId').references('id').inTable('user').onDelete('CASCADE');
+        table.string('accessTokenHash').notNullable().unique();
+        table.string('refreshTokenHash').unique();
+        table.dateTime('expiresAt').notNullable();
+        table.string('scope');
+        table.timestamps(true, true);
+      });
+    }
+
     // ─── ELITE SECURITY HARDENING ───
-    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts'];
+    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts', 'oauth_clients', 'oauth_tokens'];
     for (const table of tables) {
         try {
             // Enable RLS

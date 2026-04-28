@@ -14,13 +14,12 @@ const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
   Tip me on TipLnk
 </a>`;
 
-  const iframeHtml = `<iframe 
-  src="${profileUrl}?embed=true&theme=${theme}&accent=${encodeURIComponent(accentColor)}" 
-  width="400" 
-  height="600" 
-  style="border:none; border-radius:24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"
-  title="Tip me on TipLnk"
-></iframe>`;
+  const widgetHtml = `<div 
+  data-tiplnk-id="${creatorAddress}" 
+  data-tiplnk-theme="${theme}" 
+  data-tiplnk-color="${accentColor}">
+</div>
+<script src="${window.location.origin}/widget.js"></script>`;
 
   const copyToClipboard = (text, key) => {
     navigator.clipboard.writeText(text);
@@ -141,14 +140,14 @@ const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
 
               <div className="relative group">
                 <pre className="bg-surface-950 border border-surface-800 rounded-2xl p-4 text-[9px] font-mono text-surface-500 overflow-hidden line-clamp-4">
-                  {iframeHtml}
+                  {widgetHtml}
                 </pre>
                 <button 
-                  onClick={() => copyToClipboard(iframeHtml, 'iframe')}
+                  onClick={() => copyToClipboard(widgetHtml, 'iframe')}
                   className="absolute inset-0 bg-accent-cyan text-black font-bold text-xs rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2"
                 >
                   {copied.iframe ? <Check size={16} /> : <Copy size={16} />}
-                  Copy Widget Iframe
+                  Copy Widget Script
                 </button>
               </div>
            </div>
