@@ -58,11 +58,12 @@ export default function SettingsModal({ isOpen, onClose }) {
   };
 
   const handleConnectSocial = (platformId) => {
-    // Currently only Google is implemented in backend, others are placeholders for now
-    if (platformId === 'google') {
+    // Currently only Google is implemented in backend
+    if (platformId === 'google' || platformId === 'google-auth') {
       window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google/start?next=${window.location.pathname}`;
     } else {
-      alert(`${platformId.charAt(0).toUpperCase() + platformId.slice(1)} integration coming soon!`);
+      // For other platforms, we just refresh for now as they might have been connected on onboarding
+      window.location.reload();
     }
   };
 
@@ -302,9 +303,14 @@ export default function SettingsModal({ isOpen, onClose }) {
                     </div>
                     <div>
                       <h4 className="font-bold text-white text-sm">Solana Wallet</h4>
-                      <p className="text-xs font-mono text-surface-500 uppercase tracking-tighter mt-0.5">
-                        {connected ? shortAddress : 'No Wallet Connected'}
+                      <p className="text-[10px] font-medium text-surface-500 uppercase tracking-tighter mt-0.5">
+                        {connected ? address : 'No Wallet Connected'}
                       </p>
+                      {authUser?.email && (
+                        <p className="text-[10px] font-bold text-brand-500/60 uppercase tracking-wider mt-1 flex items-center gap-1.5">
+                          <Shield size={10} /> {authUser.email}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {connected ? (
@@ -329,9 +335,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     { id: 'discord', name: 'Discord', icon: MessageSquare, color: 'text-[#5865F2]', connected: !!profile?.discordHandle, metrics: profile?.socialMetrics?.metrics?.discord },
                     { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'text-[#FF0000]', connected: !!profile?.socials?.youtube },
                     { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'text-[#E1306C]', connected: !!profile?.socials?.instagram },
-                    { id: 'github', name: 'GitHub', icon: Github, color: 'text-[#F0F6FC]', connected: !!profile?.socials?.github },
-                    { id: 'pinterest', name: 'Pinterest', icon: Globe, color: 'text-[#BD081C]', connected: !!profile?.socials?.pinterest }
-                  ].map((platform) => (
+                  ].filter(p => p.id === 'twitter' || p.id === 'discord' || p.connected).map((platform) => (
                     <div key={platform.id} className="p-4 bg-surface-900/20 border border-surface-800/60 rounded-xl flex items-center justify-between hover:bg-surface-900/40 transition-all">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg bg-surface-900 flex items-center justify-center ${platform.connected ? platform.color : 'text-surface-600'}`}>

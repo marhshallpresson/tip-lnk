@@ -88,31 +88,7 @@ export default function CreatorPage() {
               </div>
             </div>
 
-            {/* Featured Section - Membership & Goals */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-card p-8 border-brand-500/10 group hover:border-brand-500/30 transition-all flex flex-col">
-                <Award className="text-brand-500 mb-4" size={24} />
-                <h4 className="font-bold text-lg mb-2 text-white">Supporter Tiers</h4>
-                <p className="text-surface-400 text-sm leading-relaxed mb-6">Support my journey and get exclusive perks, early access, and Discord roles.</p>
-                <div className="mt-auto">
-                  <button className="text-brand-500 text-xs font-black uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
-                    View Membership <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-              <div className="glass-card p-8 border-emerald-500/10 group hover:border-emerald-500/30 transition-all">
-                <TrendingUp className="text-emerald-500 mb-4" size={24} />
-                <h4 className="font-bold text-lg mb-2 text-white">Active Goal</h4>
-                <p className="text-surface-400 text-sm leading-relaxed mb-6">Raising for improved streaming hardware and a new series of Web3 tutorials.</p>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 w-[65%] shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                </div>
-                <div className="flex justify-between mt-3">
-                  <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">65% of $5,000</span>
-                  <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">$3,250 reached</span>
-                </div>
-              </div>
-            </div>
+            {/* Removed Membership & Goals filler section */}
           </div>
 
           {/* Sticky Sidebar */}
@@ -392,10 +368,10 @@ const TabContent = ({ activeTab, profile }) => {
   }
 
   return (
-    <div className="py-24 bg-white/[0.02] border border-dashed border-white/10 rounded-[48px] text-center">
+    <div className="py-24 bg-white/[0.02] border border-dashed border-surface-800 rounded-[48px] text-center">
       <ImageIcon size={64} className="text-white/5 mx-auto mb-6" />
       <h4 className="text-2xl font-bold text-white mb-2">Digital Gallery</h4>
-      <p className="text-surface-500 text-sm max-w-xs mx-auto">NFT collections and creative assets will be showcased here in our next update.</p>
+      <p className="text-surface-500 text-sm max-w-xs mx-auto">This creator hasn't uploaded any digital assets or NFT collections to their gallery yet.</p>
     </div>
   );
 };
