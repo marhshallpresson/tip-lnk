@@ -175,6 +175,52 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
     setTxStep('configure');
   };
 
+  const handleFiatTip = async () => {
+    if (!resolvedAddress || !amount || parseFloat(amount) <= 0) return;
+    setProcessing(true);
+    setError(null);
+    try {
+      const isProd = import.meta.env.PROD;
+      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+      
+      const response = await fetch(`${API_BASE_URL}/api/payments/fiat/intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creatorId: resolvedAddress,
+          amount: parseFloat(amount),
+          senderName: profile?.displayName || 'Anonymous',
+          memo: note
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.checkoutUrl) {
+         // Open Fossa Pay in a secure popup window
+         const width = 500;
+         const height = 700;
+         const left = window.screenX + (window.innerWidth - width) / 2;
+         const top = window.screenY + (window.innerHeight - height) / 2;
+         window.open(data.checkoutUrl, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
+         
+         // Set pending state to wait for webhook confirmation
+         setTxResult({ 
+             status: 'pending', 
+             signature: data.intentId, 
+             outAmount: amount, 
+             executionMode: 'fossa_pay' 
+         });
+      } else {
+         throw new Error(data.error || 'Fiat gateway is currently unavailable.');
+      }
+    } catch (err) {
+      console.error('Fiat Intent Error:', err);
+      setError(err.message || 'Failed to initiate card payment.');
+      setProcessing(false);
+    }
+  };
+
   if (txResult) {
     const isPending = txResult.status === 'pending';
     return (
@@ -444,6 +490,20 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
                 <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-5 h-5 rounded-full" />
                 Open in Solflare
               </button>
+              <button
+                onClick={() => window.location.href = getJupiterDeepLink(window.location.href)}
+                className="btn-primary w-full !h-12 bg-[#1b1c1d] hover:bg-[#2a2b2c] !text-[#24e8af] border border-[#24e8af]/20 shadow-none"
+              >
+                <img src="https://jup.ag/favicon.ico" alt="Jupiter" className="w-5 h-5 rounded-full" />
+                Open in Jupiter
+              </button>
+              <button
+                onClick={() => window.location.href = getBackpackDeepLink(window.location.href)}
+                className="btn-primary w-full !h-12 bg-[#E33E3F] hover:bg-[#C23233] !text-white border-none shadow-none"
+              >
+                <img src="https://backpack.app/favicon.ico" alt="Backpack" className="w-5 h-5 rounded-full" />
+                Open in Backpack
+              </button>
             </div>
           ) : !publicKey ? (
             <div className="flex justify-center w-full mt-4 border-t border-white/10 pt-6">
@@ -459,6 +519,21 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
               Confirm & Pay
             </button>
           )}
+
+          {/* --- FOSSA PAY INTEGRATION --- */}
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+            <div className="relative flex justify-center text-[9px] uppercase font-black tracking-widest"><span className="bg-[#111111] px-4 text-white/20">OR</span></div>
+          </div>
+          <button
+            onClick={handleFiatTip}
+            disabled={processing || !resolvedAddress}
+            className="w-full h-14 bg-white hover:bg-white/90 text-black rounded-xl font-bold flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
+          >
+            <CreditCard size={20} />
+            Pay with Card or Bank
+          </button>
+
           <p className="text-center text-[10px] font-semibold text-white/20 uppercase tracking-wider mt-6">
               0% direct transfer fees • Instant creator payout
           </p>

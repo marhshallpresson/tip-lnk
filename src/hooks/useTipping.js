@@ -202,27 +202,10 @@ export function useTipping(creatorAddress) {
             throw new Error(submitData.error?.message || 'Transaction submission failed.');
           }
 
-          // ─── ELITE OPTIMISTIC RELAY: Notify backend immediately ───
-          try {
-              await fetch(`${API_BASE_URL}/api/solana/tips/confirm`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      signature,
-                      recipient: creatorAddress,
-                      amount: fromLamports(BigInt(route.baseAmount), 6),
-                      tokenSymbol: 'USDC', 
-                      senderName: senderName || 'Anonymous',
-                      message: note
-                  })
-              });
-          } catch (relayErr) {
-              console.warn('🛡️ Relay: Optimistic update failed.', relayErr);
-          }
-
           // ─── Phase 9: UX Truth Enforcement - Show Pending State ───
-          setTxResult({
-            success: false,
+          // Optimistic backend confirmations are removed. Webhook is the only source of truth.
+          const result = {
+            success: true,
             status: 'pending',
             signature,
             executionMode: route.executionMode,
@@ -233,49 +216,24 @@ export function useTipping(creatorAddress) {
             sender: senderName || 'Anonymous',
             recipientAddress: creatorAddress,
             treasuryAddress: TREASURY_WALLET
-          });
+          };
 
-          // ─── ELITE RETRY & FAILOVER LOGIC ───
-          const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-          
+          setTxResult(result);
+
+          // Optionally wait for RPC confirmation before returning, but UI stays pending until webhook
           try {
+            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
             await connection.confirmTransaction({
               signature,
               ...latestBlockhash
             }, 'confirmed');
           } catch (e) {
-            await new Promise(r => setTimeout(r, 2000));
-            await connection.confirmTransaction({
-              signature,
-              ...latestBlockhash
-            }, 'confirmed');
+            // Ignore RPC timeout, webhook will handle it
           }
 
-          // ─── Phase 3: Wait for 'Finalized' on High-Value Tips (>$50) ───
-          if (parseFloat(totalChargedUSDC) > 50) {
-            await connection.confirmTransaction({
-              signature,
-              ...latestBlockhash
-            }, 'finalized');
-          }
+          return result;
         }
 
-        const result = {
-          success: true,
-          status: 'confirmed',
-          signature,
-          executionMode: route.executionMode,
-          outAmount: parseFloat(fromLamports(BigInt(route.baseAmount), 6)),
-          feeAmount: parseFloat(fromLamports(BigInt(route.feeAmount), 6)),
-          totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
-          timestamp: Date.now(),
-          sender: senderName || 'Anonymous',
-          recipientAddress: creatorAddress,
-          treasuryAddress: TREASURY_WALLET
-        };
-
-        setTxResult(result);
-        return result;
       } catch (err) {
         console.error('Tipping Engine Fault:', err);
         setError(err.message || 'Transaction failed. Check wallet.');
@@ -310,6 +268,7 @@ export function useTipping(creatorAddress) {
     processing,
     executeTip,
     txResult,
+    setTxResult,
     reset,
     error,
   };

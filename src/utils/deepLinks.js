@@ -25,11 +25,31 @@ export const getSolflareDeepLink = (url) => {
   }
 };
 
+export const getJupiterDeepLink = (url) => {
+  try {
+    const target = new URL(url);
+    return `https://jup.ag/browse/${encodeURIComponent(target.toString())}`; // Example deep link schema, adjust if official Jupiter Mobile schema is different
+  } catch (e) {
+    const cleanUrl = url.split('#')[0].split('?')[0];
+    return `https://jup.ag/browse/${encodeURIComponent(cleanUrl)}`;
+  }
+};
+
+export const getBackpackDeepLink = (url) => {
+  try {
+    const target = new URL(url);
+    return `backpack://browse/${encodeURIComponent(target.toString())}`;
+  } catch (e) {
+    const cleanUrl = url.split('#')[0].split('?')[0];
+    return `backpack://browse/${encodeURIComponent(cleanUrl)}`;
+  }
+};
+
 export const isMobile = () => {
   if (typeof window === 'undefined') return false;
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
 export const hasSolanaProvider = () => {
-  return !!(window.solana || window.solflare || window.phantom?.solana);
+  return !!(window.solana || window.solflare || window.phantom?.solana || window.backpack || window.jupiter);
 };

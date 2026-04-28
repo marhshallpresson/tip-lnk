@@ -151,6 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'auth/csrf', 
     'auth/dynamic/verify',
     'payouts/webhook', 
+    'payments/fiat/webhook',
     'solana/webhooks/helius', 
     'solana/profile/update', 
     'quicknode/rpc/solana',

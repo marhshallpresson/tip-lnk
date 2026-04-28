@@ -39,18 +39,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const intentId = `pi_${randomUUID().replace(/-/g, '')}`
 
-    // --- FIAT ONRAMP (Dynamic/Banxa/MoonPay Abstraction) ---
-    if (paymentMethod === 'fiat_onramp') {
-      // In production, this would call Dynamic's Funding API or a direct provider.
-      // For now, we return a mock URL or a specific configuration for the Dynamic Widget.
-      return res.json({
-        success: true,
-        intentId,
-        status: 'requires_action',
-        fiatOnrampUrl: `https://app.dynamic.xyz/fund?destination=${creator.walletAddress}&amount=${amount}`,
-      })
-    }
-
     // --- CRYPTO EXECUTION (External or Embedded Wallet) ---
     if (!sourceWalletAddress || !inputTokenMint) {
       return res.status(400).json({ error: 'Source wallet and input token required for crypto payments' })
