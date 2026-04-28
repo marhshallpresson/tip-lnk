@@ -117,7 +117,7 @@ export function useTipping(creatorAddress) {
   // ─── Real-time Price Fetching (Jupiter Price V3 Standard) ───
   const fetchPrice = useCallback(async (symbol) => {
     try {
-      const token = SUPPORTED_TOKENS.find(t => t.symbol === symbol);
+      const token = tokens.find(t => t.symbol === symbol);
       if (!token) return 1;
 
       const response = await fetch(`https://price.jup.ag/v6/price?ids=${token.mint}`);
@@ -127,7 +127,7 @@ export function useTipping(creatorAddress) {
       console.error('Price API Failure:', err);
       return 1;
     }
-  }, []);
+  }, [tokens]);
 
   const calculateRoute = useCallback(
     async (tokenSymbol, tokenAmount, note = '') => {
@@ -142,7 +142,8 @@ export function useTipping(creatorAddress) {
       setError(null);
 
       try {
-        const token = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
+        const token = tokens.find((t) => t.symbol === tokenSymbol);
+        if (!token) throw new Error('Token not found');
         const amountInLamports = toLamports(tokenAmount, token.decimals);
 
         const isProd = import.meta.env.PROD;
@@ -301,7 +302,7 @@ export function useTipping(creatorAddress) {
   }, []);
 
   return {
-    tokens: SUPPORTED_TOKENS,
+    tokens,
     selectedToken,
     setSelectedToken,
     amount,

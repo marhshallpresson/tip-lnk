@@ -487,6 +487,19 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
           {isMobile() && !hasSolanaProvider() ? (
             <div className="flex flex-col gap-3">
               <button
+                onClick={() => window.location.href = getSolanaPayUri(resolvedAddress, amount, selectedToken.mint)}
+                className="btn-primary w-full !h-14 bg-brand-500 !text-black border-none shadow-brand-500/20"
+              >
+                <Zap size={20} fill="currentColor" />
+                Instant Pay with Wallet
+              </button>
+
+              <div className="relative py-1">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                <div className="relative flex justify-center text-[8px] uppercase font-black tracking-widest"><span className="bg-[#111111] px-4 text-white/10">Or open app browser</span></div>
+              </div>
+
+              <button
                 onClick={() => window.location.href = getPhantomDeepLink(window.location.href)}
                 className="btn-primary w-full !h-12 bg-[#AB9FF2] hover:bg-[#9081E6] !text-white border-none shadow-none"
               >

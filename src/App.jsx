@@ -368,6 +368,7 @@ export default function App() {
       settings={{
         environmentId: dynamicEnvId || 'sandbox',
         walletConnectors: [SolanaWalletConnectors],
+        shadowDOMEnabled: false, // Often helps with CSS and internal view loading issues in some frameworks
       }}
     >
       <SolanaWalletProvider>

@@ -9,17 +9,25 @@ export default defineConfig({
       include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder'],
     }),
   ],
+  define: {
+    'global': 'globalThis',
+  },
   optimizeDeps: {
     include: [
       '@dynamic-labs/sdk-react-core',
       '@dynamic-labs/solana',
-      '@dynamic-labs/wallet-connector-core'
+      '@dynamic-labs/wallet-connector-core',
+      '@dynamic-labs/sdk-api',
+      '@dynamic-labs/multi-wallet'
     ],
     exclude: ['@solana/web3.js', 'tweetnacl']
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       onwarn(warning, warn) {
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
@@ -29,6 +37,11 @@ export default defineConfig({
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3']
         return serverOnly.some(pkg => id.includes(pkg))
+      },
+      output: {
+        manualChunks: {
+          'dynamic-sdk': ['@dynamic-labs/sdk-react-core', '@dynamic-labs/solana']
+        }
       }
     }
   },
