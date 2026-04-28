@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '../contexts/WalletContext';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 /**

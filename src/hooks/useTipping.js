@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '../contexts/WalletContext';
 import { VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 
@@ -102,31 +102,30 @@ export function useTipping(creatorAddress) {
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
-        // ─── PHASE 4: SECURE JUPITER ROUTING ───
+        // ─── PHASE 2: UNIFIED PAYMENT INTENT ENGINE ───
         const payload = {
-          inputMint: token.mint,
-          outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
-          amount: amountInLamports.toString(),
-          slippageBps: 50,
-          userPublicKey: publicKey?.toBase58() || '',
-          destinationWallet: creatorAddress,
-          memo: note // Attach the supporter message
+          creatorId: creatorAddress,
+          inputTokenMint: token.mint,
+          amount: tokenAmount.toString(),
+          paymentMethod: 'external_wallet', // default for now until Phase 3 (Widget Refactor)
+          sourceWalletAddress: publicKey?.toBase58() || '',
+          memo: note
         };
 
-        const response = await fetch(`${API_BASE_URL}/api/solana/jupiter/swap`, {
+        const response = await fetch(`${API_BASE_URL}/api/payments/intent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         
-        if (!response.ok) throw new Error('Professional routing engine failed');
+        if (!response.ok) throw new Error('Payment Intent engine failed');
 
-        const swapData = await response.json();
+        const intentData = await response.json();
         const order = {
-          outAmount: swapData.quote.outAmount,
-          transaction: swapData.transaction,
-          executionMode: swapData.executionMode,
-          dflowAnalytics: swapData.dflowAnalytics
+          outAmount: intentData.quote.outAmount,
+          transaction: intentData.transaction,
+          executionMode: intentData.executionMode,
+          intentId: intentData.intentId
         };
 
         // ─── Phase 2: Dynamic Sender-Pays Fee Calculation ───

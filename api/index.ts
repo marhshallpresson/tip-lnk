@@ -21,6 +21,7 @@ import { default as authResetPasswordStart } from './_handlers/auth/reset-passwo
 import { default as authResetPasswordVerify } from './_handlers/auth/reset-password-verify.js'
 import { default as authTwitterCallback } from './_handlers/auth/twitter/callback.js'
 import { default as authDiscordCallback } from './_handlers/auth/discord/callback.js'
+import { default as authDynamicVerify } from './_handlers/auth/dynamic-verify.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
 import { default as solanaProfileGet } from './_handlers/solana/profile/get.js'
@@ -50,6 +51,12 @@ import { default as adminStats } from './_handlers/admin/stats.js'
 import { default as adminCreators } from './_handlers/admin/creators.js'
 import { default as adminLedger } from './_handlers/admin/ledger.js'
 
+import { default as paymentsIntent } from './_handlers/payments/intent.js'
+
+import { default as sdkInit } from './_handlers/sdk/init.js'
+import { default as sdkTip } from './_handlers/sdk/tip.js'
+import { default as sdkEvents } from './_handlers/sdk/events.js'
+
 // Route Registry
 const ROUTES: Record<string, Function> = {
   // Auth
@@ -69,6 +76,7 @@ const ROUTES: Record<string, Function> = {
   'auth/reset-password-verify': authResetPasswordVerify,
   'auth/twitter/callback': authTwitterCallback,
   'auth/discord/callback': authDiscordCallback,
+  'auth/dynamic/verify': authDynamicVerify,
 
   // Solana
   'solana/profile': solanaProfile,
@@ -100,6 +108,14 @@ const ROUTES: Record<string, Function> = {
   'admin/stats': adminStats,
   'admin/creators': adminCreators,
   'admin/ledger': adminLedger,
+
+  // Payments
+  'payments/intent': paymentsIntent,
+
+  // SDK
+  'sdk/init': sdkInit,
+  'sdk/tip': sdkTip,
+  'sdk/events': sdkEvents,
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -133,6 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
   const bypassCsrf = [
     'auth/csrf', 
+    'auth/dynamic/verify',
     'payouts/webhook', 
     'solana/webhooks/helius', 
     'solana/profile/update', 
@@ -140,7 +157,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'solana/jupiter/swap',
     'solana/send',
     'solana/priority-fee',
-    'solana/tips/message'
+    'solana/tips/message',
+    'sdk/init',
+    'sdk/tip'
   ].includes(routeKey)
   const hasAuth = !!req.headers['authorization']
   

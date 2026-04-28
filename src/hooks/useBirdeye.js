@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '../contexts/WalletContext';
 
 /**
  * Elite Birdeye Data Intelligence Hook

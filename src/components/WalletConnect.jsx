@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWallet } from '../contexts/WalletContext';
+import { DynamicWidget } from '@dynamic-labs/sdk-react-core';
 import { Smartphone, CheckCircle, Loader2, X, ChevronLeft, Mail, Chrome, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -385,7 +385,7 @@ export default function WalletConnect({ onConnected }) {
         {!connected ? (
             <div className="flex flex-col gap-3">
                
-                <div className="flex justify-center opacity-30 hover:opacity-100 transition-opacity scale-90"><WalletMultiButton /></div>
+                <div className="flex justify-center transition-opacity"><DynamicWidget /></div>
             </div>
         ) : (
             <div className="bg-brand-500/10 border border-brand-500/20 rounded-xl p-6 text-center animate-scale-in">

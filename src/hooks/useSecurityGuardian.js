@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '../contexts/WalletContext';
 import { toLamports, fromLamports, isValidAddress } from '../utils/security';
 
 /**

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
+import { emitTorqueEvent } from "../../../_lib/torque.js"
 import { Redis } from '@upstash/redis'
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
@@ -94,7 +95,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Insert into ledger (tips materialized view)
-        await db('tips').insert({
+        const tokenSymbol = tx.nativeTransfers?.length > 0 ? 'SOL' : (transfer.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'USDC' : 'TOKEN');
+        const insertResult = await db('tips').insert({
           signature,
           slot: tx.slot,
           timestamp,
@@ -102,7 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           recipient,
           amount,
           message, // Save the supporter message
-          tokenSymbol: tx.nativeTransfers?.length > 0 ? 'SOL' : (transfer.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'USDC' : 'TOKEN'),
+          tokenSymbol,
           status: 'confirmed',
           type: 'webhook_indexed'
         }).onConflict('signature').ignore() // Reject duplicate signatures
@@ -110,6 +112,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Mark raw as processed
         await db('transactions_raw').where({ signature }).update({ status: 'processed' });
         console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`)
+
+        // ─── PHASE 2: TORQUE EVENT PIPELINE ───
+        // We only emit the event if the insert actually happened (it wasn't ignored due to conflict)
+        if (insertResult && (insertResult as any).length > 0) {
+            // Check if this is their first tip
+            const previousTips = await db('tips').where({ recipient }).count('signature as count').first();
+            const isFirstTip = parseInt(String(previousTips?.count || '0')) === 1;
+
+            if (isFirstTip) {
+                await emitTorqueEvent({
+                    event_type: 'creator_first_tip',
+                    metadata: {
+                        creator_id: recipient,
+                        tx_signature: signature,
+                        source: 'helius_webhook'
+                    }
+                });
+            }
+
+            await emitTorqueEvent({
+                event_type: 'tip_completed',
+                metadata: {
+                    wallet_address: sender,
+                    creator_id: recipient,
+                    amount_usd: amount, // Ideally normalized, using raw amount as fallback
+                    token_symbol: tokenSymbol,
+                    tx_signature: signature,
+                    source: 'helius_webhook'
+                }
+            });
+        }
         
         // ─── PHASE 3: REAL-TIME PUB/SUB NOTIFICATION ───
         if (redis) {

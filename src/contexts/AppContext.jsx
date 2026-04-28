@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from './WalletContext';
 import bs58 from 'bs58';
 import { useAuth } from './AuthContext';
-import { getProfile, saveProfile, logTip } from '../utils/database';
+import { getProfile, saveProfile } from '../utils/database';
 
 const AppContext = createContext(null);
 

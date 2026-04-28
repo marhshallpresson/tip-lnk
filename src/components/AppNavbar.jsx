@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Zap, ArrowRight, User, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '../contexts/WalletContext';
 import { useApp } from '../contexts/AppContext';
 import WalletDropdown from './WalletDropdown';
 

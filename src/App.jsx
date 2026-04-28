@@ -1,4 +1,4 @@
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from './contexts/WalletContext';
 import { SolanaWalletProvider } from './contexts/WalletContext';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -356,15 +356,25 @@ function AuthCallbackHandler() {
 }
 
 export default function App() {
+  const dynamicEnvId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID || 'sandbox'; // Fallback for dev
+
   return (
-    <SolanaWalletProvider>
-      <AuthProvider>
-        <AppProvider>
-          <div className="min-h-screen bg-surface-950 text-white">
-            <AppContent />
-          </div>
-        </AppProvider>
-      </AuthProvider>
-    </SolanaWalletProvider>
+    <DynamicContextProvider
+      theme="dark"
+      settings={{
+        environmentId: dynamicEnvId,
+        walletConnectors: [SolanaWalletConnectors],
+      }}
+    >
+      <SolanaWalletProvider>
+        <AuthProvider>
+          <AppProvider>
+            <div className="min-h-screen bg-surface-950 text-white">
+              <AppContent />
+            </div>
+          </AppProvider>
+        </AuthProvider>
+      </SolanaWalletProvider>
+    </DynamicContextProvider>
   );
 }

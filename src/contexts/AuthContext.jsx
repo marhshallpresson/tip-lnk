@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import api from '../lib/api';
 
 const AuthContext = createContext();
@@ -8,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const { authToken: dynamicAuthToken, handleLogOut: dynamicLogout } = useDynamicContext();
 
   const fetchMe = async () => {
     // ─── ELITE CONSOLE CLEANUP ───
@@ -37,6 +39,24 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
+  // ─── ELITE DYNAMIC SYNC ───
+  useEffect(() => {
+    const syncDynamic = async () => {
+      if (dynamicAuthToken && !api.accessToken) {
+        try {
+          const { data, ok } = await api.post('/auth/dynamic/verify', { dynamicJwt: dynamicAuthToken });
+          if (ok && data.success) {
+             api.setAccessToken(data.sessionToken);
+             setUser(data.user);
+          }
+        } catch (err) {
+           console.error("Dynamic sync failed", err);
+        }
+      }
+    };
+    syncDynamic();
+  }, [dynamicAuthToken]);
 
   useEffect(() => {
     fetchMe();
@@ -86,6 +106,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       api.setAccessToken(null);
       setUser(null);
+      if (dynamicLogout) {
+          try { await dynamicLogout(); } catch (e) {}
+      }
       window.location.href = '/';
     }
   };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '../contexts/WalletContext';
+import { DynamicWidget, useIsLoggedIn } from '@dynamic-labs/sdk-react-core';
 import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
 import { useSecurityGuardian } from '../hooks/useSecurityGuardian';
@@ -443,6 +444,10 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
                 <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-5 h-5 rounded-full" />
                 Open in Solflare
               </button>
+            </div>
+          ) : !publicKey ? (
+            <div className="flex justify-center w-full mt-4 border-t border-white/10 pt-6">
+              <DynamicWidget />
             </div>
           ) : (
             <button

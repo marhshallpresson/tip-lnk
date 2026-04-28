@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '../contexts/WalletContext';
 import { useApp } from '../contexts/AppContext';
 import { useNFTs } from '../hooks/useNFTs';
 import { ImageIcon, Star, Loader2, AlertCircle } from 'lucide-react';

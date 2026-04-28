@@ -1,37 +1,63 @@
-import { useMemo } from 'react';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { 
-  SolflareWalletAdapter, 
-  PhantomWalletAdapter 
-} from '@solana/wallet-adapter-wallets';
-import { SolanaMobileWalletAdapter, createDefaultAddressSelector, createDefaultAuthorizationResultCache, createDefaultWalletNotFoundHandler } from '@solana-mobile/wallet-adapter-mobile';
+import React, { createContext, useContext, useMemo, useEffect, useState } from 'react';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { Connection, PublicKey } from '@solana/web3.js';
 import { QUICKNODE_SOLANA_RPC } from '../config';
 
-export function SolanaWalletProvider({ children }) {
-  const endpoint = QUICKNODE_SOLANA_RPC;
+const WalletContext = createContext();
+const ConnectionContext = createContext();
 
-  const wallets = useMemo(() => [
-    // ─── Elite Mobile Detection ───
-    new SolanaMobileWalletAdapter({
-        addressSelector: createDefaultAddressSelector(),
-        appIdentity: {
-            name: 'TipLnk',
-            uri: window.location.origin,
-            icon: '/favicon.svg',
-        },
-        authorizationResultCache: createDefaultAuthorizationResultCache(),
-        cluster: 'mainnet-beta',
-        onWalletNotFound: createDefaultWalletNotFoundHandler(),
-    }),
-    // Redundant adapters removed to silence 'Standard Wallet' warnings
-  ], []);
+export function SolanaWalletProvider({ children }) {
+  const { primaryWallet, handleLogOut } = useDynamicContext();
+  const [connection] = useState(() => new Connection(QUICKNODE_SOLANA_RPC));
+
+  const walletState = useMemo(() => {
+    let publicKey = null;
+    let connected = false;
+
+    if (primaryWallet && primaryWallet.chain === 'sol') {
+      try {
+        publicKey = new PublicKey(primaryWallet.address);
+        connected = true;
+      } catch (e) {
+        console.error('Failed to parse public key from Dynamic wallet');
+      }
+    }
+
+    const signTransaction = async (transaction) => {
+      if (!primaryWallet) throw new Error('Wallet not connected');
+      const signer = await primaryWallet.connector.getSigner();
+      return await signer.signTransaction(transaction);
+    };
+
+    const signMessage = async (message) => {
+      if (!primaryWallet) throw new Error('Wallet not connected');
+      const signer = await primaryWallet.connector.getSigner();
+      return await signer.signMessage(message);
+    };
+
+    return {
+      publicKey,
+      connected,
+      signTransaction,
+      signMessage,
+      disconnect: handleLogOut,
+      wallet: primaryWallet
+    };
+  }, [primaryWallet, handleLogOut]);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <ConnectionContext.Provider value={{ connection }}>
+      <WalletContext.Provider value={walletState}>
+        {children}
+      </WalletContext.Provider>
+    </ConnectionContext.Provider>
   );
+}
+
+export function useWallet() {
+  return useContext(WalletContext);
+}
+
+export function useConnection() {
+  return useContext(ConnectionContext);
 }
