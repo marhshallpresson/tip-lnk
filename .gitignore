@@ -12,3 +12,6 @@ backend/final-mail-test.ts
 .env*.local
 dev.db
 .claude
+plans/
+dynamic-integration-arch.md
+dynamic-integration-arch.md

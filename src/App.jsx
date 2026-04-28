@@ -2,6 +2,8 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { SolanaWalletProvider } from './contexts/WalletContext';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
+import { SolanaWalletConnectors } from '@dynamic-labs/solana';
 import StepIndicator from './components/StepIndicator';
 import RoleSelection from './components/RoleSelection';
 import CategorySelection from './components/CategorySelection';
