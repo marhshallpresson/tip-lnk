@@ -132,18 +132,21 @@ export default function Dashboard() {
 
       {/* --- SIDEBAR (Grass Style) --- */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 w-[88px] border-r border-white/5 flex flex-col items-center shrink-0 bg-[#000000] z-50 transition-transform duration-300 transform
+        fixed md:static inset-y-0 left-0 w-[240px] border-r border-white/5 flex flex-col items-start shrink-0 bg-[#000000] z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo Section */}
-        <div className="py-10">
-          <div className="w-10 h-10 rounded-[14px] bg-brand-500 flex items-center justify-center shadow-[0_0_20px_rgba(159,53,232,0.2)]">
-            <img src="favicon.svg" alt="Tip Lnk" />
+        <div className="py-10 px-8 w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[14px] bg-brand-500 flex items-center justify-center shadow-[0_0_20px_rgba(159,53,232,0.2)]">
+              <img src="favicon.svg" alt="Tip Lnk" className="w-6 h-6" />
+            </div>
+            <span className="font-bold text-xl tracking-tight text-white">TipLnk</span>
           </div>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 w-full px-4 flex flex-col items-center gap-4 py-4">
+        <nav className="flex-1 w-full px-4 flex flex-col items-start gap-2 py-4">
           {menuItems.map((item) => {
             const isActive = location.pathname.includes(item.id) || (item.id === 'overview' && location.pathname === '/dashboard');
             return (
@@ -154,11 +157,11 @@ export default function Dashboard() {
                   setIsSidebarOpen(false);
                 }}
                 className={`grass-sidebar-btn ${isActive ? 'grass-sidebar-btn-active' : ''} group relative`}
-                title={item.label}
               >
-                <item.icon size={22} />
+                <item.icon size={20} className={isActive ? 'text-brand-500' : 'text-inherit'} />
+                <span className="font-bold text-sm tracking-tight">{item.label}</span>
                 {isActive && (
-                  <div className="absolute left-[-16px] w-1 h-6 bg-brand-500 rounded-r-full" />
+                  <div className="absolute left-0 w-1 h-5 bg-brand-500 rounded-r-full" />
                 )}
               </button>
             );
@@ -166,20 +169,20 @@ export default function Dashboard() {
         </nav>
 
         {/* Footer Actions */}
-        <div className="py-8 flex flex-col items-center gap-6">
+        <div className="py-8 px-4 w-full flex flex-col items-start gap-2">
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="grass-sidebar-btn text-white/20 hover:text-white"
-            title="Support"
+            className="grass-sidebar-btn"
           >
             <Heart size={20} />
+            <span className="font-bold text-sm tracking-tight">Support</span>
           </button>
           <button
             onClick={handleDisconnect}
-            className="grass-sidebar-btn text-red-500/40 hover:text-red-500 hover:bg-red-500/5"
-            title="Log Out"
+            className="grass-sidebar-btn !text-red-500/40 hover:!text-red-500 hover:bg-red-500/5"
           >
             <LogOut size={20} />
+            <span className="font-bold text-sm tracking-tight">Log Out</span>
           </button>
         </div>
       </aside>
