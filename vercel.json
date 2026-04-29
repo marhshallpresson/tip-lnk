@@ -3,7 +3,7 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "installCommand": "npm install --legacy-peer-deps",
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/actions.json",
@@ -18,11 +18,14 @@
       "destination": "/api/index.ts"
     },
     {
+      "handle": "filesystem"
+    },
+    {
       "source": "/assets/(.*)",
       "destination": "/assets/$1"
     },
     {
-      "source": "/((?:.*)\\.(?:js|wasm|map|css|png|jpg|svg|ico|json))$",
+      "source": "/(.*\\.(?:js|wasm|map|css|png|jpg|svg|ico|json))$",
       "destination": "/$1"
     },
     {
@@ -47,16 +50,8 @@
           "value": "strict-origin-when-cross-origin"
         },
         {
-          "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
-        },
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=63072000; includeSubDomains; preload"
-        },
-        {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.dynamic.xyz https://*.dynamic.xyz; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://*.helius-rpc.com https://*.solana.com wss://*.solana.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag https://api.jup.ag wss://relay.walletconnect.com wss://relay.walletconnect.org https://*.walletconnect.com https://api.eitherway.ai https://*.discord.com https://discord.com https://*.brevo.com https://api.brevo.com https://*.dynamic-js.com https://*.dynamic.xyz; img-src 'self' data: https: blob:; frame-src 'self' https://app.dynamic.xyz; worker-src 'self' blob:; frame-ancestors 'self' *"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://*.helius-rpc.com https://*.solana.com wss://*.solana.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag https://api.jup.ag wss://relay.walletconnect.com wss://relay.walletconnect.org https://*.walletconnect.com https://api.eitherway.ai https://*.discord.com https://discord.com https://*.brevo.com https://api.brevo.com https://*.dynamic-js.com https://*.dynamic.xyz; img-src 'self' data: https: blob:; frame-src 'self' https://app.dynamic.xyz; worker-src 'self' blob:; frame-ancestors 'self' *"
         }
       ]
     },
