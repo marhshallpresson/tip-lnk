@@ -78,6 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       recipient: destinationWallet,
       amount: amount,
       message, 
+      tokenMint: 'FIAT_USD',
       tokenSymbol: 'FIAT_USD',
       status: 'confirmed',
       type: 'fiat_webhook'

@@ -130,13 +130,13 @@ export const hostFromAbsoluteUrl = (value: string) => {
 export const oauthRedirectUrl = (req?: VercelRequest) => {
   const env = normalizeBaseUrl(process.env.GOOGLE_REDIRECT_URL || '')
   const inferred = inferredOrigin(req)
-  if (req && inferred) {
+    if (env && /^https?:\/\//.test(env)) {
     const inferredHost = hostFromAbsoluteUrl(inferred)
     const envHost = hostFromAbsoluteUrl(env)
-    if (env && /^https?:\/\
+    if (inferredHost === envHost) return `${env}/api/auth/google/callback`
     return `${inferred}/api/auth/google/callback`
   }
-  if (env && /^https?:\/\
+  if (env && /^https?:\/\//.test(env)) return `${env}/api/auth/google/callback`
   return `${apiUrl(req)}/api/auth/google/callback`
 }
 

@@ -53,6 +53,7 @@ import { default as adminLedger } from './_handlers/admin/ledger.js'
 import { default as creatorAnalytics } from './_handlers/creators/analytics.js'
 
 import { default as paymentsIntent } from './_handlers/payments/intent.js'
+import { default as paymentsFiatWebhook } from './_handlers/payments/fiat/webhook.js'
 
 import { default as sdkInit } from './_handlers/sdk/init.js'
 import { default as sdkTip } from './_handlers/sdk/tip.js'
@@ -106,6 +107,7 @@ const ROUTES: Record<string, Function> = {
   'admin/ledger': adminLedger,
 
   'payments/intent': paymentsIntent,
+  'payments/fiat/webhook': paymentsFiatWebhook,
 
   'sdk/init': sdkInit,
   'sdk/tip': sdkTip,

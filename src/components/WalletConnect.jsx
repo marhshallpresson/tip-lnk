@@ -117,6 +117,8 @@ Request ID: ${requestId}`;
   useEffect(() => {
     const isAlreadyLoggedIn = user && user.walletAddress === publicKey?.toBase58();
     if (connected && publicKey && !advancing && !isAlreadyLoggedIn) {
+      // Auto-trigger SIWS is disabled to prevent "Connection rejected" errors
+      // from overlapping auto-connect handshakes. The user must click "Continue".
     }
   }, [connected, publicKey, advancing, user]);
 
