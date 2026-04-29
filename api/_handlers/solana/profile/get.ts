@@ -125,10 +125,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.twitterHandle = user.twitterHandle
     profile.discordHandle = user.discordHandle
     profile.solDomain = user.solDomain
-    profile.bio = user.bio
-    profile.location = user.location
-    profile.followersCount = user.followers_count
-    profile.followingCount = user.following_count
     profile.onboardingComplete = Boolean(user.onboardingComplete)
 
     // ─── ELITE SEO METADATA ───
