@@ -317,7 +317,7 @@ const TabContent = ({ activeTab, profile }) => {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-1">Official Website</span>
-                  <span className="font-bold text-xl">{profile.link.replace(/^https?:\/\
+                  <span className="font-bold text-xl">{profile.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
                 </div>
               </a>
             )}
