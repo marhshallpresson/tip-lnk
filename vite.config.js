@@ -1,9 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [
     react(),
+    nodePolyfills({
+      include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder'],
+    }),
     {
       name: 'dynamic-qrcode-fix',
       enforce: 'pre',
@@ -51,8 +55,8 @@ export default defineConfig({
         warn(warning);
       },
       external: (id) => {
-        const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3']
-        const dynamicInternal = ['bs58', 'eventemitter3', 'crypto-browserify', 'stream-browserify', 'string_decoder']; return serverOnly.some(pkg => id.includes(pkg)) || dynamicInternal.some(pkg => id.includes(pkg));
+        const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3'];
+        return serverOnly.some(pkg => id.includes(pkg));
       },
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
@@ -72,7 +76,7 @@ export default defineConfig({
       },
     }
   },
-  base: '/', // Ensure base URL is correctly set for asset resolution
+  base: '/',
   test: {
     environment: 'jsdom',
     globals: true,
@@ -82,10 +86,6 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
-      'eventemitter3': 'eventemitter3',
-      'bs58': 'bs58',
-      'qrcode': 'qrcode',
-      'qrcode.react': 'qrcode.react'
     },
   },
 });
