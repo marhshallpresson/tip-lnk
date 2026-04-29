@@ -1,13 +1,19 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [
     react(),
-    nodePolyfills({
-      include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder'],
-    }),
+    {
+      name: 'dynamic-qrcode-fix',
+      enforce: 'pre',
+      resolveId(source, importer, options) {
+        if (source === 'qrcode' && importer && importer.includes('@dynamic-labs')) {
+          return this.resolve('qrcode', importer, { skipSelf: true, ...options });
+        }
+        return null;
+      },
+    },
   ],
   define: {
     'global': 'globalThis',
@@ -19,7 +25,10 @@ export default defineConfig({
       '@dynamic-labs/wallet-connector-core',
       '@dynamic-labs/sdk-api-core',
       '@dynamic-labs/multi-wallet',
-      '@dynamic-labs/iconic'
+      '@dynamic-labs/iconic',
+      'string_decoder',
+      '@phantom/client',
+      '@phantom/openapi-wallet-service'
     ],
     esbuildOptions: {
       define: {
@@ -43,10 +52,27 @@ export default defineConfig({
       },
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3']
-        return serverOnly.some(pkg => id.includes(pkg))
-      }
+        const dynamicInternal = ['bs58', 'eventemitter3', 'crypto-browserify', 'stream-browserify', 'string_decoder']; return serverOnly.some(pkg => id.includes(pkg)) || dynamicInternal.some(pkg => id.includes(pkg));
+      },
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        manualChunks: (id) => {
+          if (id.includes('@dynamic-labs')) {
+            return 'dynamic';
+          }
+          if (id.includes('@solana') || id.includes('@jup-ag')) {
+            return 'solana';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        },
+      },
     }
   },
+  base: '/', // Ensure base URL is correctly set for asset resolution
   test: {
     environment: 'jsdom',
     globals: true,
@@ -56,6 +82,10 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
+      'eventemitter3': 'eventemitter3',
+      'bs58': 'bs58',
+      'qrcode': 'qrcode',
+      'qrcode.react': 'qrcode.react'
     },
   },
 });
