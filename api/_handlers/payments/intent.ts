@@ -75,46 +75,93 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         feeBpsParam = `&platformFeeBps=500`; // 5%
     }
 
-    // Fetch Jupiter V6 Quote
-    const JUP_API = 'https://quote-api.jup.ag/v6'
-    const quoteUrl = `${JUP_API}/quote?inputMint=${inputTokenMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50${feeBpsParam}`
-    
-    const quoteResponse = await axios.get(quoteUrl)
-    const quote = quoteResponse.data
+    // ─── Phase 9: Failover & Reliability Model ───
+    let order = null;
+    let executionMode = 'sync';
 
-    if (!quote) {
-      return res.status(400).json({ error: 'Failed to generate routing quote' })
+    // 1. Try DFlow Elite Routing first
+    try {
+      const DFLOW_API = 'https://quote-api.dflow.net'
+      const DFLOW_API_KEY = process.env.VITE_DFLOW_API_KEY
+      const platformFeeBps = isDirect ? 0 : 500
+
+      const orderParams = new URLSearchParams({
+        inputMint: inputTokenMint,
+        outputMint: outputMint,
+        amount: amount.toString(),
+        slippageBps: '50',
+        userPublicKey: sourceWalletAddress,
+        platformFeeBps: platformFeeBps.toString(),
+        prioritizationFeeLamports: 'auto'
+      })
+
+      const dflowResponse = await axios.get(`${DFLOW_API}/order?${orderParams}`, {
+        headers: DFLOW_API_KEY ? { 'x-api-key': DFLOW_API_KEY } : {},
+        timeout: 3000 // Tight timeout for failover
+      })
+      
+      order = dflowResponse.data
+      executionMode = order.executionMode || 'sync'
+      console.log('🛡️ Failover Model: DFlow Primary success.')
+      
+      return res.json({
+        success: true,
+        intentId,
+        status: 'requires_action',
+        quote: {
+          outAmount: order.outAmount,
+          priceImpactPct: order.priceImpactPct
+        },
+        transaction: order.transaction, 
+        executionMode,
+        lastValidBlockHeight: order.lastValidBlockHeight,
+        provider: 'dflow'
+      })
+
+    } catch (dflowErr: any) {
+      console.warn('⚠️ Failover Model: DFlow Primary failed, falling back to Jupiter V6.', dflowErr.message)
+      
+      // 2. Fallback to Jupiter V6
+      const JUP_API = 'https://quote-api.jup.ag/v6'
+      const quoteUrl = `${JUP_API}/quote?inputMint=${inputTokenMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50${feeBpsParam}`
+      
+      const quoteResponse = await axios.get(quoteUrl)
+      const quote = quoteResponse.data
+
+      if (!quote) {
+        throw new Error('All routing engines (DFlow & Jupiter) failed.')
+      }
+
+      const swapPayload = {
+        quoteResponse: quote,
+        userPublicKey: sourceWalletAddress,
+        destinationWallet: creator.walletAddress,
+        wrapAndUnwrapSol: true,
+        feeAccount: process.env.VITE_TREASURY_WALLET,
+        dynamicComputeUnitLimit: true,
+        prioritizationFeeLamports: 'auto'
+      }
+
+      const swapResponse = await axios.post(`${JUP_API}/swap`, swapPayload, {
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      const { swapTransaction } = swapResponse.data
+
+      return res.json({
+        success: true,
+        intentId,
+        status: 'requires_action',
+        quote: {
+          outAmount: quote.outAmount,
+          priceImpactPct: quote.priceImpactPct
+        },
+        transaction: swapTransaction,
+        executionMode: 'sync', // Jupiter is typically sync via our relay
+        provider: 'jupiter'
+      })
     }
 
-    // Build the Base64 Transaction via Jupiter
-    const swapPayload = {
-      quoteResponse: quote,
-      userPublicKey: sourceWalletAddress,
-      destinationWallet: creator.walletAddress,
-      wrapAndUnwrapSol: true,
-      feeAccount,
-      dynamicComputeUnitLimit: true,
-      prioritizationFeeLamports: 'auto'
-    }
-
-    const swapResponse = await axios.post(`${JUP_API}/swap`, swapPayload, {
-      headers: { 'Content-Type': 'application/json' }
-    })
-
-    const { swapTransaction } = swapResponse.data
-
-    if (!swapTransaction) {
-       throw new Error('Jupiter failed to return swap transaction')
-    }
-
-    return res.json({
-      success: true,
-      intentId,
-      status: 'requires_action',
-      quote,
-      transaction: swapTransaction, // Base64 unsigned transaction
-      executionMode: 'jup_v6'
-    })
 
   } catch (err: any) {
     console.error('Payment Intent Error:', err.response?.data || err.message)

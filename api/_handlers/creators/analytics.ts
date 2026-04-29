@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         db.raw('count(signature) as total_tips'),
         db.raw('sum(amount) as total_volume')
       )
-      .first()
+      .first() as any
 
     return res.json({
       success: true,

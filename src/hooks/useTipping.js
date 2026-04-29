@@ -6,12 +6,15 @@ import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 // ─── Elite Protocol Constants ───
 const TREASURY_WALLET = import.meta.env.VITE_TREASURY_WALLET ;
 
+import { getTiplnkProgram, getSendTokenAccounts } from '../lib/anchor';
+
 /**
  * Professional Tipping Engine (Sender-Pays Fee Standard)
  * Implements real-time routing with a dynamic near-zero platform fee added to the sender.
+ * Elite Upgrade: Anchor On-chain Integration & DFlow Elite Routing.
  */
 export function useTipping(creatorAddress) {
-  const { publicKey, signTransaction } = useWallet();
+  const { publicKey, signTransaction, wallet: dynamicWallet } = useWallet();
   const { connection } = useConnection();
 
   const DEFAULT_TOKENS = [
@@ -205,7 +208,7 @@ export function useTipping(creatorAddress) {
 
   const executeTip = useCallback(
     async (senderName, note = '') => {
-      if (!route || !publicKey || !signTransaction || !connection) {
+      if (!route || !publicKey || !signTransaction || !connection || !dynamicWallet) {
         setError('Missing transaction data or wallet connection.');
         return;
       }
@@ -215,71 +218,111 @@ export function useTipping(creatorAddress) {
       try {
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-
-        // ─── ELITE QUICKNODE PRIORITY FEE INJECTOR ───
-        const feeRes = await fetch(`${API_BASE_URL}/api/solana/priority-fee`);
-        const feeData = await feeRes.json();
-        const recommendedPriorityFee = feeData.recommendedFee || 5000;
+        const DFLOW_API = 'https://quote-api.dflow.net';
+        const DFLOW_API_KEY = import.meta.env.VITE_DFLOW_API_KEY;
 
         let signature;
-        if (route.transaction) {
-          // ─── Elite Multi-Instruction Processing ───
-          const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
-          
-          // Note: In a production DFlow/Jupiter flow, priority fees are usually bundled.
-          // Here we demonstrate the deep integration by logging or applying it if the SDK allows.
-          console.log(`🛡️ Quicknode: Applying optimal priority fee: ${recommendedPriorityFee} micro-lamports`);
 
+        // ─── ELITE EXECUTION BRANCHING ───
+        // Use Anchor for direct tips (SOL/USDC with no swap) to emit on-chain events
+        const isDirect = selectedToken.mint === 'So11111111111111111111111111111111111111112' || selectedToken.symbol === 'USDC';
+        
+        if (isDirect && !route.transaction.includes('swap')) { 
+           console.log('🛡️ Anchor: Executing on-chain fortified tip.');
+           const program = getTiplnkProgram(connection, dynamicWallet);
+           const amountBN = new (await import('bn.js')).default(toLamports(amount, selectedToken.decimals).toString());
+
+           if (selectedToken.symbol === 'SOL') {
+              signature = await program.methods
+                .sendSolTip(amountBN, note)
+                .accounts({
+                  sender: publicKey,
+                  creator: new PublicKey(creatorAddress),
+                  systemProgram: PublicKey.default,
+                })
+                .rpc();
+           } else {
+              const accounts = await getSendTokenAccounts(
+                publicKey, 
+                new PublicKey(creatorAddress), 
+                new PublicKey(selectedToken.mint)
+              );
+              signature = await program.methods
+                .sendTokenTip(amountBN, note)
+                .accounts(accounts)
+                .rpc();
+           }
+        } else {
+          // ─── DFlow / Jupiter Advanced Routing ───
+          const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
           const signedTx = await signTransaction(tx);
 
-          // Use our Professional Backend Sender Relay
           const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               transaction: Buffer.from(signedTx.serialize()).toString('base64'),
-              note: note // Pass the note to the backend for potential on-chain recording
+              note: note
             }),
           });
 
           const submitData = await submitRes.json();
           signature = submitData.result;
+        }
 
-          if (!signature) {
-            throw new Error(submitData.error?.message || 'Transaction submission failed.');
-          }
+        if (!signature) {
+          throw new Error('Transaction submission failed.');
+        }
 
-          // ─── Phase 9: UX Truth Enforcement - Show Pending State ───
-          // Optimistic backend confirmations are removed. Webhook is the only source of truth.
-          const result = {
-            success: true,
-            status: 'pending',
-            signature,
-            executionMode: route.executionMode,
-            outAmount: parseFloat(fromLamports(BigInt(route.baseAmount), 6)),
-            feeAmount: parseFloat(fromLamports(BigInt(route.feeAmount), 6)),
-            totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
-            timestamp: Date.now(),
-            sender: senderName || 'Anonymous',
-            recipientAddress: creatorAddress,
-            treasuryAddress: TREASURY_WALLET
-          };
+        // ─── UX Truth Enforcement - Show Pending State ───
+        const result = {
+          success: true,
+          status: 'pending',
+          signature,
+          executionMode: route.executionMode,
+          outAmount: parseFloat(fromLamports(BigInt(route.baseAmount), 6)),
+          feeAmount: parseFloat(fromLamports(BigInt(route.feeAmount), 6)),
+          totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
+          timestamp: Date.now(),
+          sender: senderName || 'Anonymous',
+          recipientAddress: creatorAddress,
+        };
 
-          setTxResult(result);
+        setTxResult(result);
 
-          // Optionally wait for RPC confirmation before returning, but UI stays pending until webhook
+        // ─── DFlow Async Order Polling (Jito Bundles) ───
+        if (route.executionMode === 'async') {
+           console.log('⏳ DFlow: Monitoring Jito bundle execution...');
+           let status = 'pending';
+           
+           // Max 15 attempts (approx 45s)
+           let attempts = 0;
+           while (status !== 'closed' && status !== 'failed' && status !== 'expired' && attempts < 15) {
+             await new Promise(r => setTimeout(r, 3000));
+             attempts++;
+             try {
+                const statusRes = await fetch(`${DFLOW_API}/order-status?signature=${signature}`, {
+                  headers: DFLOW_API_KEY ? { 'x-api-key': DFLOW_API_KEY } : {}
+                });
+                const statusData = await statusRes.json();
+                status = statusData.status;
+                console.log(`📊 DFlow Status: ${status}`);
+             } catch (e) {
+                console.warn('DFlow status poll failed, waiting for webhook fallback.');
+                break; 
+             }
+           }
+        } else {
+          // Standard sync confirmation
           try {
             const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-            await connection.confirmTransaction({
-              signature,
-              ...latestBlockhash
-            }, 'confirmed');
+            await connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed');
           } catch (e) {
-            // Ignore RPC timeout, webhook will handle it
+             console.warn('RPC confirmation timeout, relying on Helius webhook.');
           }
-
-          return result;
         }
+
+        return result;
 
       } catch (err) {
         console.error('Tipping Engine Fault:', err);
@@ -288,7 +331,7 @@ export function useTipping(creatorAddress) {
         setProcessing(false);
       }
     },
-    [route, publicKey, signTransaction, creatorAddress, connection]
+    [route, publicKey, signTransaction, creatorAddress, connection, dynamicWallet, selectedToken, amount]
   );
 
   const reset = useCallback(() => {
