@@ -2,8 +2,6 @@ node_modules
 scripts
 .env
 skills
-PHASE2.md
-PHASE2_ELITE.md
 .qwen
 dist
 .gemini
@@ -13,3 +11,4 @@ backend/final-mail-test.ts
 dev.db
 .claude
 plans/
+PHASE2.md

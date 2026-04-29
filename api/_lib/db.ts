@@ -116,6 +116,10 @@ export async function initSchema() {
         table.string('solDomain').unique();
         table.boolean('auto_convert_usdc').defaultTo(true); // Elite Default: Settle in Stables
         table.boolean('onboardingComplete').defaultTo(false);
+        table.integer('followers_count').defaultTo(0);
+        table.integer('following_count').defaultTo(0);
+        table.string('bio', 1000);
+        table.string('location');
         table.dateTime('emailVerifiedAt');
         table.text('profileData');
         table.dateTime('lastLoginAt');
@@ -169,10 +173,22 @@ export async function initSchema() {
         table.string('treasury_address');
         table.string('tokenMint').notNullable();
         table.string('tokenSymbol').notNullable();
+        table.string('method').defaultTo('crypto'); // 'crypto' or 'fiat'
         table.string('status').defaultTo('confirmed');
         table.string('type').defaultTo('tip');
       });
       await db.raw('CREATE INDEX IF NOT EXISTS idx_tips_timestamp ON "tips" (timestamp DESC);');
+    }
+
+    // 2b. Analytics Daily Table
+    if (!(await db.schema.hasTable('analytics_daily'))) {
+      await db.schema.createTable('analytics_daily', (table) => {
+        table.date('date').notNullable();
+        table.string('user_id').references('id').inTable('user').onDelete('CASCADE');
+        table.decimal('volume_usdc', 20, 8).defaultTo(0);
+        table.integer('tip_count').defaultTo(0);
+        table.primary(['date', 'user_id']);
+      });
     }
 
     // 3. Indexer State
@@ -282,7 +298,7 @@ export async function initSchema() {
     }
 
     // ─── ELITE SECURITY HARDENING ───
-    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts', 'oauth_clients', 'oauth_tokens'];
+    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts', 'oauth_clients', 'oauth_tokens', 'analytics_daily'];
     for (const table of tables) {
         try {
             // Enable RLS

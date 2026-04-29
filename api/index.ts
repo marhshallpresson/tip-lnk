@@ -51,6 +51,8 @@ import { default as adminStats } from './_handlers/admin/stats.js'
 import { default as adminCreators } from './_handlers/admin/creators.js'
 import { default as adminLedger } from './_handlers/admin/ledger.js'
 
+import { default as creatorAnalytics } from './_handlers/creators/analytics.js'
+
 import { default as paymentsIntent } from './_handlers/payments/intent.js'
 
 import { default as sdkInit } from './_handlers/sdk/init.js'

@@ -12,6 +12,11 @@ import {
   Transaction, 
   LAMPORTS_PER_SOL 
 } from "@solana/web3.js"
+import { 
+  getAssociatedTokenAddress, 
+  createTransferCheckedInstruction, 
+  getMint 
+} from "@solana/spl-token"
 import { rpcManager } from "../../../_lib/rpc.js"
 import { db } from "../../../_lib/db.js"
 
@@ -68,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const payload: ActionGetResponse = {
         icon: `https://tiplnk.me/api/og/${creatorAddress}`, // Use OG engine for icon
         title: `Tip ${creatorName} on TipLnk`,
-        description: `Support ${creatorName} with a direct SOL tip. 0% platform fees.`,
+        description: `Support ${creatorName} with a direct SOL or USDC tip. 0% platform fees.`,
         label: "Tip Now",
         links: {
           actions: [
@@ -79,13 +84,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
             {
               type: "transaction",
-              label: "Tip 0.5 SOL",
-              href: `${req.url}?amount=0.5`,
+              label: "Tip 5 USDC",
+              href: `${req.url}?amount=5&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`,
             },
             {
               type: "transaction",
-              label: "Tip 1 SOL",
-              href: `${req.url}?amount=1`,
+              label: "Tip 10 USDC",
+              href: `${req.url}?amount=10&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`,
             },
             {
               type: "transaction",
@@ -94,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               parameters: [
                 {
                   name: "amount",
-                  label: "Enter SOL amount",
+                  label: "Enter amount",
                 }
               ]
             }
@@ -108,6 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'POST') {
       const { account } = req.body as ActionPostRequest
       const amountStr = req.query.amount as string
+      const splToken = req.query['spl-token'] as string
 
       if (!account) {
         return res.status(400).json({ error: 'Account (sender) required' })
@@ -124,22 +130,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const sender = new PublicKey(account)
       const recipient = new PublicKey(creatorAddress)
+      const transaction = new Transaction()
 
-      // Build Transaction
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: sender,
-          toPubkey: recipient,
-          lamports: Math.floor(amount * LAMPORTS_PER_SOL),
+      if (splToken) {
+        // --- SPL Token Transfer ---
+        const mint = new PublicKey(splToken)
+        
+        const { mintData, blockhash } = await rpcManager.executeWithFailover(async (conn) => {
+           const [m, bh] = await Promise.all([
+             getMint(conn, mint),
+             conn.getLatestBlockhash()
+           ])
+           return { mintData: m, blockhash: bh.blockhash }
         })
-      )
 
-      // Get latest blockhash
-      const { blockhash } = await rpcManager.executeWithFailover(async (conn) => {
-        return await conn.getLatestBlockhash()
-      })
+        const fromAta = await getAssociatedTokenAddress(mint, sender)
+        const toAta = await getAssociatedTokenAddress(mint, recipient)
 
-      transaction.recentBlockhash = blockhash
+        transaction.add(
+          createTransferCheckedInstruction(
+            fromAta,
+            mint,
+            toAta,
+            sender,
+            Math.floor(amount * Math.pow(10, mintData.decimals)),
+            mintData.decimals
+          )
+        )
+        transaction.recentBlockhash = blockhash
+      } else {
+        // --- Native SOL Transfer ---
+        const { blockhash } = await rpcManager.executeWithFailover(async (conn) => {
+          return await conn.getLatestBlockhash()
+        })
+        
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: sender,
+            toPubkey: recipient,
+            lamports: Math.floor(amount * LAMPORTS_PER_SOL),
+          })
+        )
+        transaction.recentBlockhash = blockhash
+      }
+
       transaction.feePayer = sender
 
       const payload: ActionPostResponse = await createPostResponse({
