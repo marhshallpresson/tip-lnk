@@ -25,17 +25,14 @@ import { db } from "../../../_lib/db.js"
  * Implements the tipping action for a specific wallet or creator handle.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Always include standard Solana Actions CORS headers
   Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
     res.setHeader(key, value)
   })
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
 
-  // Extract wallet from path
   const path = req.url?.split('?')[0] || ''
   const parts = path.split('/').filter(Boolean)
   const walletStr = parts[parts.length - 1]
@@ -45,11 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // 1. Resolve creator info
     let creatorAddress = walletStr
     let creatorName = 'Creator'
 
-    // Try to find in DB
     const user = await db('user')
       .where({ walletAddress: walletStr })
       .orWhere({ solDomain: walletStr })
@@ -61,17 +56,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       creatorName = user.solDomain || user.name || 'Creator'
     }
 
-    // Validate creator address
     try {
       new PublicKey(creatorAddress)
     } catch {
       return res.status(400).json({ error: 'Invalid creator address' })
     }
 
-    // --- GET: Metadata ---
     if (req.method === 'GET') {
       const payload: ActionGetResponse = {
-        icon: `https://tiplnk.me/api/og/${creatorAddress}`, // Use OG engine for icon
+        icon: `https://tiplnk.me/api/og/${creatorAddress}`,
         title: `Tip ${creatorName} on TipLnk`,
         description: `Support ${creatorName} with a direct SOL or USDC tip. 0% platform fees.`,
         label: "Tip Now",
@@ -109,7 +102,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json(payload)
     }
 
-    // --- POST: Construct Transaction ---
     if (req.method === 'POST') {
       const { account } = req.body as ActionPostRequest
       const amountStr = req.query.amount as string
@@ -133,7 +125,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const transaction = new Transaction()
 
       if (splToken) {
-        // --- SPL Token Transfer ---
         const mint = new PublicKey(splToken)
         
         const { mintData, blockhash } = await rpcManager.executeWithFailover(async (conn) => {
@@ -159,7 +150,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
         transaction.recentBlockhash = blockhash
       } else {
-        // --- Native SOL Transfer ---
         const { blockhash } = await rpcManager.executeWithFailover(async (conn) => {
           return await conn.getLatestBlockhash()
         })

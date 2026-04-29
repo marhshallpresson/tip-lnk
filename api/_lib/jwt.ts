@@ -5,7 +5,6 @@ if (!JWT_SECRET) {
   console.error('❌ Critical: JWT_SECRET is not configured in environment variables.')
 }
 
-// Ensure we don't pass undefined to TextEncoder
 const secret = new TextEncoder().encode(JWT_SECRET || 'fallback-secret-for-initialization-only')
 const ISSUER = 'https://tip-lnk.vercel.app'
 const AUDIENCE = 'tiplnk-app'
@@ -44,7 +43,6 @@ export async function verifySessionToken(token: string): Promise<SessionTokenPay
     
     const sessionPayload = payload as unknown as SessionTokenPayload
     
-    // ─── ELITE VERSION ENFORCEMENT ───
     if (sessionPayload.v !== 1) {
         console.warn('🛡️ JWT: Unsupported token version detected:', sessionPayload.v)
         return null

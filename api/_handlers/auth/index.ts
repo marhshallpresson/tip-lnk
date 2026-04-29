@@ -1,12 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-// Master Dispatcher for Hobby Plan Compliance (Limit: 12 Functions)
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Extract the sub-route from the URL or a custom header
-  // Path format: /api/auth/login -> subRoute: login
   const path = req.url?.split('?')[0] || ''
   const parts = path.split('/').filter(Boolean)
   
-  // parts[0] is 'api', parts[1] is 'auth'
   const action = parts[2] 
   const subAction = parts[3]
 
@@ -24,7 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (subAction === 'start') module = await import('./link-email/start.js')
         if (subAction === 'verify') module = await import('./link-email/verify.js')
     } else {
-        // Direct actions: login, register, logout, me, exchange, etc.
         if (action === 'login') module = await import('./login.js')
         if (action === 'register') module = await import('./register.js')
         if (action === 'logout') module = await import('./logout.js')

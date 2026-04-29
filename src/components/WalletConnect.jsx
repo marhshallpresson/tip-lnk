@@ -39,7 +39,6 @@ export default function WalletConnect({ onConnected }) {
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   
-  // Views: 'wallets', 'email-login', 'email-register', 'email-prompt', 'email-verify', 'email-success', 'email-reset', 'email-reset-sent'
   const [view, setView] = useState('wallets'); 
   const [advancing, setAdvancing] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
@@ -82,12 +81,10 @@ Request ID: ${requestId}`;
 
       const res = await loginWithWallet(addr, signatureStr, message);
       if (res.success) {
-        // Elite Flow Enforcement: Check for Email
         if (!res.user?.email) {
           setView('email-prompt');
           return;
         }
-        // Fully authenticated: pass to App.jsx for routing
         onConnected(addr, true);
       }
     } catch (err) {
@@ -99,7 +96,6 @@ Request ID: ${requestId}`;
     }
   }, [loginWithWallet, onConnected, signMessage]);
 
-  // Phantom SDK Events
   useEffect(() => {
     const handleConnect = async (connectEvent) => {
       if (connectEvent.publicKey) {
@@ -118,16 +114,12 @@ Request ID: ${requestId}`;
     return () => phantomSdk.off('connect', handleConnect);
   }, [performSiwsLogin, advancing]);
 
-  // Standard Wallet Events
   useEffect(() => {
     const isAlreadyLoggedIn = user && user.walletAddress === publicKey?.toBase58();
     if (connected && publicKey && !advancing && !isAlreadyLoggedIn) {
-      // Auto-trigger SIWS is disabled to prevent "Connection rejected" errors
-      // from overlapping auto-connect handshakes. The user must click "Continue".
     }
   }, [connected, publicKey, advancing, user]);
 
-  // Deep Link Auto-Connect
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.get('autoConnect') === 'true' && !advancing) {
@@ -173,7 +165,7 @@ Request ID: ${requestId}`;
         const result = await login(formData.email, formData.password);
         if (result.success) {
           if (!result.user?.walletAddress) {
-             setView('wallets'); // Require wallet link
+             setView('wallets');
              return;
           }
           onConnected(result.user.walletAddress, true);

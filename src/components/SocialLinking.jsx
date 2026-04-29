@@ -11,7 +11,6 @@ export default function SocialLinking({ onComplete, onBack }) {
   const twitterLinked = profile.socials?.isTwitterVerified;
   const discordLinked = profile.socials?.isDiscordVerified;
 
-  // Use generic icons for branded ones to avoid missing export crashes
   const TwitterIcon = Share2;
   const DiscordIcon = MessageSquare;
 
@@ -21,14 +20,12 @@ export default function SocialLinking({ onComplete, onBack }) {
       listenerRef.current = null;
     }
     if (popupRef.current && !popupRef.current.closed) {
-      // Don't close - let popup close itself after sending message
     }
     popupRef.current = null;
     setVerifying(null);
   }, []);
 
   const startOAuth = useCallback((platform) => {
-    // Close any existing popup first
     if (popupRef.current && !popupRef.current.closed) {
       popupRef.current.close();
     }
@@ -39,7 +36,6 @@ export default function SocialLinking({ onComplete, onBack }) {
     setVerifying(platform);
     const redirectUri = `${window.location.origin}/auth/callback/${platform}`;
 
-    // Generate a random PKCE code verifier (43-128 chars, Twitter requirement)
     const generatePKCEVerifier = () => {
       let result = '';
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
@@ -61,7 +57,6 @@ export default function SocialLinking({ onComplete, onBack }) {
       }
       const codeVerifier = generatePKCEVerifier();
       const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      // Store verifier in sessionStorage so the callback can use it later if needed
       sessionStorage.setItem(`pkce_verifier_${platform}`, codeVerifier);
       url = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=users.read%20tweet.read%20offline.access&state=${state}&code_challenge=${codeVerifier}&code_challenge_method=plain`;
     } else if (platform === 'discord') {
@@ -102,7 +97,6 @@ export default function SocialLinking({ onComplete, onBack }) {
 
     popupRef.current = popup;
 
-    // Listen for success message from popup
     const messageListener = (event) => {
       if (event.origin !== window.location.origin) return;
 
@@ -119,7 +113,6 @@ export default function SocialLinking({ onComplete, onBack }) {
           }
         };
 
-        // If we got extra details (especially for X), pre-fill the profile instantly
         if (platform === 'twitter' && event.data.details) {
           const { name, bio, avatar } = event.data.details;
           updates.displayName = profile.displayName || name;
@@ -130,7 +123,6 @@ export default function SocialLinking({ onComplete, onBack }) {
         
         updateProfile(updates);
 
-        // Cleanup
         if (listenerRef.current) {
           window.removeEventListener('message', listenerRef.current);
           listenerRef.current = null;
@@ -155,7 +147,6 @@ export default function SocialLinking({ onComplete, onBack }) {
     listenerRef.current = messageListener;
     window.addEventListener('message', messageListener);
 
-    // Heartbeat to detect manual popup close
     const timer = setInterval(() => {
       if (popup.closed) {
         clearInterval(timer);
@@ -169,7 +160,6 @@ export default function SocialLinking({ onComplete, onBack }) {
     }, 1000);
   }, [profile.socials, updateProfile]);
 
-  // Cleanup listeners on unmount
   useEffect(() => {
     return () => {
       if (listenerRef.current) {

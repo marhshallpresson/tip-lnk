@@ -16,7 +16,6 @@ export default function DomainRegistration({ onComplete, onBack }) {
     setAvailable(null);
 
     try {
-      // Free off-chain resolution for Phase 2 Elite
       setAvailable(true);
     } catch (err) {
       setAvailable(true);

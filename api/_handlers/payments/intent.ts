@@ -26,7 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Creator ID and amount required' })
     }
 
-    // 1. Resolve Creator
     const creator = await db('user')
       .where({ walletAddress: creatorId })
       .orWhere({ solDomain: creatorId })
@@ -39,12 +38,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const intentId = `pi_${randomUUID().replace(/-/g, '')}`
 
-    // --- CRYPTO EXECUTION (External or Embedded Wallet) ---
     if (!sourceWalletAddress || !inputTokenMint) {
       return res.status(400).json({ error: 'Source wallet and input token required for crypto payments' })
     }
 
-    // Verify wallets
     try {
       new PublicKey(sourceWalletAddress)
       new PublicKey(creator.walletAddress)
@@ -53,33 +50,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid wallet or token address' })
     }
 
-    // Determine output token (respecting creator's auto_convert preference)
     const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-    let outputMint = creator.walletAddress // Default to direct transfer
+    let outputMint = creator.walletAddress
     
-    // If auto_convert is true (which is default for TipLnk), always convert to USDC
     if (creator.auto_convert_usdc !== false) {
        outputMint = USDC_MINT
     } else {
-       outputMint = inputTokenMint // No conversion, send exactly what they sent
+       outputMint = inputTokenMint
     }
 
-    // ─── ELITE FEE EXTRACTION ───
-    // 5% Platform Fee, injected directly into Jupiter's swap transaction
     const isDirect = inputTokenMint === outputMint
     let feeAccount = undefined;
     let feeBpsParam = '';
 
     if (!isDirect && process.env.VITE_TREASURY_WALLET) {
         feeAccount = process.env.VITE_TREASURY_WALLET;
-        feeBpsParam = `&platformFeeBps=500`; // 5%
+        feeBpsParam = `&platformFeeBps=500`;
     }
 
-    // ─── Phase 9: Failover & Reliability Model ───
     let order = null;
     let executionMode = 'sync';
 
-    // 1. Try DFlow Elite Routing first
     try {
       const DFLOW_API = 'https://quote-api.dflow.net'
       const DFLOW_API_KEY = process.env.VITE_DFLOW_API_KEY
@@ -97,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const dflowResponse = await axios.get(`${DFLOW_API}/order?${orderParams}`, {
         headers: DFLOW_API_KEY ? { 'x-api-key': DFLOW_API_KEY } : {},
-        timeout: 3000 // Tight timeout for failover
+        timeout: 3000
       })
       
       order = dflowResponse.data
@@ -121,7 +112,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (dflowErr: any) {
       console.warn('⚠️ Failover Model: DFlow Primary failed, falling back to Jupiter V6.', dflowErr.message)
       
-      // 2. Fallback to Jupiter V6
       const JUP_API = 'https://quote-api.jup.ag/v6'
       const quoteUrl = `${JUP_API}/quote?inputMint=${inputTokenMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50${feeBpsParam}`
       
@@ -157,7 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           priceImpactPct: quote.priceImpactPct
         },
         transaction: swapTransaction,
-        executionMode: 'sync', // Jupiter is typically sync via our relay
+        executionMode: 'sync',
         provider: 'jupiter'
       })
     }

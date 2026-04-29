@@ -3,7 +3,6 @@ import { useWallet, useConnection } from '../contexts/WalletContext';
 import { VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 
-// ─── Elite Protocol Constants ───
 const TREASURY_WALLET = import.meta.env.VITE_TREASURY_WALLET ;
 
 import { getTiplnkProgram, getSendTokenAccounts } from '../lib/anchor';
@@ -26,12 +25,10 @@ export function useTipping(creatorAddress) {
   const [tokens, setTokens] = useState(DEFAULT_TOKENS);
   const [selectedToken, setSelectedToken] = useState(DEFAULT_TOKENS[0]);
 
-  // ─── Elite Balance Detection & Dynamic Asset Fetching ───
   useEffect(() => {
     const detectBalances = async () => {
         if (!publicKey || !connection) return;
         try {
-            // 1. Fetch Jupiter Strict List
             let jupTokens = [];
             try {
               const res = await fetch('https://tokens.jup.ag/tokens?tags=strict');
@@ -41,7 +38,6 @@ export function useTipping(creatorAddress) {
               jupTokens = DEFAULT_TOKENS;
             }
 
-            // 2. Fetch User Token Accounts
             const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
                 programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
             });
@@ -54,14 +50,11 @@ export function useTipping(creatorAddress) {
                 }
             });
 
-            // Add SOL balance
             const solBalance = await connection.getBalance(publicKey);
             balances['So11111111111111111111111111111111111111112'] = solBalance / 1e9;
 
-            // 3. Intersect and Map
             const dynamicTokens = [];
             
-            // Always try to include SOL first if they have balance or as default
             if (balances['So11111111111111111111111111111111111111112'] > 0) {
               const solData = jupTokens.find(t => t.address === 'So11111111111111111111111111111111111111112') || DEFAULT_TOKENS[1];
               dynamicTokens.push({
@@ -75,7 +68,7 @@ export function useTipping(creatorAddress) {
             }
 
             Object.entries(balances).forEach(([mint, balance]) => {
-               if (mint === 'So11111111111111111111111111111111111111112') return; // Already handled
+               if (mint === 'So11111111111111111111111111111111111111112') return;
                const tokenData = jupTokens.find(t => t.address === mint);
                if (tokenData) {
                   dynamicTokens.push({
@@ -89,14 +82,11 @@ export function useTipping(creatorAddress) {
                }
             });
 
-            // Sort by balance (descending)
             dynamicTokens.sort((a, b) => (b.balance || 0) - (a.balance || 0));
 
-            // Fallback to default tokens if wallet is empty
             const finalTokens = dynamicTokens.length > 0 ? dynamicTokens : DEFAULT_TOKENS;
 
             setTokens(finalTokens);
-            // Auto-select first token
             setSelectedToken(finalTokens[0]);
             
         } catch (e) {
@@ -117,7 +107,6 @@ export function useTipping(creatorAddress) {
   const [txResult, setTxResult] = useState(null);
   const [error, setError] = useState(null);
 
-  // ─── Real-time Price Fetching (Jupiter Price V3 Standard) ───
   const fetchPrice = useCallback(async (symbol) => {
     try {
       const token = tokens.find(t => t.symbol === symbol);
@@ -152,12 +141,11 @@ export function useTipping(creatorAddress) {
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
-        // ─── PHASE 2: UNIFIED PAYMENT INTENT ENGINE ───
         const payload = {
           creatorId: creatorAddress,
           inputTokenMint: token.mint,
           amount: tokenAmount.toString(),
-          paymentMethod: 'external_wallet', // default for now until Phase 3 (Widget Refactor)
+          paymentMethod: 'external_wallet',
           sourceWalletAddress: publicKey?.toBase58() || '',
           memo: note
         };
@@ -178,11 +166,9 @@ export function useTipping(creatorAddress) {
           intentId: intentData.intentId
         };
 
-        // ─── Phase 2: Dynamic Sender-Pays Fee Calculation ───
         const baseOutAmount = BigInt(order.outAmount);
-        // Hybrid Fee Model: 0% direct, 5% swap
         const inputMint = token.mint;
-        const outputMint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // USDC
+        const outputMint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
         const dynamicFeeBps = (inputMint === outputMint) ? 0n : 500n;
         const platformFee = (baseOutAmount * dynamicFeeBps) / 10000n;
         const totalAuthorization = baseOutAmount + platformFee;
@@ -223,8 +209,6 @@ export function useTipping(creatorAddress) {
 
         let signature;
 
-        // ─── ELITE EXECUTION BRANCHING ───
-        // Use Anchor for direct tips (SOL/USDC with no swap) to emit on-chain events
         const isDirect = selectedToken.mint === 'So11111111111111111111111111111111111111112' || selectedToken.symbol === 'USDC';
         
         if (isDirect && !route.transaction.includes('swap')) { 
@@ -253,7 +237,6 @@ export function useTipping(creatorAddress) {
                 .rpc();
            }
         } else {
-          // ─── DFlow / Jupiter Advanced Routing ───
           const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
           const signedTx = await signTransaction(tx);
 
@@ -274,7 +257,6 @@ export function useTipping(creatorAddress) {
           throw new Error('Transaction submission failed.');
         }
 
-        // ─── UX Truth Enforcement - Show Pending State ───
         const result = {
           success: true,
           status: 'pending',
@@ -290,12 +272,10 @@ export function useTipping(creatorAddress) {
 
         setTxResult(result);
 
-        // ─── DFlow Async Order Polling (Jito Bundles) ───
         if (route.executionMode === 'async') {
            console.log('⏳ DFlow: Monitoring Jito bundle execution...');
            let status = 'pending';
            
-           // Max 15 attempts (approx 45s)
            let attempts = 0;
            while (status !== 'closed' && status !== 'failed' && status !== 'expired' && attempts < 15) {
              await new Promise(r => setTimeout(r, 3000));
@@ -313,7 +293,6 @@ export function useTipping(creatorAddress) {
              }
            }
         } else {
-          // Standard sync confirmation
           try {
             const latestBlockhash = await connection.getLatestBlockhash('confirmed');
             await connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed');

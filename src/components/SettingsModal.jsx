@@ -33,7 +33,6 @@ export default function SettingsModal({ isOpen, onClose }) {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
     updateProfile({
@@ -58,11 +57,9 @@ export default function SettingsModal({ isOpen, onClose }) {
   };
 
   const handleConnectSocial = (platformId) => {
-    // Currently only Google is implemented in backend
     if (platformId === 'google' || platformId === 'google-auth') {
       window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google/start?next=${window.location.pathname}`;
     } else {
-      // For other platforms, we just refresh for now as they might have been connected on onboarding
       window.location.reload();
     }
   };
@@ -70,7 +67,6 @@ export default function SettingsModal({ isOpen, onClose }) {
   const address = publicKey?.toBase58() || '';
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Not Connected';
 
-  // Get initials for avatar
   const getInitials = (name) => {
     if (!name) return '??';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

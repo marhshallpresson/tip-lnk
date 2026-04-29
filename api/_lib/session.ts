@@ -12,7 +12,7 @@ export const extractBearerToken = (req: Request): string | null => {
 import { signSessionToken, verifySessionToken } from './jwt.js'
 
 export const SESSION_COOKIE_NAME = 'sid'
-const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000
 
 export interface SessionUser {
     id: string;
@@ -116,13 +116,10 @@ export const getUserRoles = async (userId: string) => {
 export const getSessionUser = async (req: Request): Promise<SessionUser | null> => {
   const sids: (string | undefined)[] = []
   
-  // 1. Try Signed Cookies
   sids.push((req.signedCookies || {})[SESSION_COOKIE_NAME])
   
-  // 2. Try Regular Cookies
   sids.push((req.cookies || {})[SESSION_COOKIE_NAME])
   
-  // 3. Try Manual Parsing
   const cookieHeader = req.headers.cookie || ''
   if (cookieHeader) {
     const cookies = cookieHeader.split(';').reduce((acc: any, curr) => {
@@ -131,7 +128,6 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
       const value = parts.slice(1).join('=')
       if (key && value) {
         try {
-          // Attempt to decode URI component, fallback to raw value
           acc[key] = decodeURIComponent(value)
         } catch (e) {
           acc[key] = value
@@ -142,7 +138,6 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
     sids.push(cookies[SESSION_COOKIE_NAME])
   }
 
-  // 4. Try Bearer Token
   const bearer = extractBearerToken(req)
   if (bearer) {
     try {
@@ -151,13 +146,11 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
     } catch (e) {}
   }
 
-  // Filter unique valid-looking SIDs (handle signed cookie prefix s: if it sneaks in)
   const uniqueSids = [...new Set(
     sids
       .filter(s => typeof s === 'string' && s.length > 20)
       .map(s => {
         const str = s as string;
-        // Strip Express signed cookie prefix if present during manual parse
         if (str.startsWith('s:')) {
           return str.slice(2).split('.')[0]
         }

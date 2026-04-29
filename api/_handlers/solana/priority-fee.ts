@@ -8,22 +8,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const QUICKNODE_RPC = process.env.VITE_SOLANA_RPC_URL
     
-    // ─── ELITE QUICKNODE INTEGRATION ───
-    // Direct call to qn_estimatePriorityFees
     const response = await axios.post(QUICKNODE_RPC, {
       jsonrpc: '2.0',
       id: 1,
       method: 'qn_estimatePriorityFees',
       params: {
         last_n_blocks: 100,
-        account: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC focus
+        account: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
         api_version: 2
       }
     })
 
     const fees = response.data?.result || {}
     
-    // Extract a "Safe but Fast" fee level (e.g., 75th percentile)
     const recommendedFee = fees.per_percentile?.['75'] || fees.medium || 1000
 
     res.status(200).json({ 

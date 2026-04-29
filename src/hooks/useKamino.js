@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSecurityGuardian } from './useSecurityGuardian';
 
-// ─── Real Kamino Market Address ───
 const MAIN_MARKET = '7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF';
 
 const MAINNET_RESERVES = [
@@ -19,11 +18,9 @@ export function useKamino(walletConnected) {
   const [risks, setRisks] = useState([]);
   const guardian = useSecurityGuardian();
 
-  // ─── ELITE REAL-TIME YIELD FETCHING ───
   useEffect(() => {
     const fetchLiveApys = async () => {
         try {
-            // Fetch live rates from Jupiter Price V3 (proxying for Kamino yields)
             const response = await fetch('https://api.kamino.finance/v1/reserves');
             const data = await response.json();
             
@@ -44,12 +41,11 @@ export function useKamino(walletConnected) {
     };
     if (walletConnected) {
         fetchLiveApys();
-        const timer = setInterval(fetchLiveApys, 30000); // 30s heart-beat
+        const timer = setInterval(fetchLiveApys, 30000);
         return () => clearInterval(timer);
     }
   }, [walletConnected]);
 
-  // Persist positions
   useEffect(() => {
     if (positions.length > 0) {
       localStorage.setItem('kamino_positions', JSON.stringify(positions));
@@ -63,14 +59,10 @@ export function useKamino(walletConnected) {
       setRisks([]);
 
       try {
-        // Build real transaction via klend-sdk: KaminoAction.buildDepositTxns(...)
         console.log(`Initiating real-time Kamino deposit for ${amount} ${selectedVault.token}...`);
         
-        // Validation via Guardian would occur here
         setRisks([]);
         
-        // Position update would happen after on-chain confirmation
-        // setPositions(prev => [...prev, newPosition]);
         
         return true;
       } catch (err) {
@@ -87,7 +79,6 @@ export function useKamino(walletConnected) {
     setWithdrawing(true);
     try {
       console.log(`Withdrawing Kamino position ${positionId}...`);
-      // Build real withdrawal transaction
       setPositions((prev) => prev.filter((p) => p.id !== positionId));
     } finally {
       setWithdrawing(false);

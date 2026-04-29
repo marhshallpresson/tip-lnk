@@ -35,7 +35,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await db('user').where({ id: session.userId }).whereNull('deletedAt').first()
     const roles = await getUserRoles(user.id)
     
-    // Task 1.4: Hardened SignJWT via centralized backend/lib/jwt.ts
     const accessToken = await signSessionToken({
       v: 1, sid: session.id, uid: user.id
     }, new Date(session.expiresAt))

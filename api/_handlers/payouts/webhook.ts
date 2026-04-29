@@ -17,7 +17,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  // 1. Directive 06A: HMAC-SHA256 Signature Verification
   const payload = JSON.stringify(req.body)
   const expectedSignature = crypto
     .createHmac('sha256', PAJCASH_SECRET)
@@ -34,11 +33,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Invalid signature' })
   }
 
-  // 2. Process Webhook Payload
   const { reference, status, amount, walletAddress } = req.body
 
   try {
-    // ─── ELITE IDEMPOTENCY CHECK ───
     const existing = await db('payouts').where({ pajcash_reference: reference }).first()
     if (existing && existing.status === status) {
         console.log(`ℹ️ Pajcash Webhook: Reference ${reference} already processed with status ${status}. Skipping.`)
@@ -47,7 +44,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`💰 Pajcash Payout Update: ${reference} | Status: ${status}`)
 
-    // Log update in payouts table (Directive 06B.5)
     await db('payouts').insert({
       pajcash_reference: reference,
       status: status,

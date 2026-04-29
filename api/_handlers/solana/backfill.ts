@@ -19,7 +19,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Valid wallet address string required' })
   }
 
-  // Elite Hardening: Ensure users can only backfill THEIR OWN wallet
   if (authUser.walletAddress && address !== authUser.walletAddress) {
       return res.status(403).json({ success: false, error: 'Unauthorized: Backfill restricted to owned wallet' })
   }

@@ -7,7 +7,7 @@ const assetUrl = normalizeUrl(
   appUrl
 )
 
-const brandColor = '#00FFA3' // TipLnk Green/Cyan
+const brandColor = '#00FFA3'
 const brandBlack = '#0A0A0A'
 const brandGray = '#1A1A1A'
 

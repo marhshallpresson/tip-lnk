@@ -23,7 +23,6 @@ const smtpTransport = () =>
         }
       : undefined,
     tls: {
-      // Professional Hardening: Enforce certificate validation in production
       rejectUnauthorized: process.env.NODE_ENV === 'production'
     }
   })

@@ -17,14 +17,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { walletAddress, profile, signature, message } = req.body
 
-  // ─── ELITE ID RESOLUTION ───
   let resolvedTargetId = walletAddress;
   if (walletAddress.startsWith('auth_')) {
       resolvedTargetId = walletAddress.replace('auth_', '');
   }
 
-  // Elite Hardening: Ensure users can only update their OWN profile
-  // Check against authUser.id (raw UUID) or authUser.walletAddress (base58)
   const isOwner = (resolvedTargetId === authUser.id) || 
                   (authUser.walletAddress && resolvedTargetId === authUser.walletAddress);
 
@@ -36,7 +33,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const solDomain = profile.solDomain || (profile.profile && profile.profile.solDomain)
 
-    // Task 3.1: ELITE SECURITY GUARD: Handle Ownership Verification via src/lib/crypto.ts
     if (solDomain && signature && message && authUser.walletAddress) {
         try {
           const isValid = verifySignature(message, signature, authUser.walletAddress)
@@ -51,15 +47,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     }
 
-    // ─── Elite Profile Sync ───
     const incomingName = profile.displayName || profile.name;
     const finalName = incomingName && incomingName.trim().length > 0 ? incomingName.trim() : authUser.name;
     
-    // Extract social handles from either root or nested socials object
     const twitterHandle = profile.twitterHandle || (profile.socials && profile.socials.twitter);
     const discordHandle = profile.discordHandle || (profile.socials && profile.socials.discord);
 
-    // Clean up profile object before saving to profileData JSON column
     const profileToSave = { ...profile };
     delete profileToSave.twitterHandle;
     delete profileToSave.discordHandle;
@@ -77,7 +70,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updated_at: new Date()
       })
     
-    // 🛡️ Webhook Guard: Ensure the wallet is registered for Helius monitoring
     if (authUser.walletAddress) {
         registerWebhookAddress(authUser.walletAddress).catch(err => 
             console.error('🛡️ Webhook Sync Failure:', err.message)

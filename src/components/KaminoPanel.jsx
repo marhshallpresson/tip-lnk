@@ -20,7 +20,6 @@ export default function KaminoPanel() {
   const [yieldData, setYieldData] = useState(null);
 
   useEffect(() => {
-    // ─── Professional Yield Simulation ───
     const simulateYield = async () => {
         setLoading(true);
         await new Promise(r => setTimeout(r, 800));

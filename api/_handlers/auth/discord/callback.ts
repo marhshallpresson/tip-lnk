@@ -25,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Discord OAuth not configured on server.' })
     }
 
-    // 1. Exchange Code for Access Token
     const params: any = {
       code,
       grant_type: 'authorization_code',
@@ -35,7 +34,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       scope: 'identify'
     }
 
-    // Optional PKCE for Discord if implemented in the future
     if (codeVerifier) {
       params.code_verifier = codeVerifier
     }
@@ -51,14 +49,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const accessToken = tokenResponse.data.access_token
 
-    // 2. Fetch User Profile
     const userResponse = await axios.get('https://discord.com/api/users/@me', {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     })
 
     const discordUsername = userResponse.data.username
 
-    // 3. Link to User Profile in DB
     await db('user').where({ id: sessionUser.id }).update({
       discordHandle: discordUsername,
       updated_at: new Date()

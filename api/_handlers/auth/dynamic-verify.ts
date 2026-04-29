@@ -25,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // 1. Verify Dynamic JWT using Dynamic's JWKS endpoint
     const jwksUrl = `https://app.dynamic.xyz/api/v0/environments/${envId}/keys`
     const JWKS = createRemoteJWKSet(new URL(jwksUrl))
 
@@ -38,18 +37,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
        return res.status(400).json({ error: 'Invalid JWT payload' })
     }
 
-    // Dynamic payloads often include email, verified_credentials, etc.
     const email = payload.email as string | undefined
     const verifiedCredentials = payload.verified_credentials as Array<any> || []
     
-    // Find primary wallet if available
     const primaryWallet = verifiedCredentials.find(c => c.format === 'blockchain' && c.chain === 'sol')
 
     if (!primaryWallet && !email) {
        return res.status(400).json({ error: 'No wallet or email associated with this Dynamic identity' })
     }
 
-    // 2. Resolve User in TipLnk DB
     let user = null;
 
     if (primaryWallet) {
@@ -60,9 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user = await db('user').where({ email }).first()
     }
 
-    // Check if we can find by dynamic_user_id (requires schema update later, but let's check profileData for now or add it to root)
     if (!user) {
-        // Attempt to find by dynamic ID stored in profileData
         const users = await db('user').select('*')
         user = users.find(u => {
             try {
@@ -72,17 +66,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
     }
 
-    // 3. Create or Update User
     let isNewUser = false;
     if (user) {
-        // Update existing user with dynamic linkage
         const profile = JSON.parse(user.profileData || '{}')
         if (profile.dynamic_user_id !== dynamicUserId) {
             profile.dynamic_user_id = dynamicUserId
             await db('user').where({ id: user.id }).update({ profileData: JSON.stringify(profile) })
         }
     } else {
-        // Create new user provisioned by Dynamic
         isNewUser = true;
         const newUserId = `auth_${randomUUID()}`
         user = {
@@ -91,14 +82,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             walletAddress: primaryWallet ? primaryWallet.address : null,
             name: email ? email.split('@')[0] : 'Dynamic User',
             onboardingComplete: false,
-            emailVerifiedAt: email ? new Date() : null, // Dynamic verified it
+            emailVerifiedAt: email ? new Date() : null,
             profileData: JSON.stringify({ dynamic_user_id: dynamicUserId })
         }
         
         await db('user').insert(user)
     }
 
-    // ─── PHASE 2: TORQUE EVENT PIPELINE ───
     if (isNewUser) {
         await emitTorqueEvent({
             event_type: 'user_signup',
@@ -121,13 +111,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     });
 
-    // 4. Issue TipLnk Session
     const session = await createSession(req as any, res as any, user.id)
 
     return res.json({
       success: true,
       user,
-      sessionToken: session.accessToken, // For local state
+      sessionToken: session.accessToken,
       auth: {
         accessToken: session.accessToken,
         type: 'Bearer',

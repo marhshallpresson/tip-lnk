@@ -11,8 +11,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!address) return res.status(400).json({ error: 'Address required' })
 
   try {
-    // ─── ELITE DATA FETCHING: BIRDEYE ───
-    // Using Birdeye's professional portfolio API for high-fidelity token data
     const response = await axios.get(`https://public-api.birdeye.so/v1/wallet/token_list?wallet=${address}`, {
       headers: {
         'X-API-KEY': BIRDEYE_API_KEY,
@@ -22,7 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = response.data?.data || {}
     
-    // Transform into high-value insights for the creator dashboard
     const insights = {
       totalUsdValue: data.totalUsd || 0,
       tokens: (data.items || []).slice(0, 10).map((item: any) => ({
@@ -38,7 +35,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ success: true, insights })
   } catch (err: any) {
     console.warn('🛡️ Birdeye: Using high-fidelity fallback for portfolio insights')
-    // Provide safe fallback for hackathon demonstration
     res.status(200).json({ 
         success: true, 
         insights: {

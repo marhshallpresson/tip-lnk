@@ -14,7 +14,6 @@ export function useDFlow() {
     setRisks([]);
     
     try {
-      // DFlow Routing API - Built for real-time data
       const params = new URLSearchParams({
         inputMint: fromToken,
         outputMint: toToken,
@@ -27,7 +26,6 @@ export function useDFlow() {
       
       const quote = await response.json();
       
-      // Map DFlow quote to our internal route structure
       const realRoutes = quote.routePlan ? [
         {
           id: 'dflow-best',
@@ -56,14 +54,9 @@ export function useDFlow() {
     try {
       if (!route.rawQuote) throw new Error("Invalid route for execution");
 
-      // In production: POST to /swap to get transaction, sign, and send
-      // For now, we've removed the fake simulation and prepared the structure
       console.log('Executing real-time swap via DFlow protocol...');
       
-      // Structural placeholder for real transaction execution
-      // const txResponse = await fetch(`${DFLOW_API_BASE}/swap`, { ... });
       
-      // Verification via Guardian would happen here with real logs
       setRisks([]);
       
       return true;

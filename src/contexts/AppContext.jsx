@@ -13,7 +13,7 @@ const defaultState = {
   onboardingComplete: false,
   profile: {
     avatarUrl: null,
-    avatarType: 'none', // none, nft, social, uploaded
+    avatarType: 'none',
     solDomain: '',
     displayName: '',
     bio: '',
@@ -23,7 +23,7 @@ const defaultState = {
     location: '',
     link: '',
     preferences: {
-      generationSound: 'first', // first, always, never
+      generationSound: 'first',
     },
     socials: {
       twitter: null,
@@ -35,8 +35,8 @@ const defaultState = {
       isTwitterVerified: false,
       isDiscordVerified: false,
     },
-    referralId: '', // Will be set to username
-    referrals: [], // Real referral data only
+    referralId: '',
+    referrals: [],
   },
   nfts: [],
   nftsLoading: false,
@@ -62,12 +62,10 @@ export function AppProvider({ children }) {
   const [dbSynced, setDbSynced] = useState(false);
   const [agent, setAgent] = useState(null);
 
-  // ─── Initialize AI Agent ───
   useEffect(() => {
     const initAgent = async () => {
       if (connected && wallet && pubkeyStr) {
         try {
-          // Initialize interface for Phase 2 autonomous actions
           setAgent({
             id: 'tiplnk-agent-01',
             status: 'active',
@@ -83,7 +81,6 @@ export function AppProvider({ children }) {
     initAgent();
   }, [connected, wallet, pubkeyStr]);
 
-  // ─── Phase 1: Local Cache Hydration ───
   useEffect(() => {
     if (pubkeyStr) {
       const saved = localStorage.getItem(`${STORAGE_KEY}_${pubkeyStr}`);
@@ -97,7 +94,6 @@ export function AppProvider({ children }) {
     }
   }, [pubkeyStr]);
 
-  // ─── Phase 2: Professional Supabase Sync ───
   useEffect(() => {
     const syncWithDb = async () => {
       if (pubkeyStr && !dbSynced) {
@@ -107,12 +103,10 @@ export function AppProvider({ children }) {
             setState(prev => {
                 const newState = { ...prev, ...dbProfile, profile: { ...prev.profile, ...dbProfile } };
 
-                // ─── ELITE ONBOARDING RESOLUTION ───
                 if (dbProfile.onboardingComplete === true) {
                     newState.onboardingComplete = true;
                 }
 
-                // Restore socials correctly into the nested structure if they exist at root
                 if (dbProfile.twitterHandle || dbProfile.discordHandle) {
                   newState.profile.socials = {
                     ...newState.profile.socials,
@@ -135,24 +129,18 @@ export function AppProvider({ children }) {
     syncWithDb();
   }, [pubkeyStr, dbSynced]);
 
-  // Reset sync flag on disconnect
   useEffect(() => {
     if (!pubkeyStr) {
       setDbSynced(false);
     }
   }, [pubkeyStr]);
 
-  // ─── Phase 3: Persistence ───
   useEffect(() => {
     if (pubkeyStr && state !== defaultState) {
-      // Local Cache
       localStorage.setItem(`${STORAGE_KEY}_${pubkeyStr}`, JSON.stringify(state));
 
-      // ─── ELITE SYNC GUARD ───
-      // Only sync if we have a real auth session.
       if (authUser) {
         if (!authUser.walletAddress || authUser.walletAddress === publicKey?.toBase58()) {
-          // Sync just the profile data and onboarding status
           saveProfile(pubkeyStr, {
             ...state.profile,
             onboardingComplete: state.onboardingComplete
@@ -163,17 +151,12 @@ export function AppProvider({ children }) {
   }, [state, pubkeyStr, authUser, publicKey]);
 
   const role = useMemo(() => {
-    if (authLoading) return 'guest'; // Hold until auth state is known
+    if (authLoading) return 'guest';
 
-    // Elite Fix: Wallet connection alone does not grant a backend session.
     if (!authUser) return 'guest';
 
-    // Elite Admin Shortcut: Admins are always creators
     const isAdmin = authUser?.roles?.includes('admin');
     
-    // ─── ELITE ROLE CALCULATION ───
-    // 'creator' now strictly means 'onboarding complete'
-    // 'user' means authenticated but setup is pending
     if (isAdmin || state.onboardingComplete) return 'creator';
 
     return 'user';
@@ -187,7 +170,6 @@ export function AppProvider({ children }) {
     setState((prev) => {
       const newProfile = { ...prev.profile, ...partial };
 
-      // ─── Deep Social Merging ───
       if (partial.socials) {
         newProfile.socials = {
           ...prev.profile.socials,
@@ -195,7 +177,6 @@ export function AppProvider({ children }) {
         };
       }
 
-      // Auto-generate referralId from username/domain if missing
       if (!newProfile.referralId) {
         const baseName = newProfile.solDomain
           ? newProfile.solDomain.replace('.tiplnk.sol', '')
@@ -234,7 +215,6 @@ export function AppProvider({ children }) {
     const signature = await signMessage(encodedMessage);
     const signatureBase58 = bs58.encode(signature);
 
-    // Explicit sync for handle claim with verification
     const result = await saveProfile(pubkeyStr, { ...state.profile, solDomain: handle }, signatureBase58, message);
     
     if (result.success) {

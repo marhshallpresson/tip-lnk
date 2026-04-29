@@ -15,8 +15,6 @@ export function SNSWarning({ snsName, walletAddress }: SNSWarningProps) {
   const [showFullAddress, setShowFullAddress] = useState(false)
 
   useEffect(() => {
-    // Detect Unicode homoglyphs and non-ASCII characters
-    // common lookalikes: о, е, а, і, і, l, 0, O
     const nonAscii = /[^\x00-\x7F]/.test(snsName)
     const suspiciousPatterns = /[оеаiіl0O]/.test(snsName) 
     setHasNonAscii(nonAscii || suspiciousPatterns)

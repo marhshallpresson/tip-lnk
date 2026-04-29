@@ -15,13 +15,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const days = parseInt(req.query.days as string) || 30
 
-    // 1. Fetch Daily Analytics
     const analytics = await db('analytics_daily')
       .where({ user_id: user.id })
       .andWhere('date', '>=', db.raw("CURRENT_DATE - INTERVAL '?' DAY", [days]))
       .orderBy('date', 'asc')
 
-    // 2. Fetch Top Supporters (Verified)
     const topSupporters = await db('tips')
       .select('sender as name')
       .sum('amount as total_amount')
@@ -31,7 +29,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .orderBy('total_amount', 'desc')
       .limit(10)
 
-    // 3. Summary Stats
     const summary = await db('tips')
       .where({ recipient: user.walletAddress, status: 'confirmed' })
       .select(

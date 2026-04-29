@@ -22,7 +22,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // ─── BACKGROUND AGGREGATION & CACHING ───
     const CACHE_KEY = 'admin:platform_stats';
     if (redis) {
       const cachedStats = await redis.get(CACHE_KEY);
@@ -52,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     if (redis) {
-      await redis.set(CACHE_KEY, JSON.stringify(finalStats), { ex: 300 }); // Cache for 5 mins
+      await redis.set(CACHE_KEY, JSON.stringify(finalStats), { ex: 300 });
     }
 
     res.json({

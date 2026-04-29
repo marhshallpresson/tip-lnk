@@ -6,7 +6,6 @@ import { BrowserSDK, AddressType } from '@phantom/browser-sdk';
  */
 const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID;
 
-// Professional Hardening: Exact string match from your Phantom Developer Dashboard
 const appUrl = import.meta.env.VITE_APP_URL?.replace(/\/$/, '') || window.location.origin;
 const redirectUrl = `${appUrl}/auth/callback/phantom-google`;
 

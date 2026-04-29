@@ -4,17 +4,12 @@ import { useTipping } from './useTipping';
 describe('useTipping', () => {
   describe('calculateRoute', () => {
     it('calculates the correct route and USDC amount for a valid token and amount', () => {
-      // Act
       const { result } = renderHook(() => useTipping('CreatorPubKey'));
       
       act(() => {
         result.current.calculateRoute('SOL', 10);
       });
 
-      // Assert
-      // token.price = 178.50. 10 * 178.50 = 1785.
-      // fee = 1785 * 0.003 = 5.355.
-      // net = 1785 - 5.355 = 1779.645.
       expect(result.current.route).not.toBeNull();
       expect(result.current.tipAmountUSDC).toBe(1779.645);
       expect(result.current.route.outputAmount).toBe(1779.645);

@@ -4,8 +4,6 @@
  */
 
 const isProd = import.meta.env.PROD;
-// In production, we MUST use the current origin. 
-// Falling back to localhost in prod causes the ERR_CONNECTION_REFUSED
 const API_BASE_URL = (isProd
   ? window.location.origin
   : (import.meta.env.VITE_API_BASE_URL)) + '/api';
@@ -69,9 +67,7 @@ class ApiClient {
       });
 
       if (response.status === 401) {
-        // Potential session expiry
         console.warn('Unauthorized request, clearing token.');
-        // this.setAccessToken(null);
       }
 
       const data = await response.json();

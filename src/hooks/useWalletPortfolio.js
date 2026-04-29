@@ -30,7 +30,6 @@ export default function useWalletPortfolio() {
       const isProd = import.meta.env.PROD;
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
-      // ─── Parallel Elite Data Fetching ───
       const [balance, priceRes, assetRes] = await Promise.all([
         connection.getBalance(publicKey).catch(() => 0),
         fetch(`${API_BASE_URL}/api/solana/price?ids=So11111111111111111111111111111111111111112,EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y`).then(r => r.json()).catch(() => ({ data: {} })),
@@ -41,7 +40,6 @@ export default function useWalletPortfolio() {
       const solPrice = parseFloat(priceRes.data?.['So11111111111111111111111111111111111111112']?.price || 180);
       const usdcPrice = parseFloat(priceRes.data?.['EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y']?.price || 1);
 
-      // ─── Professional DAS API Transformation ───
       const rawAssets = assetRes.assets?.items || [];
 
       const tokens = rawAssets
@@ -55,7 +53,6 @@ export default function useWalletPortfolio() {
           icon: item.content?.links?.image || '◎'
         }));
 
-      // Add SOL manually as DAS usually excludes native SOL
       tokens.unshift({
         mint: 'So11111111111111111111111111111111111111112',
         symbol: 'SOL',

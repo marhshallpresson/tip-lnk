@@ -20,7 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const opts = { ...getCookieOptions(req as any), maxAge: 600000 }
     
-    // patchResponse added res.cookie for Vercel
     ;(res as any).cookie('g_state', state, opts)
     ;(res as any).cookie('g_verifier', verifier, opts)
     ;(res as any).cookie('g_nonce', nonce, opts)

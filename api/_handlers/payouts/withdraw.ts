@@ -12,7 +12,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    // ─── ELITE AUTHENTICATION ───
     const user = await getSessionUser(req as any)
     if (!user || !user.walletAddress) {
       return res.status(401).json({ error: 'Unauthorized' })
@@ -25,7 +24,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid amount' })
     }
 
-    // ─── ELITE BALANCE ENFORCEMENT ───
     const ledger = await getCreatorBalance(user.walletAddress)
     if (withdrawAmount > ledger.balance) {
         return res.status(400).json({ 
@@ -34,9 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
     }
 
-    // ─── ELITE EXCHANGE RATE INTELLIGENCE ───
-    // In production, fetch from Pajcash rate API or reliable oracle
-    let ngnRate = 1600; // Updated fallback for current market conditions
+    let ngnRate = 1600;
     try {
         const rateRes = await axios.get('https://api.exchangerate-api.com/v4/latest/USD');
         if (rateRes.data?.rates?.NGN) {
@@ -49,7 +45,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const amountNGN = withdrawAmount * ngnRate 
     const reference = `PAJ-${randomUUID().replace(/-/g, '').slice(0, 16)}`
 
-    // ─── ELITE PAJCASH INTEGRATION ───
     const PAJCASH_API_KEY = process.env.PAJCASH_API_KEY
     const PAJCASH_BASE_URL = process.env.PAJCASH_BASE_URL || 'https://api.pajcash.com'
 
@@ -60,7 +55,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
     }
 
-    // Create a pending payout record
     await db('payouts').insert({
       pajcash_reference: reference,
       status: 'pending',
@@ -70,7 +64,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     try {
-      // Direct integration call to Pajcash
       const response = await axios.post(`${PAJCASH_BASE_URL}/api/v1/offramp/initiate`, {
         amount: amountNGN,
         currency: 'NGN',

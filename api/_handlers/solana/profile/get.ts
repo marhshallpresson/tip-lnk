@@ -19,7 +19,6 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Extract from query OR from URL parts (for /api/solana/profile/WALLET)
   let wallet = req.query.wallet as string
   if (!wallet) {
     const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []
@@ -31,7 +30,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // ─── ELITE ID RESOLUTION ───
     let resolvedId = wallet;
     let isInternalId = false;
 
@@ -42,7 +40,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isInternalId = true;
     }
 
-    // ─── ELITE CACHING LAYER ───
     const cacheKey = `profile:${wallet}`;
     if (redis) {
         const cached = await redis.get(cacheKey);
@@ -52,7 +49,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     }
 
-    // Advanced Query: Search by internal ID first if identified, else by walletAddress, etc.
     let user;
     
     if (isInternalId) {
@@ -84,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     image: `https://tiplnk.me/api/og/${wallet}`
                 }
             };
-            if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 }); // Cache for 5 mins
+            if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 });
             return res.json(responseData)
         }
         user = await db('user').where({ solDomain: wallet }).first()
@@ -111,13 +107,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ success: false, error: 'User profile not found' })
     }
 
-    // ─── ELITE DATA RESOLUTION ───
     const rawData = JSON.parse(user.profileData || '{}')
     
-    // Support both new flattened structure and legacy nested state structure
     const profile = rawData.profile ? { ...rawData.profile } : { ...rawData }
     
-    // Merge in high-priority root fields from the user table
     const socialMetrics = await aggregateSocialMetrics(user.twitterHandle, user.discordHandle)
     
     profile.socialMetrics = socialMetrics
@@ -127,7 +120,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.solDomain = user.solDomain
     profile.onboardingComplete = Boolean(user.onboardingComplete)
 
-    // ─── ELITE SEO METADATA ───
     const displayName = profile.displayName || user.name || 'Solana Creator'
     const avatarUrl = profile.avatarUrl || `https://tiplnk.me/api/og/${user.walletAddress}`
     
@@ -140,7 +132,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const responseData = { success: true, profile, metadata };
     
-    // ─── ELITE SOCIAL PROOF: FETCH RECENT TIPS ───
     if (user.walletAddress) {
       const tips = await db('tips')
         .where('recipient', user.walletAddress)
@@ -155,9 +146,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }))
     }
 
-    // Cache the final response
     if (redis) {
-        await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 }); // Cache for 60 seconds
+        await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 });
     }
 
     return res.json(responseData)

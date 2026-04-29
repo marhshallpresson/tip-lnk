@@ -28,7 +28,7 @@ export const getSolflareDeepLink = (url) => {
 export const getJupiterDeepLink = (url) => {
   try {
     const target = new URL(url);
-    return `https://jup.ag/browse/${encodeURIComponent(target.toString())}`; // Example deep link schema, adjust if official Jupiter Mobile schema is different
+    return `https://jup.ag/browse/${encodeURIComponent(target.toString())}`;
   } catch (e) {
     const cleanUrl = url.split('#')[0].split('?')[0];
     return `https://jup.ag/browse/${encodeURIComponent(cleanUrl)}`;
@@ -49,17 +49,12 @@ export const getSolanaPayUri = (creatorAddress, amount, inputTokenMint) => {
   const isProd = import.meta.env.PROD;
   const baseUrl = isProd ? 'https://tiplnk.me' : window.location.origin;
   
-  // Construct the Action URL. The backend handles the exact mint and amount.
   const actionUrl = new URL(`${baseUrl}/api/solana/actions/tip/${creatorAddress}`);
   if (amount) actionUrl.searchParams.set('amount', amount.toString());
-  // In a full implementation we'd pass token as well if the action backend supported it, 
-  // but for now the backend action tip defaults to native SOL in its current state, or we could pass `spl-token` if we update the backend.
-  // We'll pass it anyway for future-proofing or if the action handler supports it.
   if (inputTokenMint && inputTokenMint !== 'So11111111111111111111111111111111111111112') {
      actionUrl.searchParams.set('spl-token', inputTokenMint);
   }
 
-  // Solana Pay transaction request protocol
   return `solana:${encodeURIComponent(actionUrl.toString())}`;
 };
 

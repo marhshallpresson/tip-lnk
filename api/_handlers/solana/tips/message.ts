@@ -16,10 +16,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // ─── ELITE JOIN PATTERN ───
-    // We attempt to update the tip if it already exists, 
-    // OR we store it in a temporary table/column if the webhook hasn't fired yet.
-    // For simplicity and speed, we'll try to update the 'tips' table directly.
     
     const updated = await db('tips')
       .where({ signature })
@@ -29,9 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
 
     if (updated === 0) {
-      // If tip doesn't exist yet (webhook lag), we can't update it.
-      // In a pro system, we'd use a 'tip_metadata' table.
-      // For this SaaS, we'll return a status so the client knows it's pending.
       return res.status(202).json({ success: true, status: 'metadata_queued' })
     }
 

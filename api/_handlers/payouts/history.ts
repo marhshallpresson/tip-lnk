@@ -10,7 +10,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    // ─── ELITE AUTHENTICATION ───
     const user = await getSessionUser(req as any)
     if (!user || !user.walletAddress) {
       return res.status(401).json({ error: 'Unauthorized' })
@@ -24,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const formattedHistory = history.map(p => ({
       id: p.id,
       date: p.created_at,
-      amountUSDC: Number(p.amount_ngn) / 1250, // rough estimate back to USDC for display
+      amountUSDC: Number(p.amount_ngn) / 1250,
       amountNGN: Number(p.amount_ngn),
       status: p.status,
       reference: p.pajcash_reference

@@ -6,12 +6,10 @@ import { ACTIONS_CORS_HEADERS, type ActionsJson } from "@solana/actions"
  * Configures the discovery manifest for Solana Actions.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Always include standard Solana Actions CORS headers
   Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
     res.setHeader(key, value)
   })
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }

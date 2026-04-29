@@ -7,7 +7,6 @@ import { getAssetsByOwner } from "../../_lib/helius.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Extract from query OR from URL parts (for /api/solana/assets/WALLET)
   let owner = req.query.owner as string
   if (!owner) {
     const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []

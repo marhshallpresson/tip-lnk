@@ -6,9 +6,9 @@ import { Connection } from '@solana/web3.js';
  */
 
 const RPC_ENDPOINTS = [
-  process.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', // Primary (QuickNode / Helius)
-  process.env.SECONDARY_RPC_URL || 'https://solana-mainnet.rpc.extnode.com', // Secondary
-  'https://api.mainnet-beta.solana.com' // Tertiary (Public Fallback)
+  process.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
+  process.env.SECONDARY_RPC_URL || 'https://solana-mainnet.rpc.extnode.com',
+  'https://api.mainnet-beta.solana.com'
 ];
 
 class RpcManager {
@@ -42,14 +42,13 @@ class RpcManager {
         return await operation(conn);
       } catch (error: any) {
         lastError = error;
-        // Check if error is related to network/timeout
         if (error.message.includes('fetch') || error.message.includes('timeout') || error.message.includes('503')) {
           this.reportFailure();
         }
         
         attempt++;
         if (attempt < maxRetries) {
-          const delay = Math.pow(2, attempt) * 500; // Exponential backoff: 1s, 2s, 4s
+          const delay = Math.pow(2, attempt) * 500;
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }

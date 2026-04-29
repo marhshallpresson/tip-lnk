@@ -46,11 +46,10 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
   const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || profile.displayName || '');
   const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
   const [isResolving, setIsResolving] = useState(false);
-  const [txStep, setTxStep] = useState('configure'); // configure, confirm, select-currency, processing, done
+  const [txStep, setTxStep] = useState('configure');
   const [searchTerm, setSearchTerm] = useState('');
   const [note, setNote] = useState('');
 
-  // ─── Resolve Recipient Address ───
   useEffect(() => {
     if (fixedRecipient) {
       setResolvedAddress(fixedRecipient.address);
@@ -127,7 +126,6 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
     }
   }, [amount, selectedToken, calculateRoute, resolvedAddress, note]);
 
-  // ─── Elite Simulation Trigger ───
   useEffect(() => {
     if (route?.transaction && txStep === 'confirm') {
       simulate(route.transaction);
@@ -135,14 +133,11 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
   }, [route?.transaction, txStep, simulate]);
 
   const handleSendTip = async () => {
-    // ─── Professional MWA / Deep Link Trigger ───
     if (isMobile() && !hasSolanaProvider()) {
         setTxStep('processing');
-        // Use Solana Pay Transaction Request standard
         const solanaUri = getSolanaPayUri(resolvedAddress, amount, selectedToken.mint);
         window.location.href = solanaUri;
         
-        // Setup a small timeout to fallback to phantom browse if solana: doesn't trigger
         setTimeout(() => {
              const deepLink = getPhantomDeepLink(window.location.href);
              window.location.href = deepLink;
@@ -203,14 +198,12 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
       const data = await response.json();
       
       if (data.success && data.checkoutUrl) {
-         // Open Fossa Pay in a secure popup window
          const width = 500;
          const height = 700;
          const left = window.screenX + (window.innerWidth - width) / 2;
          const top = window.screenY + (window.innerHeight - height) / 2;
          window.open(data.checkoutUrl, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
          
-         // Set pending state to wait for webhook confirmation
          setTxResult({ 
              status: 'pending', 
              signature: data.intentId, 

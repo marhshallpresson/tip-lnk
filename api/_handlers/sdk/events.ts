@@ -8,7 +8,6 @@ import { db } from "../../_lib/db.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Validate API Key
   const authHeader = req.headers['authorization']
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid API key' })
@@ -25,10 +24,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'creatorId is required' })
     }
 
-    // ─── ELITE VALIDATION ───
-    // This query pulls directly from the `tips` table which is populated
-    // exclusively by the Helius Webhook (the Source of Truth).
-    // This guarantees no fake events are returned to the SDK consumer.
 
     let query = db('tips')
       .where({ recipient: creatorId, status: 'confirmed' })
@@ -47,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const events = tips.map(tip => ({
         eventId: tip.signature,
         type: 'tip_completed',
-        amountUsdc: tip.tokenSymbol === 'USDC' ? tip.amount : 0, // Fallback needed for SOL valuation
+        amountUsdc: tip.tokenSymbol === 'USDC' ? tip.amount : 0,
         amountRaw: tip.amount,
         tokenSymbol: tip.tokenSymbol,
         sender: tip.sender,

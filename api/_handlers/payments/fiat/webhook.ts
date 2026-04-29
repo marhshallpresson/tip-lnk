@@ -26,7 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  // 1. Signature Verification
   const payload = JSON.stringify(req.body)
   const expectedSignature = crypto
     .createHmac('sha256', FOSSA_SECRET)
@@ -43,7 +42,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Invalid signature' })
   }
 
-  // 2. Parse Payload
   const { reference, status, amount, destinationWallet, metadata } = req.body
 
   if (status !== 'completed' && status !== 'successful') {
@@ -52,7 +50,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // 3. Prevent duplicate processing via Redis lock (10 mins)
     if (redis) {
       const isDuplicate = await redis.set(`lock:fiat:${reference}`, '1', { nx: true, ex: 600 });
       if (!isDuplicate) {
@@ -61,7 +58,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // 4. Idempotency Check in DB
     const existing = await db('tips').where({ signature: reference }).first()
     if (existing) {
         console.log(`ℹ️ Fiat Webhook: Reference ${reference} already processed in ledger. Skipping.`)
@@ -74,10 +70,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const message = metadata?.memo || null
     const timestamp = new Date()
 
-    // 5. Insert into Ledger
     const insertResult = await db('tips').insert({
-      signature: reference, // Use reference as unique tx ID
-      slot: 0, // Fiat transactions don't have slots
+      signature: reference,
+      slot: 0,
       timestamp,
       sender: 'FIAT_ONRAMP', 
       recipient: destinationWallet,
@@ -88,7 +83,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       type: 'fiat_webhook'
     }).onConflict('signature').ignore()
 
-    // 6. Growth Tracking (Torque Event)
     if (insertResult && (insertResult as any).length > 0) {
       const previousTips = await db('tips').where({ recipient: destinationWallet }).count('signature as count').first();
       const isFirstTip = parseInt(String(previousTips?.count || '0')) === 1;
@@ -117,7 +111,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // 7. Real-Time Pub/Sub Notification
     if (redis) {
       await redis.publish('live-tips', JSON.stringify({
           signature: reference,
@@ -133,7 +126,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err) {
     console.error('Fiat Webhook Fault:', err)
     
-    // DLQ Fallback
     if (redis) {
       try { await redis.lpush('dlq:fiat_webhooks', payload) } catch(e){}
     }

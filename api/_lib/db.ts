@@ -15,7 +15,7 @@ const config = process.env.DATABASE_URL
       client: 'pg',
       connection: {
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false } // Required for Supabase production
+        ssl: { rejectUnauthorized: false }
       },
       pool: {
         min: 2,
@@ -50,19 +50,17 @@ export async function getCreatorBalance(walletAddress: string) {
     if (!walletAddress) return { totalTips: 0, totalWithdrawn: 0, balance: 0 };
 
     try {
-        // Fetch all confirmed tips
         const tips = await db('tips')
             .where({ recipient: walletAddress, status: 'confirmed' });
         
         const solPrice = await getSolPrice();
 
-        // Normalize all tips to USD
         const totalTipsUSD = tips.reduce((acc, tip) => {
             const amount = Number(tip.amount);
             if (tip.tokenSymbol === 'SOL') {
                 return acc + (amount * solPrice);
             }
-            return acc + amount; // Assume USDC/Stable
+            return acc + amount;
         }, 0);
         
         const payouts = await db('payouts')
@@ -70,7 +68,6 @@ export async function getCreatorBalance(walletAddress: string) {
             .whereIn('status', ['pending', 'completed'])
             .sum('amount_ngn as total');
 
-        // Convert NGN back to a rough USD equivalent for the ledger internal check
         const totalWithdrawnNGN = Number(payouts[0]?.total || 0);
         const totalWithdrawnUSD = totalWithdrawnNGN / 1250; 
 
@@ -85,10 +82,6 @@ export async function getCreatorBalance(walletAddress: string) {
     }
 }
 
-// ─── ELITE AUTOMATION ───
-// Automatically ensure schema is provisioned on boot.
-// In serverless, this runs on cold start. In local dev, it runs once.
-// We call this after 'db' is exported to avoid "Cannot access 'db' before initialization"
 initSchema().catch(err => {
 });
 
@@ -99,10 +92,7 @@ initSchema().catch(err => {
 export async function initSchema() {
 
   try {
-    // ─── ELITE SAFETY GUARD ───
-    // DANGEROUS_RESET_DB_FOR_MIGRATION logic removed for production safety.
 
-    // 1. User Table
     if (!(await db.schema.hasTable('user'))) {
       await db.schema.createTable('user', (table) => {
         table.string('id').primary(); 
@@ -114,7 +104,7 @@ export async function initSchema() {
         table.string('discordHandle').unique();
         table.string('walletAddress').unique();
         table.string('solDomain').unique();
-        table.boolean('auto_convert_usdc').defaultTo(true); // Elite Default: Settle in Stables
+        table.boolean('auto_convert_usdc').defaultTo(true);
         table.boolean('onboardingComplete').defaultTo(false);
         table.integer('followers_count').defaultTo(0);
         table.integer('following_count').defaultTo(0);
@@ -127,8 +117,6 @@ export async function initSchema() {
         table.timestamps(true, true);
       });
     } else {
-        // ─── ELITE AUTO-MIGRATION (Phase 2 Hardening) ───
-        // Ensure solDomain exists if table was created in early beta
         const hasSolDomain = await db.schema.hasColumn('user', 'solDomain');
         if (!hasSolDomain) {
             await db.schema.table('user', (table) => {
@@ -146,7 +134,6 @@ export async function initSchema() {
         }
     }
 
-    // 1b. Event Sourcing: Raw Webhook Payloads (Append-Only)
     if (!(await db.schema.hasTable('transactions_raw'))) {
       await db.schema.createTable('transactions_raw', (table) => {
         table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
@@ -158,7 +145,6 @@ export async function initSchema() {
       });
     }
 
-    // 2. Tips Table (Materialized View of Confirmed Tips)
     if (!(await db.schema.hasTable('tips'))) {
       await db.schema.createTable('tips', (table) => {
         table.string('signature').primary();
@@ -173,14 +159,13 @@ export async function initSchema() {
         table.string('treasury_address');
         table.string('tokenMint').notNullable();
         table.string('tokenSymbol').notNullable();
-        table.string('method').defaultTo('crypto'); // 'crypto' or 'fiat'
+        table.string('method').defaultTo('crypto');
         table.string('status').defaultTo('confirmed');
         table.string('type').defaultTo('tip');
       });
       await db.raw('CREATE INDEX IF NOT EXISTS idx_tips_timestamp ON "tips" (timestamp DESC);');
     }
 
-    // 2b. Analytics Daily Table
     if (!(await db.schema.hasTable('analytics_daily'))) {
       await db.schema.createTable('analytics_daily', (table) => {
         table.date('date').notNullable();
@@ -191,7 +176,6 @@ export async function initSchema() {
       });
     }
 
-    // 3. Indexer State
     if (!(await db.schema.hasTable('indexer_state'))) {
       await db.schema.createTable('indexer_state', (table) => {
         table.string('address').primary();
@@ -200,7 +184,6 @@ export async function initSchema() {
       });
     }
 
-    // 4. Roles Table
     if (!(await db.schema.hasTable('roles'))) {
       await db.schema.createTable('roles', (table) => {
         table.string('id').primary();
@@ -208,12 +191,10 @@ export async function initSchema() {
         table.timestamps(true, true);
       });
       console.log('✨ Roles table provisioned.');
-      // Seed default user role
       await db('roles').insert({ id: '00000000-0000-4000-8000-000000000001', name: 'user' }).onConflict('name').ignore();
       await db('roles').insert({ id: '00000000-0000-4000-8000-000000000002', name: 'admin' }).onConflict('name').ignore();
     }
 
-    // 5. User Roles Mapping
     if (!(await db.schema.hasTable('user_roles'))) {
       await db.schema.createTable('user_roles', (table) => {
         table.string('userId').references('id').inTable('user').onDelete('CASCADE');
@@ -222,7 +203,6 @@ export async function initSchema() {
       });
     }
 
-    // 6. Session Table
     if (!(await db.schema.hasTable('session'))) {
       await db.schema.createTable('session', (table) => {
         table.string('id').primary();
@@ -235,7 +215,6 @@ export async function initSchema() {
       });
     }
 
-    // 7. Email Verification Tokens
     if (!(await db.schema.hasTable('email_verification_token'))) {
       await db.schema.createTable('email_verification_token', (table) => {
         table.string('id').primary();
@@ -247,7 +226,6 @@ export async function initSchema() {
       });
     }
 
-    // 8. Password Reset Tokens
     if (!(await db.schema.hasTable('password_reset_token'))) {
       await db.schema.createTable('password_reset_token', (table) => {
         table.string('id').primary();
@@ -258,7 +236,6 @@ export async function initSchema() {
       });
     }
 
-    // 9. Payouts Table
     if (!(await db.schema.hasTable('payouts'))) {
       await db.schema.createTable('payouts', (table) => {
         table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
@@ -271,19 +248,17 @@ export async function initSchema() {
       });
     }
 
-    // 10. OAuth Clients
     if (!(await db.schema.hasTable('oauth_clients'))) {
       await db.schema.createTable('oauth_clients', (table) => {
         table.string('id').primary();
         table.string('userId').references('id').inTable('user').onDelete('CASCADE');
         table.string('name').notNullable();
         table.string('secretHash').notNullable();
-        table.string('redirectUris').notNullable(); // Comma-separated
+        table.string('redirectUris').notNullable();
         table.timestamps(true, true);
       });
     }
 
-    // 11. OAuth Tokens
     if (!(await db.schema.hasTable('oauth_tokens'))) {
       await db.schema.createTable('oauth_tokens', (table) => {
         table.string('id').primary();
@@ -297,16 +272,11 @@ export async function initSchema() {
       });
     }
 
-    // ─── ELITE SECURITY HARDENING ───
     const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts', 'oauth_clients', 'oauth_tokens', 'analytics_daily'];
     for (const table of tables) {
         try {
-            // Enable RLS
             await db.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY;`);
             
-            // Create "Internal Only" Policy to satisfy Linter
-            // This policy explicitly allows the service_role while denying everyone else (anon/authenticated)
-            // Note: service_role usually bypasses RLS anyway, but this makes the intent explicit for Supabase.
             await db.raw(`
                 DO $$
                 BEGIN
@@ -324,17 +294,13 @@ export async function initSchema() {
                 $$;
             `);
         } catch (e) { 
-            // Handle edge cases for different DB environments
         }
     }
 
-    // ─── ELITE DATA CLEANUP ───
-    // 1. Remove legacy dummy emails
     await db('user')
       .where('email', 'like', '%@phantom.local')
       .update({ email: null });
 
-    // 2. Recover 'Reset' Accounts: Sync onboarding status from profileData JSON to root column
     try {
         const usersToFix = await db('user')
             .where({ onboardingComplete: false })

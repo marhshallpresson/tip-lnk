@@ -35,10 +35,8 @@ export default function DashboardWalkthrough({ onComplete }) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Only show walkthrough if onboarding is truly complete
     if (!onboardingComplete) return;
     
-    // Slight delay for impact after dashboard load
     const timer = setTimeout(() => setIsVisible(true), 1000);
     return () => clearTimeout(timer);
   }, [onboardingComplete]);

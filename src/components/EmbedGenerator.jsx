@@ -6,7 +6,6 @@ const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
   const [accentColor, setAccentColor] = useState('#00D265');
   const [theme, setTheme] = useState('dark');
 
-  // Construct the dynamic profile URL
   const profileUrl = `${window.location.origin}/${handle}`;
 
   const buttonHtml = `<a href="${profileUrl}" target="_blank" style="display: inline-flex; align-items: center; background: ${accentColor}; color: #000; padding: 12px 24px; border-radius: 12px; font-weight: 800; text-decoration: none; font-family: sans-serif; gap: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);">

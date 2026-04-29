@@ -34,7 +34,6 @@ export default function AdminDashboard() {
       const isProd = import.meta.env.PROD;
       const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
       
-      // The dashboard stats still require the backend secret for data aggregation
       const adminSecret = 'tiplnk-elite-admin-2026-god-mode'; 
       const headers = { 'x-admin-secret': adminSecret };
       

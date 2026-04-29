@@ -15,7 +15,6 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
 
-// ─── Elite Network Routing ───
 const getRpcUrl = () => {
     const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
     const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
@@ -37,12 +36,10 @@ export async function registerWebhookAddress(address: string) {
   }
 
   try {
-    // 1. Fetch existing webhook config
     const { data: webhook } = await axios.get(
       `https://api.helius.xyz/v0/webhooks/${WEBHOOK_ID}?api-key=${API_KEY}`
     );
 
-    // 2. Add address if not already present
     if (!webhook.accountAddresses.includes(address)) {
       const newAddresses = [...webhook.accountAddresses, address];
       await axios.put(
@@ -122,7 +119,6 @@ export async function aggregateSocialMetrics(twitterHandle?: string, discordId?:
  */
 export async function backfillTransactions(address: string, limit = 100) {
   try {
-    // If on devnet, we skip Helius-specific indexing as gTFA is a mainnet product
     if (NETWORK === 'devnet') return [];
 
     const { data } = await axios.post(getRpcUrl(), {
@@ -230,7 +226,6 @@ export async function getPriorityFeeEstimate(accountAddresses: string[]) {
  */
 export async function getAssetsByOwner(owner: string) {
   try {
-    // DAS API is Mainnet only, return empty for Devnet simulation
     if (NETWORK === 'devnet') return { assets: { items: [] } };
 
     const { data } = await axios.post(getRpcUrl(), {

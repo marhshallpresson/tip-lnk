@@ -22,14 +22,10 @@ export function usePajRamp() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState(null);
 
-  // Initialize SDK on load
   useEffect(() => {
-    // Note: The SDK might require merchant configuration or environment settings
-    // For now, we initialize as per the stateless wrapper pattern
     initializeSDK();
   }, []);
 
-  // Persist session token
   useEffect(() => {
     if (sessionToken) {
       localStorage.setItem('paj_session_token', sessionToken);
@@ -42,7 +38,7 @@ export function usePajRamp() {
     setError(null);
     try {
       const res = await initiate(emailOrPhone || authUser?.email);
-      return res; // Should contain success status
+      return res;
     } catch (err) {
       setError(err.message || 'Failed to initiate OTP');
       throw err;
@@ -68,36 +64,37 @@ export function usePajRamp() {
   }, [authUser]);
 
   const fetchBanks = useCallback(async () => {
-    if (banks.length > 0) return banks;
     setLoadingBanks(true);
     try {
       const bankList = await getBanks();
-      setBanks(bankList);
-      return bankList;
+      setBanks(bankList || []);
+      return bankList || [];
     } catch (err) {
-      console.error('Failed to fetch banks', err);
+      console.error('🛡️ usePajRamp: Failed to fetch banks', err);
       return [];
     } finally {
       setLoadingBanks(false);
     }
-  }, [banks]);
+  }, []);
 
   const resolveAccount = useCallback(async (bankId, accountNumber) => {
     if (!sessionToken) throw new Error('Authentication required');
     try {
       const res = await resolveBankAccount(sessionToken, bankId, accountNumber);
-      return res; // Should contain accountName
+      return res;
     } catch (err) {
+      console.error('🛡️ usePajRamp: Resolve error', err);
       throw err;
     }
   }, [sessionToken]);
 
   const getRate = useCallback(async (amount, type = 'offRamp') => {
+    if (!amount || isNaN(amount)) return null;
     try {
       const rateData = await getRateByAmount(amount, type);
-      return rateData; // contains userTax, merchantTax, totalReceived, etc.
+      return rateData;
     } catch (err) {
-      console.error('Rate fetch failed', err);
+      console.error('🛡️ usePajRamp: Rate fetch failed', err);
       return null;
     }
   }, []);
@@ -111,16 +108,18 @@ export function usePajRamp() {
         accountNumber,
         token
       });
-      return order; // Contains the deposit address
+      return order;
     } catch (err) {
-      setError(err.message || 'Failed to create off-ramp order');
-      throw err;
+      const msg = err.message || 'Failed to create off-ramp order';
+      setError(msg);
+      throw new Error(msg);
     }
   }, [sessionToken]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setSessionToken(null);
-  };
+    setBanks([]);
+  }, []);
 
   return {
     sessionToken,

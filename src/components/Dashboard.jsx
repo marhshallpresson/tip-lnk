@@ -38,7 +38,6 @@ export default function Dashboard() {
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
 
-  // ─── ELITE WALKTHROUGH TRIGGER ───
   useEffect(() => {
     const hasSeenWalkthrough = localStorage.getItem(`walkthrough_seen_${authUser?.id}`);
     const onboardingFinishedJustNow = localStorage.getItem('onboarding_just_finished') === 'true';
@@ -51,7 +50,6 @@ export default function Dashboard() {
       setShowWalkthrough(true);
     }
 
-    // ─── ONBOARDING PROMPT ───
     if (role === 'user' && authUser) {
       setShowOnboardingPrompt(true);
     }
@@ -67,7 +65,6 @@ export default function Dashboard() {
 
 
   const handleDisconnect = async () => {
-    // ─── Professional Logout Sequence ───
     try {
       if (connected) {
         await disconnect().catch(() => null);
@@ -76,8 +73,8 @@ export default function Dashboard() {
     } catch (e) {
       console.warn('Logout cleanup incomplete:', e);
     } finally {
-      resetOnboarding();  // Clear Local Cache
-      navigate('/');      // Return to Landing
+      resetOnboarding();
+      navigate('/');
     }
   };
 

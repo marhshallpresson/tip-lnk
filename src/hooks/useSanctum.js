@@ -19,7 +19,6 @@ export function useSanctum() {
       if (!response.ok) throw new Error('Sanctum API unreachable');
       const data = await response.json();
       
-      // Filter for major LSTs to keep UI clean
       const majorSymbols = ['INF', 'jupSOL', 'jitoSOL', 'mSOL', 'bSOL'];
       const filtered = data.filter(lst => majorSymbols.includes(lst.symbol));
       

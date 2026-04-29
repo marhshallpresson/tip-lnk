@@ -12,9 +12,6 @@ export const AuthProvider = ({ children }) => {
   const { authToken: dynamicAuthToken, handleLogOut: dynamicLogout } = useDynamicContext();
 
   const fetchMe = async () => {
-    // ─── ELITE CONSOLE CLEANUP ───
-    // If we don't have a token, don't even try to fetch the user.
-    // This stops the browser from logging a red 401 error in the console.
     if (!api.accessToken) {
       setUser(null);
       setLoading(false);
@@ -28,11 +25,9 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
       } else {
         setUser(null);
-        // Clear token if me fails (likely expired)
         api.setAccessToken(null);
       }
     } catch (err) {
-      // Only log if it's a real network error, not a 401
       console.debug('Session check: No active user session found.');
       setUser(null);
     } finally {
@@ -40,7 +35,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ─── ELITE DYNAMIC SYNC ───
   useEffect(() => {
     const syncDynamic = async () => {
       if (dynamicAuthToken && !api.accessToken) {

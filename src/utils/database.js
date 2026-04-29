@@ -20,3 +20,8 @@ export async function getProfile(walletAddress) {
   return res.data?.profile || null;
 }
 
+export async function logTip(tipData) {
+  const res = await api.post('/solana/tips/confirm', tipData);
+  return res.data;
+}
+

@@ -4,7 +4,6 @@ import { ensureCsrfToken } from "../../_lib/csrf.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Shim res.cookie for Vercel compatibility with backend libs
   if (!(res as any).cookie) {
     (res as any).cookie = (name: string, value: string, options: any) => {
       let cookieStr = `${name}=${value}; Path=${options.path || '/'}`

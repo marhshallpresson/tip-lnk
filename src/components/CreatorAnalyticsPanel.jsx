@@ -12,7 +12,6 @@ export default function CreatorAnalyticsPanel() {
 
   const totalReach = profile?.socialMetrics?.totalFollowers || 0;
 
-  // Derive top supporters from real data
   const supporterMap = tipsReceived.reduce((acc, tip) => {
     const name = tip.sender || 'Anonymous';
     if (!acc[name]) acc[name] = { name, amount: 0, count: 0 };

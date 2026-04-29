@@ -24,7 +24,6 @@ export default function useTransactionHistory() {
     setHistory((h) => ({ ...h, loading: true, error: null }));
 
     try {
-      // ─── Professional Helius Indexing Integration ───
       const isProd = import.meta.env.PROD;
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
       const response = await fetch(`${API_BASE_URL}/api/solana/tips/${publicKey.toBase58()}`);
@@ -33,7 +32,6 @@ export default function useTransactionHistory() {
 
       const { tips } = await response.json();
 
-      // Format for UI
       const transactions = tips.map(tip => ({
         signature: tip.signature,
         timestamp: new Date(tip.timestamp).getTime(),
@@ -50,7 +48,6 @@ export default function useTransactionHistory() {
 
       setHistory({ transactions, loading: false, error: null });
 
-      // Trigger a silent backfill to keep the indexer fresh
       fetch(`${API_BASE_URL}/api/solana/backfill`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

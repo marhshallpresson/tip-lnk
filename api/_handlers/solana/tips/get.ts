@@ -8,7 +8,6 @@ import { getSolPrice } from "../../../_lib/price.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Extract from query OR from URL parts (for /api/solana/tips/WALLET)
   let address = req.query.address as string
   if (!address) {
     const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []
@@ -26,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .orderBy('timestamp', 'desc')
       .limit(50)
     
-    // ─── ELITE DATA INTELLIGENCE: USD VALUATION ───
     const solPrice = await getSolPrice()
     const enhancedTips = tips.map(tip => {
         const amount = Number(tip.amount)

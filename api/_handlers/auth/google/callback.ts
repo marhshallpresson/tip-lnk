@@ -25,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const config = await getGoogleConfig()
 
-    // Vercel cookies helper
     const stateCookie = req.cookies?.g_state
     const verifierCookie = req.cookies?.g_verifier
     const nonceCookie = req.cookies?.g_nonce
@@ -70,7 +69,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
-    // Ensure we don't fallback to email as name if we want to enforce real names later
     const validatedName = (name && name !== email) ? name : null
 
     let user = await db('user').where({ googleSub: sub }).whereNull('deletedAt').first()

@@ -12,7 +12,7 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('idle'); // idle | success | error
+  const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
 
   useEffect(() => {

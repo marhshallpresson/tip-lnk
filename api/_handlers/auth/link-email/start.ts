@@ -24,9 +24,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const code = randomCode(6)
     const codeHash = sha256Hex(code)
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 mins
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
-    // Store verification intent
     await db('email_verification_token').insert({
         id: randomUUID(),
         userId: user.id,

@@ -20,7 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const webhookKey = req.headers['authorization']
   const SECRET = process.env.HELIUS_WEBHOOK_SECRET
 
-  // Elite Hardening: Verify Helius Secret
   if (SECRET && webhookKey !== SECRET) {
       console.warn('⚠️ Webhook blocked: Invalid authorization key')
       return res.status(401).json({ error: 'Unauthorized' })
@@ -31,13 +30,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     for (const tx of transactions) {
-        // Reject failed transactions
         if (tx.transactionError) continue;
 
         const signature = tx.signature
         
-        // ─── PHASE 1: WEBHOOK RELIABILITY & EVENT SOURCING ───
-        // Store raw payload first
         try {
             await db('transactions_raw').insert({
                 signature: signature,
@@ -47,15 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }).onConflict('signature').ignore();
         } catch (dbErr) {
             console.error('Failed to log raw transaction:', dbErr);
-            // If DB fails, push to Redis dead-letter queue as ultimate fallback
             if (redis) {
                 await redis.lpush('dlq:webhooks', JSON.stringify(tx));
             }
-            continue; // Skip processing if we can't guarantee raw state
+            continue;
         }
 
-        // ─── IDEMPOTENCY CHECK ───
-        // Prevent duplicate processing via Redis lock (10 mins)
         if (redis) {
             const isDuplicate = await redis.set(`lock:tx:${signature}`, '1', { nx: true, ex: 600 });
             if (!isDuplicate) {
@@ -67,7 +60,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const sender = tx.feePayer
         const timestamp = new Date(tx.timestamp * 1000)
         
-        // Extract native or token transfer
         const transfer = tx.nativeTransfers?.[0] || tx.tokenTransfers?.[0]
         if (!transfer) {
              await db('transactions_raw').where({ signature }).update({ status: 'skipped' });
@@ -78,23 +70,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const isNative = tx.nativeTransfers?.length > 0
         const amount = isNative ? (transfer.amount / 1e9) : transfer.tokenAmount
 
-        // ─── PHASE 5: MEMO EXTRACTION ───
-        // Check for Solana Memo Program (MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848)
         let message = null;
         const memoIx = tx.instructions?.find((ix: any) => ix.programId === 'MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848');
         if (memoIx && memoIx.data) {
            message = memoIx.data;
         }
 
-        // PHASE 6: FRAUD PREVENTION
-        // Reject zero amounts and self-transfers
         if (amount <= 0 || sender === recipient) {
             console.warn(`🛡️ Webhook: Rejected invalid transfer for ${signature}`);
             await db('transactions_raw').where({ signature }).update({ status: 'rejected_fraud' });
             continue;
         }
 
-        // Insert into ledger (tips materialized view)
         const tokenSymbol = tx.nativeTransfers?.length > 0 ? 'SOL' : (transfer.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'USDC' : 'TOKEN');
         const insertResult = await db('tips').insert({
           signature,
@@ -103,20 +90,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           sender,
           recipient,
           amount,
-          message, // Save the supporter message
+          message,
           tokenSymbol,
           status: 'confirmed',
           type: 'webhook_indexed'
-        }).onConflict('signature').ignore() // Reject duplicate signatures
+        }).onConflict('signature').ignore()
         
-        // Mark raw as processed
         await db('transactions_raw').where({ signature }).update({ status: 'processed' });
         console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`)
 
-        // ─── PHASE 2: TORQUE EVENT PIPELINE ───
-        // We only emit the event if the insert actually happened (it wasn't ignored due to conflict)
         if (insertResult && (insertResult as any).length > 0) {
-            // Check if this is their first tip
             const previousTips = await db('tips').where({ recipient }).count('signature as count').first();
             const isFirstTip = parseInt(String(previousTips?.count || '0')) === 1;
 
@@ -136,7 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 metadata: {
                     wallet_address: sender,
                     creator_id: recipient,
-                    amount_usd: amount, // Ideally normalized, using raw amount as fallback
+                    amount_usd: amount,
                     token_symbol: tokenSymbol,
                     tx_signature: signature,
                     source: 'helius_webhook'
@@ -144,7 +127,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
         
-        // ─── PHASE 3: REAL-TIME PUB/SUB NOTIFICATION ───
         if (redis) {
              await redis.publish('live-tips', JSON.stringify({
                  signature,

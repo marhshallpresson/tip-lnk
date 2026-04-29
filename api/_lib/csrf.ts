@@ -49,7 +49,6 @@ export const getCsrfCookieToken = (req: Request) => {
   const fromMiddleware = normalizeToken((req.cookies || {})[CSRF_COOKIE_NAME])
   if (fromMiddleware) return fromMiddleware
 
-  // Manual Parsing Fallback (Crucial for Vercel/Serverless edge cases)
   const cookieHeader = req.headers.cookie || ''
   const cookies = cookieHeader.split(';').reduce((acc: any, curr) => {
     const [key, value] = curr.trim().split('=')

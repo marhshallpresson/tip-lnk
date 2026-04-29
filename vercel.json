@@ -18,14 +18,7 @@
       "destination": "/api/index.ts"
     },
     {
-      "handle": "filesystem"
-    },
-    {
-      "source": "/assets/(.*)",
-      "destination": "/assets/$1"
-    },
-    {
-      "source": "/(.*\\.(?:js|wasm|map|css|png|jpg|svg|ico|json))$",
+      "source": "/(.*\\.(?:js|css|wasm|png|jpg|jpeg|gif|svg|ico|json|map))$",
       "destination": "/$1"
     },
     {

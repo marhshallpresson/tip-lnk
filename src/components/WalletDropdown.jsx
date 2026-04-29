@@ -19,7 +19,6 @@ export default function WalletDropdown() {
   const address = publicKey?.toBase58() || '';
   const shortAddress = `${address.slice(0, 5)}...${address.slice(-5)}`;
 
-  // Close when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -31,7 +30,6 @@ export default function WalletDropdown() {
   }, []);
 
   const handleDisconnect = async () => {
-    // ─── Professional Logout Sequence ───
     setIsOpen(false);
     try {
         if (connected) {
@@ -41,8 +39,8 @@ export default function WalletDropdown() {
     } catch (e) {
         console.warn('Logout cleanup incomplete:', e);
     } finally {
-        resetOnboarding();  // Clear Local Cache
-        navigate('/');      // Return to Landing
+        resetOnboarding();
+        navigate('/');
     }
   };
 

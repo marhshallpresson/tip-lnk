@@ -104,7 +104,6 @@ export function patchResponse(res: VercelResponse) {
       }
       if (options.maxAge) cookieStr += `; Max-Age=${Math.floor(options.maxAge / 1000)}`
       
-      // Filter out existing cookie with same name to avoid duplicates in the same response
       const index = cookies.findIndex(c => c.startsWith(`${name}=`))
       if (index !== -1) cookies.splice(index, 1)
       
@@ -134,10 +133,10 @@ export const oauthRedirectUrl = (req?: VercelRequest) => {
   if (req && inferred) {
     const inferredHost = hostFromAbsoluteUrl(inferred)
     const envHost = hostFromAbsoluteUrl(env)
-    if (env && /^https?:\/\//i.test(env) && envHost === inferredHost) return env
+    if (env && /^https?:\/\
     return `${inferred}/api/auth/google/callback`
   }
-  if (env && /^https?:\/\//i.test(env)) return env
+  if (env && /^https?:\/\
   return `${apiUrl(req)}/api/auth/google/callback`
 }
 

@@ -17,7 +17,6 @@ export function useTransactionSimulation() {
       const isProd = import.meta.env.PROD;
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
-      // ─── ELITE RPC FAILOVER ───
       let response;
       try {
         response = await fetch(`${API_BASE_URL}/api/quicknode/rpc/solana`, {
@@ -32,7 +31,6 @@ export function useTransactionSimulation() {
         });
       } catch (e) {
         console.warn('🛡️ Secondary RPC attempting failover...', e);
-        // If QuickNode fails, try Helius (solana/rpc)
         response = await fetch(`${API_BASE_URL}/api/solana/rpc`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -4,7 +4,6 @@ import { rateLimit } from './_ratelimit.js'
 import { verifyCsrfToken } from './_lib/csrf.js'
 import { patchResponse } from './_handlers/auth/_utils.js'
 
-// Import Handlers
 import { default as authMe } from './_handlers/auth/me.js'
 import { default as authLogin } from './_handlers/auth/login.js'
 import { default as authRegister } from './_handlers/auth/register.js'
@@ -59,9 +58,7 @@ import { default as sdkInit } from './_handlers/sdk/init.js'
 import { default as sdkTip } from './_handlers/sdk/tip.js'
 import { default as sdkEvents } from './_handlers/sdk/events.js'
 
-// Route Registry
 const ROUTES: Record<string, Function> = {
-  // Auth
   'auth/me': authMe,
   'auth/login': authLogin,
   'auth/register': authRegister,
@@ -80,7 +77,6 @@ const ROUTES: Record<string, Function> = {
   'auth/discord/callback': authDiscordCallback,
   'auth/dynamic/verify': authDynamicVerify,
 
-  // Solana
   'solana/profile': solanaProfile,
   'solana/profile/get': solanaProfileGet,
   'solana/profile/update': solanaProfileUpdate,
@@ -101,20 +97,16 @@ const ROUTES: Record<string, Function> = {
   'social/x-posts': socialXPosts,
   'quicknode/rpc/solana': solanaRpc,
 
-  // Payouts
   'payouts/webhook': payoutsWebhook,
   'payouts/history': payoutsHistory,
   'payouts/withdraw': payoutsWithdraw,
 
-  // Admin
   'admin/stats': adminStats,
   'admin/creators': adminCreators,
   'admin/ledger': adminLedger,
 
-  // Payments
   'payments/intent': paymentsIntent,
 
-  // SDK
   'sdk/init': sdkInit,
   'sdk/tip': sdkTip,
   'sdk/events': sdkEvents,
@@ -127,7 +119,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = req.url?.split('?')[0] || ''
   const parts = path.split('/').filter(Boolean)
   
-  // Base health check
   if (parts.length <= 1) {
     return res.status(200).json({ service: 'tiplnkapi', status: 'online' })
   }
@@ -136,7 +127,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const action = parts[2]
   const subAction = parts[3]
 
-  // Construct route key
   let routeKey = `${moduleName}/${action}`
   if (subAction) routeKey += `/${subAction}`
 
@@ -147,7 +137,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!(await rateLimit(req, res))) return
   }
 
-  // ─── ELITE CSRF ENFORCEMENT ───
   const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
   const bypassCsrf = [
     'auth/csrf', 
@@ -173,7 +162,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // ─── PERFORMANCE: CACHE CONTROL ───
   if (req.method === 'GET') {
     const isRealTime = [
       'solana/price', 
@@ -184,20 +172,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ].includes(routeKey) || (moduleName === 'solana' && ['price', 'assets', 'tips'].includes(action));
 
     if (isRealTime) {
-      // Real-time data: Short cache for CDN (5s), very short stale period
       res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=5')
     } else {
-      // Shared cache for 60s, client cache for 10s
       res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30')
     }
   }
 
   try {
-    // ─── ELITE ROUTE RESOLUTION ───
-    // Check for exact matches first (e.g., auth/login)
     let handlerFunc = ROUTES[routeKey]
 
-    // Check for module/action matches if no exact match (handles params like solana/assets/WALLET)
     if (!handlerFunc) {
         const baseKey = `${moduleName}/${action}`
         handlerFunc = ROUTES[baseKey]
@@ -209,7 +192,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(404).json({ error: `Route not found: ${routeKey}` })
   } catch (err: any) {
-    // ─── ERROR MASKING (Anti-Information Leakage) ───
     console.error(`🛡️ Critical Dispatch Error [${routeKey}]:`, err.message)
     res.status(500).json({ 
         error: 'Internal Server Error', 

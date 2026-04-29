@@ -6,7 +6,6 @@ import { Redis } from '@upstash/redis'
 const LIMIT = 100 
 const tracker = new Map<string, { count: number; lastReset: number }>()
 
-// ─── PHASE 2: SCALABLE RATE LIMITING ───
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
   ? new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
@@ -14,7 +13,6 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
     })
   : null;
 
-// Multi-tiered rate limiters
 const authLimiter = redis ? new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(10, '60 s'),
@@ -41,7 +39,6 @@ export async function rateLimit(req: VercelRequest, res: VercelResponse): Promis
 
   const key = `rl:${ip}:${isAuth ? 'auth' : 'api'}`
 
-  // ─── ELITE DISTRIBUTED PATTERN ───
   try {
     if (redis && (isAuth ? authLimiter : apiLimiter)) {
       const limiter = isAuth ? authLimiter! : apiLimiter!;
@@ -65,7 +62,6 @@ export async function rateLimit(req: VercelRequest, res: VercelResponse): Promis
     console.error('Upstash Rate Limit Failure, falling back to memory:', err)
   }
 
-  // ─── MEMORY FALLBACK ───
   const now = Date.now()
   const record = tracker.get(key) || { count: 0, lastReset: now }
   

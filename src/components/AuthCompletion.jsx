@@ -17,13 +17,11 @@ export default function AuthCompletion() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Sync state if user loads after mount
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
     if (user?.name && !name) setName(user.name);
   }, [user]);
 
-  // Redirect if unauthenticated or fully complete
   useEffect(() => {
     if (!authLoading) {
       if (!user) {

@@ -8,7 +8,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let { username } = req.query
   
-  // Extract from URL parts if not in query (e.g. /api/social/x-posts/USERNAME)
   if (!username) {
     const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []
     username = parts[parts.length - 1]
@@ -18,7 +17,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Username required' })
   }
     
-  // Task 1.2: Strict username validation to prevent SSRF
   if (!/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
     return res.status(400).json({ error: 'Invalid Twitter username format' })
   }

@@ -14,8 +14,6 @@ export default function RequireAuth({ children, requiredRole }) {
   const { role, dbSynced } = useApp();
   const location = useLocation();
 
-  // ─── Phase 1: Deep Sync Check ───
-  // If we have a wallet but haven't checked the DB yet, show a loader to prevent flickers
   const { connected } = useWallet();
   if (connected && !dbSynced) {
     return (
@@ -28,7 +26,6 @@ export default function RequireAuth({ children, requiredRole }) {
     );
   }
 
-  // If the user isn't minimally a 'user' (i.e. no wallet), and we need higher privileges
   if (role === 'guest' && requiredRole !== 'guest') {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
@@ -42,7 +39,6 @@ export default function RequireAuth({ children, requiredRole }) {
   }
 
   if (requiredRole === 'user') {
-    // If they are already a creator, they shouldn't be here (e.g. going to /onboarding)
     if (role === 'creator') {
       return <Navigate to="/dashboard" replace />;
     }

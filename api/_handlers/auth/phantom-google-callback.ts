@@ -20,14 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ success: false, error: 'Wallet address, signature, and message are required.' })
   }
 
-  // Task 3.1: Hardened Cryptographic Verification via src/lib/crypto.ts
   try {
     const isValid = verifySignature(message, signature, walletAddress)
     if (!isValid) {
       return res.status(401).json({ success: false, error: 'Invalid wallet signature.' })
     }
 
-    // Replay Protection: Verify timestamp
     const timestampMatch = message.match(/Timestamp: (\d+)/)
     if (!timestampMatch) return res.status(400).json({ success: false, error: 'Missing timestamp in message.' })
     const timestamp = parseInt(timestampMatch[1])

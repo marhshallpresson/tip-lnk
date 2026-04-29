@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { logError } from './logger.js';
 
-// Define the Torque Event Schema
 export interface TorqueEvent {
   event_type: 
     | 'user_signup' 
@@ -29,7 +28,7 @@ export interface TorqueEvent {
   };
 }
 
-const TORQUE_API_URL = process.env.TORQUE_API_URL || 'http://localhost:3000/api/events'; // Mock or actual Torque MCP endpoint
+const TORQUE_API_URL = process.env.TORQUE_API_URL || 'http://localhost:3000/api/events';
 const TORQUE_API_KEY = process.env.TORQUE_API_KEY;
 
 /**
@@ -42,31 +41,24 @@ export const emitTorqueEvent = async (event: Omit<TorqueEvent, 'timestamp'>) => 
     timestamp: new Date().toISOString(),
   };
 
-  // In development without a key, just log
   if (!TORQUE_API_KEY) {
     console.log(`[Torque Local] Emitted event: ${event.event_type}`, fullEvent.metadata);
     return;
   }
 
   try {
-    // ─── ELITE DEAD LETTER QUEUE (DLQ) PREPARATION ───
-    // If Redis was fully set up here, we would push to a stream first.
-    // For now, we attempt direct delivery.
     
     await axios.post(TORQUE_API_URL, fullEvent, {
       headers: {
         'Authorization': `Bearer ${TORQUE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      timeout: 5000, // Fail fast so we don't block main threads
+      timeout: 5000,
     });
     
   } catch (error: any) {
-    // ─── PHASE 9: FAILURE HANDLING ───
-    // Do NOT throw. Logging failure is sufficient to prevent blocking core flows like Webhooks.
     console.error(`[Torque Error] Failed to emit ${event.event_type}:`, error.message);
     logError('torque_emit_failed', { event, error: error.message });
     
-    // TODO: Push to Redis DLQ for background retry
   }
 };

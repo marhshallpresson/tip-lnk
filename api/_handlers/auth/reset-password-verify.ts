@@ -44,10 +44,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       updated_at: new Date()
     })
 
-    // Revoke all sessions for security
     await db('session').where({ userId: user.id }).delete()
 
-    // Delete the reset token
     await db('password_reset_token').where({ userId: user.id }).delete()
 
     res.status(200).json({ success: true, message: 'Password has been reset successfully. Please log in with your new password.' })

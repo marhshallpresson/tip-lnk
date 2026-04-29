@@ -32,14 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const connection = new Connection(RPC_URL, 'confirmed');
 
-    // 1. Quote Intelligence (DFlow pre-routing analytics)
     const dflowQuoteResponse = await fetch(
       `https://quote-api.dflow.net/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}`
     ).then((r) => r.json()).catch(() => null)
     
-    // 2. Execution Layer (Jupiter V6)
     const isDirect = inputMint === outputMint;
-    let feeBps = isDirect ? 0 : 500; // 0% direct, 5% swap
+    let feeBps = isDirect ? 0 : 500;
     const TREASURY_WALLET = process.env.VITE_TREASURY_WALLET;
     
     if (!TREASURY_WALLET) feeBps = 0;
@@ -59,14 +57,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: quoteResponse.error })
     }
 
-    // 3. Destination Routing
     const destinationPubkey = new PublicKey(destinationWallet)
     const outputMintPubkey = new PublicKey(outputMint)
     
     const destinationTokenAccount = getAssociatedTokenAddressSync(
       outputMintPubkey,
       destinationPubkey,
-      true // allowOwnerOffCurve
+      true
     )
 
     let feeAccount;
@@ -78,7 +75,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
     }
 
-    // 4. Build Jupiter Swap Payload
     const swapRequestBody = {
       userPublicKey,
       quoteResponse,
@@ -99,14 +95,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: swapResponse.error })
     }
 
-    // ─── ELITE MEMO INJECTION ───
     let finalTxBase64 = swapResponse.swapTransaction;
     if (memo && memo.trim().length > 0) {
         try {
             const swapTxBuf = Buffer.from(swapResponse.swapTransaction, 'base64');
             const transaction = VersionedTransaction.deserialize(swapTxBuf);
             
-            // Fetch LUT accounts referenced in the transaction
             const addressLookupTableAccounts = await Promise.all(
                 transaction.message.addressTableLookups.map(async (lookup) => {
                     return connection.getAddressLookupTable(lookup.accountKey)
@@ -114,12 +108,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 })
             );
 
-            // Decompile the message into instructions
             const decompiledMessage = TransactionMessage.decompile(transaction.message, {
                 addressLookupTableAccounts: addressLookupTableAccounts.filter(Boolean) as any,
             });
 
-            // Prepend Memo Instruction
             decompiledMessage.instructions.unshift(
                 new TransactionInstruction({
                     keys: [],
@@ -128,7 +120,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 })
             );
 
-            // Re-compile
             transaction.message = decompiledMessage.compileToV0Message(
                 addressLookupTableAccounts.filter(Boolean) as any
             );
@@ -140,7 +131,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     }
 
-    // 5. Return Serialized Transaction
     res.status(200).json({
       transaction: finalTxBase64,
       quote: quoteResponse,

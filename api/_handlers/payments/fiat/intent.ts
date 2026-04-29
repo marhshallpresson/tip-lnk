@@ -22,7 +22,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Creator ID and a valid amount are required' })
     }
 
-    // 1. Resolve Creator
     const creator = await db('user')
       .where({ walletAddress: creatorId })
       .orWhere({ solDomain: creatorId })
@@ -35,7 +34,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const intentId = `fossa_${randomUUID().replace(/-/g, '')}`
 
-    // ─── ELITE FOSSA PAY INTEGRATION ───
     const FOSSA_API_KEY = process.env.FOSSA_API_KEY
     const FOSSA_BASE_URL = process.env.FOSSA_BASE_URL || 'https://api.fossapay.com'
 
@@ -46,15 +44,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Calculate Platform Fee (5%)
     const platformFee = amount * 0.05
     const finalAmountUsd = amount - platformFee
 
     try {
-      // 2. Initiate Fossa Pay Checkout Session
-      // In production, this creates a secure intent linked to the creator's settlement address.
       const response = await axios.post(`${FOSSA_BASE_URL}/api/v1/onramp/checkout`, {
-        amount: amount, // Total charged to user
+        amount: amount,
         currency: 'USD',
         reference: intentId,
         destinationWallet: creator.walletAddress,
@@ -64,7 +59,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           memo,
           platformFee
         },
-        // Direct webhook for this specific integration
         webhookUrl: 'https://tip-lnk.vercel.app/api/payments/fiat/webhook'
       }, {
         headers: { 'Authorization': `Bearer ${FOSSA_API_KEY}` }
@@ -80,7 +74,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (apiErr: any) {
       console.error('Fossa Pay API Error:', apiErr.response?.data || apiErr.message)
       
-      // Fallback response for development/testing if Fossa is unreachable
       if (process.env.NODE_ENV === 'development' || !process.env.FOSSA_API_KEY) {
           return res.json({
             success: true,

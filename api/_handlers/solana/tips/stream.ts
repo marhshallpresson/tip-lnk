@@ -34,15 +34,9 @@ export default async function handler(req: Request) {
              throw new Error('Redis configuration missing');
         }
 
-        // Note: Edge functions on Vercel do not support native TCP Redis connections easily, 
-        // but Upstash provides HTTP based Pub/Sub using REST or we can use regular polling 
-        // as a fallback if standard PubSub isn't available via the REST client.
-        // For a production SaaS, this would typically connect to a managed WebSocket service (like Pusher or Supabase Realtime).
         
-        // As a demonstration of the Pub/Sub to Frontend flow:
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: 'connected', wallet: walletAddress })}\n\n`));
         
-        // Simulating a keep-alive ping
         const interval = setInterval(() => {
           try {
              controller.enqueue(encoder.encode(':\n\n'));

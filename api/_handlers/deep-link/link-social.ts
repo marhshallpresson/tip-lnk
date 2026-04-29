@@ -10,7 +10,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { walletAddress, handle, platform, signature, message } = req.body
   
-  // Task 3.1: Elite Hardening: Signature Proof Required via src/lib/crypto.ts
   if (!signature || !message || !verifySignature(message, signature, walletAddress)) {
       return res.status(401).json({ success: false, error: 'Cryptographic proof failed. Verification denied.' })
   }

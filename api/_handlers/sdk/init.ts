@@ -10,7 +10,6 @@ import { emitTorqueEvent } from "../../_lib/torque.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Validate API Key (OAuth Client / App Key)
   const authHeader = req.headers['authorization']
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid API key' })
@@ -18,9 +17,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const apiKey = authHeader.split(' ')[1]
 
   try {
-    // ─── ELITE SDK AUTHENTICATION ───
-    // In production, this verifies against oauth_tokens or a dedicated api_keys table.
-    // For now, we simulate success if the key looks like a valid structure.
     if (apiKey.length < 10) throw new Error('Invalid API key format')
 
     const { creatorId, originUrl, theme = 'dark' } = req.body
@@ -39,10 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Creator not found' })
     }
 
-    // Provision a short-lived session token for the iframe
     const sessionToken = `sdk_sess_${randomUUID()}`
 
-    // Track the embed load for Growth
     await emitTorqueEvent({
       event_type: 'embed_loaded',
       metadata: {

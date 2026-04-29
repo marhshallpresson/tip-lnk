@@ -35,7 +35,6 @@ export default function CheckoutPage() {
     fetchProfile();
   }, [wallet]);
 
-  // Handle closing (postMessage to parent)
   const handleClose = () => {
     if (window.parent) {
       window.parent.postMessage('tiplnk-close', '*');
@@ -105,7 +104,6 @@ export default function CheckoutPage() {
              theme={theme}
              accent={accent}
              onSuccess={() => {
-                // Keep modal open for success state, or auto-close after delay
                 setTimeout(handleClose, 3000);
              }}
            />

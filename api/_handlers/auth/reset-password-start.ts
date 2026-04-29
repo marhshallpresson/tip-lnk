@@ -18,14 +18,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const user = await db('user').where({ email }).whereNull('deletedAt').first()
     
-    // We always return success to prevent email enumeration
     if (!user) {
       return res.status(200).json({ success: true, message: 'If an account exists, a reset link has been sent.' })
     }
 
     const token = randomToken()
     const tokenHash = sha256Hex(token)
-    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000) // 1 hour
+    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000)
 
     await db('password_reset_token').where({ userId: user.id }).delete()
 

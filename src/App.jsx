@@ -29,7 +29,6 @@ const TermsOfService = lazy(() => import('./components/legal/TermsOfService.jsx'
 const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy.jsx'));
 
 
-// Auto-scroll to top on navigation
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -48,7 +47,6 @@ function AppContent() {
     if (role === 'guest') {
       setShowWalletModal(true);
     } else {
-      // Both 'user' and 'creator' roles go to dashboard
       navigate('/dashboard');
     }
   };
@@ -64,7 +62,6 @@ function AppContent() {
   }, [onboardingStep, update]);
 
   const finishOnboarding = useCallback(() => {
-    // ─── ELITE COMPLETION TRIGGER ───
     update({ onboardingComplete: true });
     localStorage.setItem('onboarding_just_finished', 'true');
     navigate('/dashboard');
@@ -187,22 +184,14 @@ function RequireAuth({ children, requiredRole }) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  // ─── ELITE AUTH ENFORCEMENT ───
-  // Every user MUST have a verified email and a FULL NAME before accessing ANY protected route
   if (!user?.email || !user?.emailVerifiedAt || !user?.name) {
-    // Only allow them to see the landing page or the verification/link/name-capture flow
-    // But since this is RequireAuth, we are already on a protected route.
-    // We should redirect to a specialized "Auth Completion" view.
     return <Navigate to="/auth/complete" state={{ from: location }} replace />;
   }
 
-  // Dashboard now accepts both 'user' (incomplete) and 'creator' (complete) roles.
-  // This allows us to show a 'Complete Onboarding' modal inside the dashboard.
   if (requiredRole === 'creator' && (role === 'user' || role === 'creator')) {
     return children;
   }
 
-  // Onboarding is for users who need to finish setup
   if (requiredRole === 'user' && role === 'user') {
     return children;
   }
@@ -222,11 +211,9 @@ function AuthCallbackHandler() {
   const { platform } = useParams();
   const navigate = useNavigate();
   const { updateProfile } = useApp();
-  const [status, setStatus] = useState('loading'); // loading | success | error
+  const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
 
-  // Elite Handler: Phantom SDK uses this route as a redirect URL.
-  // We must not interfere with Phantom's own message passing if it's phantom-google.
   const isPhantomGoogle = platform === 'phantom-google';
 
   useEffect(() => {
@@ -268,7 +255,6 @@ function AuthCallbackHandler() {
               }
             };
 
-            // If we got extra details (especially for X), apply them for instant setup
             if (platform === 'twitter' && data.details) {
               updates.displayName = data.details.name;
               updates.bio = data.details.bio;
@@ -368,7 +354,7 @@ export default function App() {
       settings={{
         environmentId: dynamicEnvId || 'sandbox',
         walletConnectors: [SolanaWalletConnectors],
-        shadowDOMEnabled: false, // Often helps with CSS and internal view loading issues in some frameworks
+        shadowDOMEnabled: false,
       }}
     >
       <SolanaWalletProvider>

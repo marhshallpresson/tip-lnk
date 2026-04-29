@@ -10,7 +10,6 @@ import { randomUUID } from "crypto"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Validate Session Token
   const authHeader = req.headers['authorization']
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid SDK session token' })
@@ -26,8 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'amount, inputTokenMint, sourceWalletAddress, and creatorId are required' })
     }
 
-    // ─── ELITE TRACKING ───
-    // Before forwarding to Jupiter/Intent Engine, log the initiation event
     await emitTorqueEvent({
       event_type: 'tip_initiated',
       metadata: {
@@ -39,15 +36,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
-    // Generate Intent (In production, this would call the internal /api/payments/intent logic directly)
-    // For this example, we mock the response to signify the hand-off to the intent engine
     const intentId = `pi_${randomUUID().replace(/-/g, '')}`
 
     return res.json({
       success: true,
       intentId,
       status: 'requires_action',
-      // The client would use this intent to finalize the transaction via Jupiter
     })
 
   } catch (err: any) {

@@ -21,8 +21,7 @@ export default function PayoutPanel() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
 
-  // PajCash UI State
-  const [rampStep, setRampStep] = useState('amount'); // amount, auth, verify, bank, resolve, confirm
+  const [rampStep, setRampStep] = useState('amount');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
@@ -47,7 +46,6 @@ export default function PayoutPanel() {
     fetchHistory();
   }, []);
 
-  // Update rate when amount changes
   useEffect(() => {
     if (ngnAmount && Number(ngnAmount) >= 1) {
       const timer = setTimeout(async () => {
@@ -106,20 +104,31 @@ export default function PayoutPanel() {
     setProcessing(true);
     setError(null);
     try {
-      // 1. Create order on PajCash
       const order = await createOrder(Number(ngnAmount), selectedBank, accountNumber);
       const depositAddress = new PublicKey(order.address);
 
-      // 2. Build Solana Transaction (USDC Transfer)
       const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
       const fromAta = await getAssociatedTokenAddress(USDC_MINT, publicKey);
       const toAta = await getAssociatedTokenAddress(USDC_MINT, depositAddress);
 
       const transaction = new Transaction();
 
-      // Check if destination ATA exists, if not create it (optional, usually PajCash uses hot wallets with ATAs ready)
-      // But for safety, we assume typical SPL transfer. 
-      // Most Ramps give a wallet address, we need to send to their ATA.
+      try {
+        const accountInfo = await connection.getAccountInfo(toAta);
+        if (!accountInfo) {
+          console.log('🛡️ Pent Test: Destination ATA missing. Adding creation instruction.');
+          transaction.add(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              toAta,
+              depositAddress,
+              USDC_MINT
+            )
+          );
+        }
+      } catch (e) {
+        console.warn('ATA check error, assuming missing:', e);
+      }
       
       transaction.add(
         createTransferInstruction(
@@ -138,10 +147,8 @@ export default function PayoutPanel() {
       const signature = await connection.sendRawTransaction(signed.serialize());
       await connection.confirmTransaction(signature);
 
-      // 3. Update local state
       setRampStep('amount');
       setNgnAmount('');
-      // Refresh history
       const historyRes = await api.get('/payouts/history');
       if (historyRes.ok && historyRes.data?.history) {
         setPayoutHistory(historyRes.data.history);

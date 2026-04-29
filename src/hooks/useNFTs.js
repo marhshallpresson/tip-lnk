@@ -13,7 +13,6 @@ export function useNFTs() {
     setError(null);
 
     try {
-      // Use QuickNode's DAS API (getAssetsByOwner) to query NFTs
       const result = await solanaRpc('getAssetsByOwner', {
         ownerAddress: walletAddress,
         page: 1,
@@ -52,7 +51,6 @@ export function useNFTs() {
             };
           });
 
-        // Sort: Doodles first
         mapped.sort((a, b) => (b.isDoodle ? 1 : 0) - (a.isDoodle ? 1 : 0));
         setNfts(mapped);
       } else {

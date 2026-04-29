@@ -25,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Twitter OAuth not configured on server.' })
     }
 
-    // 1. Exchange Code for Access Token
     const params: any = {
       code,
       grant_type: 'authorization_code',
@@ -49,7 +48,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const accessToken = tokenResponse.data.access_token
 
-    // 2. Fetch User Profile with detailed fields
     const userResponse = await axios.get('https://api.twitter.com/2/users/me', {
       headers: { 'Authorization': `Bearer ${accessToken}` },
       params: {
@@ -63,7 +61,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const twitterBio = twitterData.description
     const twitterAvatar = twitterData.profile_image_url?.replace('_normal', '_400x400')
 
-    // 3. Link to User Profile in DB and pre-fill if empty
     const currentUser = await db('user').where({ id: sessionUser.id }).first()
     const currentProfile = JSON.parse(currentUser.profileData || '{}')
     
@@ -72,7 +69,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       updated_at: new Date()
     }
 
-    // Pre-fill name and bio if not already set
     if (!currentUser.name) updates.name = twitterName
     
     const newProfileData = {
