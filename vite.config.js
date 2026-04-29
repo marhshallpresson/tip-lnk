@@ -37,11 +37,6 @@ export default defineConfig({
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3']
         return serverOnly.some(pkg => id.includes(pkg))
-      },
-      output: {
-        manualChunks: {
-          'dynamic-sdk': ['@dynamic-labs/sdk-react-core', '@dynamic-labs/solana']
-        }
       }
     }
   },

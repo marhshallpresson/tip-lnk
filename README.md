@@ -60,6 +60,7 @@ TipLnk orchestrates an enterprise-grade stack for maximum reliability:
 - **Jupiter V6:** The core execution engine for non-custodial swaps and fee extraction.
 - **Fossa Pay:** Primary fiat-to-crypto onramp and unified fiat payment gateway.
 - **Helius/Quicknode:** The absolute source of truth for on-chain events and high-speed transaction relay.
+- **Birdeye:** Real-time market intelligence and portfolio valuation for creators.
 - **Torque MCP:** Real-time growth tracking and user lifecycle analytics.
 - **Pajcash:** Specialized instant offramping to Nigerian Bank accounts (NGN).
 

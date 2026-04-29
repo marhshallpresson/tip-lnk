@@ -178,7 +178,7 @@ const CreatorHeader = ({ profile, supporterCount, totalVolume }) => {
           <div className="max-w-3xl px-4">
             <div className="flex flex-col items-center gap-2 mb-4">
               <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-2">{profile.solDomain || displayName}</h1>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 {profile.twitterHandle && (
                   <a
                     href={`https://x.com/${profile.twitterHandle}`}
@@ -189,6 +189,18 @@ const CreatorHeader = ({ profile, supporterCount, totalVolume }) => {
                     <Twitter size={14} fill="currentColor" />
                     <span className="text-xs font-bold tracking-tight">@{profile.twitterHandle}</span>
                   </a>
+                )}
+                {profile.followersCount > 0 && (
+                   <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/5 text-white/40">
+                      <span className="text-xs font-black text-white">{profile.followersCount.toLocaleString()}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Followers</span>
+                   </div>
+                )}
+                {profile.location && (
+                   <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/5 text-white/40">
+                      <Globe size={12} />
+                      <span className="text-xs font-bold tracking-tight">{profile.location}</span>
+                   </div>
                 )}
                 <div className="flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 px-4 py-2 rounded-2xl">
                   <div className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
@@ -294,6 +306,28 @@ const TabContent = ({ activeTab, profile }) => {
               <p className="italic text-white/20 font-medium">Sharing my creative journey on the blockchain.</p>
             </div>
           )}
+        </div>
+
+        <div className="space-y-8 pt-16 border-t border-white/5">
+          <h3 className="text-lg font-black uppercase tracking-widest text-white/30">Network Integrity</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 text-center">
+              <span className="block text-2xl font-black text-brand-500 mb-1">{profile.followersCount?.toLocaleString() || '0'}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Followers</span>
+            </div>
+            <div className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 text-center">
+              <span className="block text-2xl font-black text-sky-400 mb-1">{supporterCount}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Supporters</span>
+            </div>
+            <div className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 text-center">
+              <span className="block text-2xl font-black text-emerald-400 mb-1">${totalVolume.toFixed(0)}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Volume (USD)</span>
+            </div>
+            <div className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 text-center">
+              <span className="block text-2xl font-black text-purple-400 mb-1">{tipsReceived.length}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Total Tips</span>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-8 pt-16 border-t border-white/5">

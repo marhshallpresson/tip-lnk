@@ -42,6 +42,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const email = payload.email as string | undefined
     const verifiedCredentials = payload.verified_credentials as Array<any> || []
     
+    // Find handles
+    const twitterCred = verifiedCredentials.find(c => c.provider === 'twitter' || c.id === 'twitter')
+    const discordCred = verifiedCredentials.find(c => c.provider === 'discord' || c.id === 'discord')
+    
+    const twitterHandle = twitterCred?.handle || twitterCred?.public_identifier
+    const discordHandle = discordCred?.handle || discordCred?.public_identifier
+
     // Find primary wallet if available
     const primaryWallet = verifiedCredentials.find(c => c.format === 'blockchain' && c.chain === 'sol')
 
@@ -77,10 +84,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (user) {
         // Update existing user with dynamic linkage
         const profile = JSON.parse(user.profileData || '{}')
-        if (profile.dynamic_user_id !== dynamicUserId) {
-            profile.dynamic_user_id = dynamicUserId
-            await db('user').where({ id: user.id }).update({ profileData: JSON.stringify(profile) })
-        }
+        const updates: any = { profileData: JSON.stringify({ ...profile, dynamic_user_id: dynamicUserId }) }
+        
+        if (twitterHandle) updates.twitterHandle = twitterHandle
+        if (discordHandle) updates.discordHandle = discordHandle
+        
+        await db('user').where({ id: user.id }).update(updates)
     } else {
         // Create new user provisioned by Dynamic
         isNewUser = true;
@@ -89,7 +98,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             id: newUserId,
             email: email || null,
             walletAddress: primaryWallet ? primaryWallet.address : null,
-            name: email ? email.split('@')[0] : 'Dynamic User',
+            twitterHandle: twitterHandle || null,
+            discordHandle: discordHandle || null,
+            name: email ? email.split('@')[0] : (twitterHandle || 'Dynamic User'),
             onboardingComplete: false,
             emailVerifiedAt: email ? new Date() : null, // Dynamic verified it
             profileData: JSON.stringify({ dynamic_user_id: dynamicUserId })
