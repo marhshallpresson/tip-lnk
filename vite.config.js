@@ -61,18 +61,7 @@ export default defineConfig({
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        manualChunks: (id) => {
-          if (id.includes('@dynamic-labs')) {
-            return 'dynamic';
-          }
-          if (id.includes('@solana') || id.includes('@jup-ag')) {
-            return 'solana';
-          }
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        },
+        entryFileNames: 'assets/[name]-[hash].js'
       },
     }
   },

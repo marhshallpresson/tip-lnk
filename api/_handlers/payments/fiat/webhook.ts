@@ -18,7 +18,7 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const signature = req.headers['x-fossa-signature'] as string
+  const signature = req.headers['x-fossapay-signature'] as string || req.headers['x-fossa-signature'] as string
   const FOSSA_SECRET = process.env.FOSSA_WEBHOOK_SECRET
 
   if (!signature || !FOSSA_SECRET) {
@@ -27,25 +27,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const payload = JSON.stringify(req.body)
+  
+  // FossaPay docs specify HMAC-SHA512 (fallback to sha256 to support legacy if needed, but we'll try sha512 first)
   const expectedSignature = crypto
+    .createHmac('sha512', FOSSA_SECRET)
+    .update(payload)
+    .digest('hex')
+
+  const expectedSignatureLegacy = crypto
     .createHmac('sha256', FOSSA_SECRET)
     .update(payload)
     .digest('hex')
 
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(expectedSignature, 'hex'),
-    Buffer.from(signature, 'hex')
-  )
+  const expectedSignatureBuffer = Buffer.from(expectedSignature, 'hex')
+  const expectedSignatureLegacyBuffer = Buffer.from(expectedSignatureLegacy, 'hex')
+  const signatureBuffer = Buffer.from(signature, 'hex')
+
+  let isValid = false;
+
+  if (expectedSignatureBuffer.length === signatureBuffer.length) {
+      isValid = crypto.timingSafeEqual(expectedSignatureBuffer, signatureBuffer)
+  } else if (expectedSignatureLegacyBuffer.length === signatureBuffer.length) {
+      isValid = crypto.timingSafeEqual(expectedSignatureLegacyBuffer, signatureBuffer)
+  }
 
   if (!isValid) {
     console.warn('⚠️ Fiat Webhook: Invalid signature detected. Potential injection attempt.')
     return res.status(401).json({ error: 'Invalid signature' })
   }
 
-  const { reference, status, amount, destinationWallet, metadata } = req.body
+  const { event, data } = req.body
+  const bodyData = data || req.body // Support { event, data } structure from docs or flat legacy structure
+  const { reference, status, amount, destinationWallet, metadata } = bodyData
 
-  if (status !== 'completed' && status !== 'successful') {
-    console.log(`ℹ️ Fiat Webhook: Reference ${reference} has status ${status}. Ignoring until completed.`)
+  // FossaPay uses 'deposit.completed', legacy code uses 'completed' or 'successful'
+  const isCompleted = status === 'completed' || status === 'successful' || event === 'deposit.completed'
+
+  if (!isCompleted) {
+    console.log(`ℹ️ Fiat Webhook: Reference ${reference} has status ${status} / event ${event}. Ignoring until completed.`)
     return res.status(200).json({ success: true, message: 'Ignored pending status' })
   }
 
