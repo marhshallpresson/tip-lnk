@@ -24,13 +24,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid domain format' })
   }
 
-  const fullDomain = domain.includes('.sol') ? domain : `${domain}.tiplnk.sol`
+  const fullDomain = domain.includes('.sol') ? domain : `${domain}.tipstack.sol`
 
   try {
     // Check local database
     const existing = await db('user').where({ solDomain: fullDomain }).first()
     if (existing) {
-        return res.json({ available: false, reason: 'Already registered on TipLnk.' })
+        return res.json({ available: false, reason: 'Already registered on Tip Stack.' })
     }
 
     const onChainOwner = await resolveSnsDomain(fullDomain)

@@ -8,14 +8,14 @@ export default function TermsOfService() {
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white uppercase tracking-widest text-brand-500">1. Acceptance of Terms</h2>
         <p className="leading-relaxed">
-          By accessing or using TipLnk ("the Protocol"), you agree to be bound by these Terms of Service. If you do not agree, you must immediately cease all use of the Protocol.
+          By accessing or using Tip Stack ("the Protocol"), you agree to be bound by these Terms of Service. If you do not agree, you must immediately cease all use of the Protocol.
         </p>
       </section>
 
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white uppercase tracking-widest text-brand-500">2. Description of Service</h2>
         <p className="leading-relaxed">
-          TipLnk is a decentralized tipping and content platform on the Solana blockchain. We provide infrastructure for creators to receive digital asset contributions from supporters.
+          Tip Stack is a decentralized tipping and content platform on the Solana blockchain. We provide infrastructure for creators to receive digital asset contributions from supporters.
         </p>
       </section>
 
@@ -24,7 +24,7 @@ export default function TermsOfService() {
         <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-4">
             <p className="font-bold text-white italic underline">3.1 Sender-Pays Platform Fee</p>
             <p className="leading-relaxed">
-              TipLnk charges a platform fee on complex transactions (swaps) to cover routing and infrastructure costs. This fee is currently set at 100 BPS (1%) and is added to the sender's total authorization. Direct transfers of SOL or USDC incur a 0% platform fee.
+              Tip Stack charges a platform fee on complex transactions (swaps) to cover routing and infrastructure costs. This fee is currently set at 100 BPS (1%) and is added to the sender's total authorization. Direct transfers of SOL or USDC incur a 0% platform fee.
             </p>
             <p className="font-bold text-white italic underline">3.2 Automated Stablecoin Settlement</p>
             <p className="leading-relaxed">
@@ -36,7 +36,7 @@ export default function TermsOfService() {
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white uppercase tracking-widest text-brand-500">4. Risk Disclosure</h2>
         <p className="leading-relaxed">
-          Blockchain transactions are irreversible. TipLnk is not responsible for lost funds due to user error, wallet compromise, or smart contract vulnerabilities. You acknowledge that crypto-assets are volatile.
+          Blockchain transactions are irreversible. Tip Stack is not responsible for lost funds due to user error, wallet compromise, or smart contract vulnerabilities. You acknowledge that crypto-assets are volatile.
         </p>
       </section>
 

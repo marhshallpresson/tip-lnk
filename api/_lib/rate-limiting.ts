@@ -27,7 +27,7 @@ function initRateLimiter(): Ratelimit {
     redis: Redis.fromEnv(),
     limiter: Ratelimit.slidingWindow(5, '60 s'), // 5 tips per creator per 60 seconds
     analytics: true,
-    prefix: 'tiplnk:rate-limit',
+    prefix: 'tipstack:rate-limit',
   })
 
   return rateLimiter

@@ -67,7 +67,7 @@ export function AppProvider({ children }) {
       if (connected && wallet && pubkeyStr) {
         try {
           setAgent({
-            id: 'tiplnk-agent-01',
+            id: 'tipstack-agent-01',
             status: 'active',
             capabilities: ['rebalance', 'autostake', 'airdrop']
           });
@@ -179,7 +179,7 @@ export function AppProvider({ children }) {
 
       if (!newProfile.referralId) {
         const baseName = newProfile.solDomain
-          ? newProfile.solDomain.replace('.tiplnk.sol', '')
+          ? newProfile.solDomain.replace('.tipstack.sol', '')
           : (newProfile.displayName || '').toLowerCase().replace(/\s+/g, '');
 
         if (baseName) {
@@ -210,7 +210,7 @@ export function AppProvider({ children }) {
   const claimHandle = useCallback(async (handle) => {
     if (!publicKey || !signMessage) throw new Error('Wallet connection required for handle verification.');
     
-    const message = `Claiming TipLnk handle: ${handle}`;
+    const message = `Claiming Tip Stack handle: ${handle}`;
     const encodedMessage = new TextEncoder().encode(message);
     const signature = await signMessage(encodedMessage);
     const signatureBase58 = bs58.encode(signature);

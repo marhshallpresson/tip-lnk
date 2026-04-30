@@ -1,4 +1,4 @@
-# TipLnk: The fastest way to monetize your craft on Solana.⚡️
+# TipStack: The fastest way to monetize your craft on Solana.⚡️
 
 **The premier non-custodial tipping and monetization protocol for the Solana ecosystem.**
 
@@ -6,20 +6,20 @@
 
 ## Overview
 
-TipLnk is a decentralized tipping infrastructure designed to seamlessly bridge the gap between Web2 onboarding and Web3 execution. We empower creators, developers, and platforms to monetize their audiences instantly, without intermediaries, custody risks, or complex wallet setups.
+TipStack is a decentralized tipping infrastructure designed to seamlessly bridge the gap between Web2 onboarding and Web3 execution. We empower creators, developers, and platforms to monetize their audiences instantly, without intermediaries, custody risks, or complex wallet setups.
 
-Whether your users are crypto-native degens with hardware wallets or mainstream fans with only an email address, TipLnk provides a unified, frictionless checkout experience. By abstracting away the complexities of blockchain transactions, TipLnk solves the fragmentation of Web3 payments and brings instant, borderless monetization to any website or social feed.
+Whether your users are crypto-native degens with hardware wallets or mainstream fans with only an email address, TipStack provides a unified, frictionless checkout experience. By abstracting away the complexities of blockchain transactions, TipStack solves the fragmentation of Web3 payments and brings instant, borderless monetization to any website or social feed.
 
 ---
 
 ## Key Features
 
-- **Non-Custodial Tipping (Powered by Jupiter):** All transactions are routed directly from the supporter's wallet to the creator's wallet. TipLnk never holds your funds.
+- **Non-Custodial Tipping (Powered by Jupiter):** All transactions are routed directly from the supporter's wallet to the creator's wallet. TipStack never holds your funds.
 - **Hybrid Payments (Crypto + Fiat):** Accept native SOL, SPL tokens (like USDC), or fiat via **Fossa Pay** (Credit Card / Bank).
 - **Frictionless Auth (Powered by Dynamic.xyz):** Support for external wallets (Phantom, Solflare, Jupiter, Backpack) and embedded MPC wallets via Email or Social login.
 - **Instant Mobile Pay (Deep Linking SOlflare & Phantom):** One-click payment via native mobile wallets using the Solana Pay Transaction Request standard.
 - **Torque Growth Engine:** Enterprise-grade event tracking to monitor user acquisition and conversion velocity in real-time.
-- **Embedded Iframe SDK:** A secure, isolated widget that allows any third-party website to embed TipLnk checkout with a single line of code.
+- **Embedded Iframe SDK:** A secure, isolated widget that allows any third-party website to embed TipStack checkout with a single line of code.
 - **Real-Time Verification (RPC):** Immutable ledger powered by **Helius** webhooks ensures 100% data integrity.
 
 ---
@@ -28,7 +28,7 @@ Whether your users are crypto-native degens with hardware wallets or mainstream 
 
 ### 🧑‍🎨 For Creators (The Receiver)
 1. **Onboard:** Connect via **Dynamic** using an existing wallet or just an email (MPC wallet provisioned instantly).
-2. **Distribute:** Share your TipLnk profile or embed the **TipLnk Widget** on your site.
+2. **Distribute:** Share your TipStack profile or embed the **TipStack Widget** on your site.
 3. **Monetize:** Receive crypto directly into your self-custody wallet from any supporter.
 4. **Offramp:** Convert earnings to local currency (e.g., NGN via **Pajcash**) instantly from the dashboard.
 
@@ -44,17 +44,17 @@ Whether your users are crypto-native degens with hardware wallets or mainstream 
 
 ## 📱 Wallet Deep Linking (Instant Pay)
 
-TipLnk implements a cutting-edge mobile experience. Using the **Solana Pay Transaction Request** standard, we eliminate the need for supporters to manually browse to TipLnk inside their wallet's in-app browser.
+TipStack implements a cutting-edge mobile experience. Using the **Solana Pay Transaction Request** standard, we eliminate the need for supporters to manually browse to TipStack inside their wallet's in-app browser.
 
 - **One-Click Native Execution:** Clicking "Instant Pay with Wallet" on a mobile device natively invokes **Phantom**, **Solflare**, **Jupiter**, or **Backpack**.
-- **Pre-Built Transactions:** The transaction is constructed on the TipLnk backend and sent directly to the wallet for signing, ensuring the correct recipient, amount, and token are locked in before the user even opens the app.
+- **Pre-Built Transactions:** The transaction is constructed on the TipStack backend and sent directly to the wallet for signing, ensuring the correct recipient, amount, and token are locked in before the user even opens the app.
 - **High Conversion:** Reduces the mobile tipping flow from 5+ steps to just 2 taps.
 
 ---
 
 ## Integrations
 
-TipLnk orchestrates an enterprise-grade stack for maximum reliability:
+TipStack orchestrates an enterprise-grade stack for maximum reliability:
 
 - **Dynamic.xyz:** Identity resolution and embedded MPC wallet abstraction.
 - **Jupiter V6:** The core execution engine for non-custodial swaps and fee extraction.
@@ -67,17 +67,17 @@ TipLnk orchestrates an enterprise-grade stack for maximum reliability:
 
 ## Embedded Tip Widget
 
-Integrate TipLnk into your platform in seconds. Our embedded widget handles all the Web3 complexity inside a secure, sandboxed iframe.
+Integrate TipStack into your platform in seconds. Our embedded widget handles all the Web3 complexity inside a secure, sandboxed iframe.
 
 ```html
-<!-- 1. Include the TipLnk Widget Script -->
-<script src="https://tiplnk.me/widget.js"></script>
+<!-- 1. Include the TipStack Widget Script -->
+<script src="https://tipstack.fun/widget.js"></script>
 
 <!-- 2. Place the button wherever you want -->
 <div 
-  data-tiplnk-id="YOUR_WALLET_ADDRESS_OR_HANDLE" 
-  data-tiplnk-theme="dark" 
-  data-tiplnk-color="#00D265">
+  data-tipstack-id="YOUR_WALLET_ADDRESS_OR_HANDLE" 
+  data-tipstack-theme="dark" 
+  data-tipstack-color="#00D265">
 </div>
 ```
 
@@ -115,7 +115,7 @@ Integrate TipLnk into your platform in seconds. Our embedded widget handles all 
 ## Core Features
 
 ### 1. Creator Profiles
-- SNS subdomain (e.g., creator.tiplnk.sol)
+- SNS subdomain (e.g., creator.tipstack.sol)
 - Bio, avatar, social links
 - Tip history & stats
 - Payout settings
@@ -311,9 +311,9 @@ Integrate TipLnk into your platform in seconds. Our embedded widget handles all 
 
 ## Vision
 
-**TipLnk = Stripe for Creators + Solana Speed + Emerging Market Focus**
+**TipStack = Stripe for Creators + Solana Speed + Emerging Market Focus**
 
-TipLnk is evolving into the liquidity layer for the creator economy. Future roadmap includes:
+TipStack is evolving into the liquidity layer for the creator economy. Future roadmap includes:
 
 - **Loyalty & Rewards (Torque Driven):** Automatically issuing verified "Supporter Badges" or NFTs when users reach certain tipping milestones.
 - **Social Graph Intelligence:** Aggregating data from Farcaster, Lens, and X to highlight a creator's most loyal on-chain fans.

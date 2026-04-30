@@ -7,7 +7,7 @@ if (!JWT_SECRET) {
 
 const secret = new TextEncoder().encode(JWT_SECRET || 'fallback-secret-for-initialization-only')
 const ISSUER = 'https://tip-lnk.vercel.app'
-const AUDIENCE = 'tiplnk-app'
+const AUDIENCE = 'tipstack-app'
 
 export type SessionTokenPayload = {
   v: 1

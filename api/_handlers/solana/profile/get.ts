@@ -75,9 +75,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     isExternal: true
                 },
                 metadata: {
-                    title: `Tip ${wallet.replace('.sol', '')} on TipLnk`,
+                    title: `Tip ${wallet.replace('.sol', '')} on Tip Stack`,
                     description: `Support this creator with direct SOL and USDC tips. Secure and instant.`,
-                    image: `https://tiplnk.me/api/og/${wallet}`
+                    image: `https://tipstack.fun/api/og/${wallet}`
                 }
             };
             if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 });
@@ -121,11 +121,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.onboardingComplete = Boolean(user.onboardingComplete)
 
     const displayName = profile.displayName || user.name || 'Solana Creator'
-    const avatarUrl = profile.avatarUrl || `https://tiplnk.me/api/og/${user.walletAddress}`
+    const avatarUrl = profile.avatarUrl || `https://tipstack.fun/api/og/${user.walletAddress}`
     
     const metadata = {
-        title: `${displayName} (@${user.twitterHandle || 'tiplnk'})`,
-        description: profile.bio || `Support ${displayName} with SOL/USDC on TipLnk. 0% platform fees.`,
+        title: `${displayName} (@${user.twitterHandle || 'tipstack'})`,
+        description: profile.bio || `Support ${displayName} with SOL/USDC on Tip Stack. 0% platform fees.`,
         image: avatarUrl,
         card: 'summary_large_image'
     }

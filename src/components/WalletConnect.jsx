@@ -58,7 +58,7 @@ export default function WalletConnect({ onConnected }) {
       const message = `${domain} wants you to sign in with your Solana account:
 ${addr}
 
-Welcome to TipLnk. Signing is the only way we can truly know that you are the owner of the wallet you are connecting. Signing is a safe, gas-less transaction that does not in any way give TipLnk permission to perform any transactions with your wallet.
+Welcome to Tip Stack. Signing is the only way we can truly know that you are the owner of the wallet you are connecting. Signing is a safe, gas-less transaction that does not in any way give Tip Stack permission to perform any transactions with your wallet.
 
 URI: ${uri}
 Version: 1
@@ -268,7 +268,7 @@ Request ID: ${requestId}`;
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">{isRegister ? 'Create Account' : 'Finalize Profile'}</h2>
             <p className="text-white/40 text-sm mb-8">
-                {isRegister ? 'Join TipLnk to start earning.' : 'To secure your account, please provide your name and email.'}
+                {isRegister ? 'Join Tip Stack to start earning.' : 'To secure your account, please provide your name and email.'}
             </p>
             {authError && <div className="mb-6 p-4 bg-red-500/5 border border-red-500/10 rounded-lg text-red-500 text-xs text-left">{authError}</div>}
             <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
@@ -377,7 +377,7 @@ Request ID: ${requestId}`;
   return (
     <div className="glass-card !bg-[#0f0f11] !border-white/5 p-6 sm:p-8 max-w-[400px] mx-auto animate-slide-up relative overflow-hidden">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-xl font-bold text-white">Connect TipLnk</h2>
+        <h2 className="text-xl font-bold text-white">Connect Tip Stack</h2>
         <button onClick={() => navigate(-1)} className="p-1 rounded-lg text-white/40 hover:text-white transition-colors"><X size={20} /></button>
       </div>
 

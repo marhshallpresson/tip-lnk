@@ -28,7 +28,7 @@ export default function DomainRegistration({ onComplete, onBack }) {
     setRegistering(true);
     
     try {
-      const fullDomain = `${domain.trim().toLowerCase()}.tiplnk.sol`;
+      const fullDomain = `${domain.trim().toLowerCase()}.tipstack.sol`;
       
       
       updateProfile({ solDomain: fullDomain, displayName: domain.trim() });
@@ -65,7 +65,7 @@ export default function DomainRegistration({ onComplete, onBack }) {
             <Check size={32} className="text-accent-green" />
           </div>
           <p className="text-accent-green font-bold text-xl mb-1">
-            ${domain.trim().toLowerCase()}.tiplnk.sol claimed!
+            ${domain.trim().toLowerCase()}.tipstack.sol claimed!
           </p>
           <p className="text-white/40 text-sm">Your profile is being prepared...</p>
         </div>
@@ -86,7 +86,7 @@ export default function DomainRegistration({ onComplete, onBack }) {
                 onKeyDown={(e) => e.key === 'Enter' && checkAvailability()}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 font-mono text-sm font-medium tracking-tight pointer-events-none hidden sm:inline">
-                .tiplnk.sol
+                .tipstack.sol
               </span>
             </div>
             
@@ -121,7 +121,7 @@ export default function DomainRegistration({ onComplete, onBack }) {
                       Available
                     </span>
                     <span className="text-white/40 text-xs">
-                      ${domain.toLowerCase()}.tiplnk.sol
+                      ${domain.toLowerCase()}.tipstack.sol
                     </span>
                   </div>
                 </div>

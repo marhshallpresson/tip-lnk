@@ -8,14 +8,14 @@ export default function PrivacyPolicy() {
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white uppercase tracking-widest text-accent-cyan">1. Information We Collect</h2>
         <p className="leading-relaxed">
-          TipLnk is designed to be privacy-first. We collect your Solana public wallet address, connected social handles (if provided), and email address (if linked).
+          Tip Stack is designed to be privacy-first. We collect your Solana public wallet address, connected social handles (if provided), and email address (if linked).
         </p>
       </section>
 
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white uppercase tracking-widest text-accent-cyan">2. On-Chain Transparency</h2>
         <p className="leading-relaxed">
-          Please note that all financial transactions made via TipLnk are recorded on the Solana blockchain and are publicly viewable on explorers like Solscan. We do not have the power to hide or delete on-chain data.
+          Please note that all financial transactions made via Tip Stack are recorded on the Solana blockchain and are publicly viewable on explorers like Solscan. We do not have the power to hide or delete on-chain data.
         </p>
       </section>
 

@@ -37,12 +37,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await sendMail({
       to: email,
-      subject: `Verification Code: ${code} - TipLnk`,
-      text: `Your TipLnk verification code is: ${code}`,
+      subject: `Verification Code: ${code} - Tip Stack`,
+      text: `Your Tip Stack verification code is: ${code}`,
       html: `
         <div style="font-family: sans-serif; background: #0d1117; color: white; padding: 40px; border-radius: 20px;">
           <h2 style="color: #00d265;">Verify your Email</h2>
-          <p style="font-size: 16px;">Enter the code below to link this email to your TipLnk profile:</p>
+          <p style="font-size: 16px;">Enter the code below to link this email to your Tip Stack profile:</p>
           <div style="background: #161b22; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;">
             <span style="font-size: 32px; font-weight: 900; letter-spacing: 10px; color: #00d265;">${code}</span>
           </div>

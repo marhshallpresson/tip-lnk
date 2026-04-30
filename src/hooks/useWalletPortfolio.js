@@ -4,7 +4,7 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 /**
  * Elite Wallet Portfolio (DAS API / Solflare Track Standard)
- * Implements high-performance asset indexing via the TipLnk Helius Proxy.
+ * Implements high-performance asset indexing via the Tip Stack Helius Proxy.
  */
 export default function useWalletPortfolio() {
   const { publicKey, connected } = useWallet();

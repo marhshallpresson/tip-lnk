@@ -26,11 +26,11 @@ function FeatureBlock({ title, description, icon: Icon, reversed }) {
 
 function ComparisonTable() {
   const rows = [
-    { feature: 'Platform Fee', tiplnk: '0%', buymeacoffee: '5%', kofi: '0%*', patreon: '5-12%' },
-    { feature: 'Instant Payout', tiplnk: '✓ Near Instant', buymeacoffee: '2-5 days', kofi: '2-5 days', patreon: '1-5 days' },
-    { feature: 'Global Recipients', tiplnk: '✓ Instant', buymeacoffee: 'Waitlist', kofi: 'PayPal only', patreon: 'Bank dependent' },
-    { feature: 'Own Your Identity', tiplnk: '✓ On-chain SNS', buymeacoffee: '✗ Centralized', kofi: '✗ Centralized', patreon: '✗ Centralized' },
-    { feature: 'Yield on Tips', tiplnk: '✓ Kamino DeFi', buymeacoffee: '✗', kofi: '✗', patreon: '✗' },
+    { feature: 'Platform Fee', tipstack: '0%', buymeacoffee: '5%', kofi: '0%*', patreon: '5-12%' },
+    { feature: 'Instant Payout', tipstack: '✓ Near Instant', buymeacoffee: '2-5 days', kofi: '2-5 days', patreon: '1-5 days' },
+    { feature: 'Global Recipients', tipstack: '✓ Instant', buymeacoffee: 'Waitlist', kofi: 'PayPal only', patreon: 'Bank dependent' },
+    { feature: 'Own Your Identity', tipstack: '✓ On-chain SNS', buymeacoffee: '✗ Centralized', kofi: '✗ Centralized', patreon: '✗ Centralized' },
+    { feature: 'Yield on Tips', tipstack: '✓ Kamino DeFi', buymeacoffee: '✗', kofi: '✗', patreon: '✗' },
   ];
 
   return (
@@ -39,7 +39,7 @@ function ComparisonTable() {
         <thead>
           <tr className="border-b border-white/5">
             <th className="text-left py-4 px-4 text-white/40 font-medium uppercase tracking-wider text-[10px]">Feature</th>
-            <th className="text-center py-4 px-4 text-brand-500 font-bold">TipLnk</th>
+            <th className="text-center py-4 px-4 text-brand-500 font-bold">Tip Stack</th>
             <th className="text-center py-4 px-4 text-white/40 font-medium">Ko-fi</th>
             <th className="text-center py-4 px-4 text-white/40 font-medium">BMC</th>
             <th className="text-center py-4 px-4 text-white/40 font-medium hidden md:table-cell">Patreon</th>
@@ -49,7 +49,7 @@ function ComparisonTable() {
           {rows.map((row) => (
             <tr key={row.feature} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
               <td className="py-4 px-4 text-white/80 font-medium">{row.feature}</td>
-              <td className="py-4 px-4 text-center text-brand-500 font-semibold">{row.tiplnk}</td>
+              <td className="py-4 px-4 text-center text-brand-500 font-semibold">{row.tipstack}</td>
               <td className="py-4 px-4 text-center text-white/40">{row.kofi}</td>
               <td className="py-4 px-4 text-center text-white/40">{row.buymeacoffee}</td>
               <td className="py-4 px-4 text-center text-white/40 hidden md:table-cell">{row.patreon}</td>
@@ -83,7 +83,7 @@ export default function LandingPage({ onGetStarted }) {
           <div className="animate-slide-up bg-[#111111] border border-white/10 rounded-xl p-1.5 max-w-lg mx-auto flex flex-col sm:flex-row items-center gap-2 shadow-2xl mb-8" style={{ animationDelay: '0.2s' }}>
             <div className="flex items-center flex-1 w-full pl-3 gap-1">
               <input type="text" placeholder="yourname" className="bg-transparent outline-none w-full min-w-0 border-none text-white focus:ring-0 placeholder:text-white/30 py-2 sm:py-3 text-base sm:text-lg" />
-              <span className="text-brand-500 font-medium whitespace-nowrap text-sm sm:text-base pr-1">.tiplnk.sol</span>
+              <span className="text-brand-500 font-medium whitespace-nowrap text-sm sm:text-base pr-1">.tipstack.sol</span>
             </div>
             <button onClick={onGetStarted} className="btn-primary w-full sm:w-auto !px-6 !py-3 sm:!py-2.5 flex-shrink-0 whitespace-nowrap text-base">
               Claim Link
@@ -96,13 +96,13 @@ export default function LandingPage({ onGetStarted }) {
       {/* Creators Grid */}
       <section id="creators" className="relative z-10 py-20 border-y border-white/5 bg-[#0c0c0c] px-4">
         <div className="max-w-[1200px] mx-auto">
-          <p className="text-center text-white/40 font-medium uppercase tracking-[0.2em] text-[10px] mb-12">Join thousands of creators on TipLnk</p>
+          <p className="text-center text-white/40 font-medium uppercase tracking-[0.2em] text-[10px] mb-12">Join thousands of creators on Tip Stack</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { name: 'Mobot Defi', handle: '@mobot.tiplnk.sol', color: 'bg-emerald-500' },
-              { name: 'DeFi Analyst', handle: '@defi.tiplnk.sol', color: 'bg-blue-500' },
-              { name: 'Music Producer', handle: '@beats.tiplnk.sol', color: 'bg-purple-500' },
-              { name: 'Web3 Dev', handle: '@dev.tiplnk.sol', color: 'bg-orange-500' }
+              { name: 'Mobot Defi', handle: '@mobot.tipstack.sol', color: 'bg-emerald-500' },
+              { name: 'DeFi Analyst', handle: '@defi.tipstack.sol', color: 'bg-blue-500' },
+              { name: 'Music Producer', handle: '@beats.tipstack.sol', color: 'bg-purple-500' },
+              { name: 'Web3 Dev', handle: '@dev.tipstack.sol', color: 'bg-orange-500' }
             ].map((c, i) => (
               <div key={i} className="home-card p-6 text-center group cursor-pointer hover:border-brand-500/20 transition-all">
                 <div className={`w-12 h-12 mx-auto rounded-full ${c.color}/20 flex items-center justify-center mb-4 border border-${c.color}/30`}>
@@ -127,7 +127,7 @@ export default function LandingPage({ onGetStarted }) {
             <FeatureBlock
               icon={Globe}
               title="Your On-chain Identity"
-              description="Claim your SNS domain (yourname.tiplnk.sol) and build a permanent tipping page that's truly yours."
+              description="Claim your SNS domain (yourname.tipstack.sol) and build a permanent tipping page that's truly yours."
             />
             <FeatureBlock
               icon={Coins}
@@ -170,9 +170,9 @@ export default function LandingPage({ onGetStarted }) {
       <footer className="relative z-10 border-t border-white/5 py-12 px-4 bg-[#080808]">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <img src="/logo.svg" className="h-14" alt="TipLnk" />
+            <img src="/logo.svg" className="h-14" alt="Tip Stack" />
           </div>
-          <p className="text-white/40 text-sm">© 2026 TipLnk. All rights reserved.</p>
+          <p className="text-white/40 text-sm">© 2026 Tip Stack. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="/terms" className="text-white/40 hover:text-brand-500 transition-colors text-sm">Terms</a>
             <a href="/privacy" className="text-white/40 hover:text-brand-500 transition-colors text-sm">Privacy</a>

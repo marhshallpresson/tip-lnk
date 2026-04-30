@@ -89,7 +89,7 @@ export default function ResetPassword() {
         )}
 
         <p className="text-white/40 text-sm mb-8 leading-relaxed">
-            Please choose a strong password to secure your TipLnk account.
+            Please choose a strong password to secure your Tip Stack account.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -8,7 +8,7 @@ import { randomUUID } from "crypto"
 
 /**
  * PHASE 1: Dynamic Auth Integration
- * Verifies Dynamic JWT, resolves user identity, and issues TipLnk session.
+ * Verifies Dynamic JWT, resolves user identity, and issues Tip Stack session.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

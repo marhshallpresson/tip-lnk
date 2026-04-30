@@ -37,7 +37,7 @@ export default function CheckoutPage() {
 
   const handleClose = () => {
     if (window.parent) {
-      window.parent.postMessage('tiplnk-close', '*');
+      window.parent.postMessage('tipstack-close', '*');
     }
   };
 
@@ -79,7 +79,7 @@ export default function CheckoutPage() {
           <div>
             <h1 className="font-black text-sm leading-none mb-1">{profile.solDomain || profile.displayName || 'Creator'}</h1>
             <div className="flex items-center gap-1 text-[10px] text-brand-500 font-bold uppercase tracking-widest">
-              <ShieldCheck size={10} /> Verified on TipLnk
+              <ShieldCheck size={10} /> Verified on Tip Stack
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function CheckoutPage() {
       {/* Security Footer */}
       <div className="p-4 text-center border-t border-white/5 bg-white/10">
         <p className="text-[10px] text-surface-500 font-bold uppercase tracking-[0.2em]">
-          Secure Checkout Powered by TipLnk
+          Secure Checkout Powered by Tip Stack
         </p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-const appName = 'TipLnk'
+const appName = 'Tip Stack'
 const normalizeUrl = (value: string) => value.trim().replace(/\/+$/, '')
 const appUrl = normalizeUrl(process.env.APP_URL || 'http://tip-link.vercel.app')
 const assetUrl = normalizeUrl(
@@ -41,7 +41,7 @@ const renderLayout = (content: string, title: string) => `
           <!-- Header -->
           <tr>
             <td style="${styles.header}">
-              <div style="font-size: 24px; font-weight: 800; color: ${brandColor}; letter-spacing: -1px;">TipLnk</div>
+              <div style="font-size: 24px; font-weight: 800; color: ${brandColor}; letter-spacing: -1px;">Tip Stack</div>
             </td>
           </tr>
 
@@ -74,7 +74,7 @@ export const templates = {
     const content = `
       <h1 style="${styles.h1}">Verify Your Email</h1>
       <p style="${styles.p}">Hi ${name},</p>
-      <p style="${styles.p}">Use the following code to verify your email address and secure your TipLnk account:</p>
+      <p style="${styles.p}">Use the following code to verify your email address and secure your Tip Stack account:</p>
       
       <div style="background-color: #000000; padding: 30px; text-align: center; border-radius: 16px; margin: 30px 0; border: 1px solid rgba(255,255,255,0.1);">
         <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: ${brandColor}; font-family: monospace;">${code}</span>
@@ -82,7 +82,7 @@ export const templates = {
       
       <p style="${styles.p}">This code will expire in 1 hour.</p>
     `
-    return renderLayout(content, 'Your TipLnk Verification Code')
+    return renderLayout(content, 'Your Tip Stack Verification Code')
   },
 
   resetPassword: (name: string, link: string) => {
@@ -98,7 +98,7 @@ export const templates = {
       
       <p style="${styles.p}">If you didn't request this, you can safely ignore this email.</p>
     `
-    return renderLayout(content, 'Reset your TipLnk password')
+    return renderLayout(content, 'Reset your Tip Stack password')
   },
 }
 

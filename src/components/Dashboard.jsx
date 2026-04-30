@@ -102,7 +102,7 @@ export default function Dashboard() {
       <ReferralModal
         isOpen={isReferralOpen}
         onClose={() => setIsReferralOpen(false)}
-        referralId={profile.referralId || profile.solDomain?.replace('.tiplnk.sol', '') || 'creator'}
+        referralId={profile.referralId || profile.solDomain?.replace('.tipstack.sol', '') || 'creator'}
       />
 
       <SettingsModal
@@ -116,7 +116,7 @@ export default function Dashboard() {
           <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center">
             <Zap size={18} className="text-brand-500" />
           </div>
-          <span className="font-bold text-lg tracking-tight">TipLnk</span>
+          <span className="font-bold text-lg tracking-tight">Tip Stack</span>
         </div>
 
         <button
@@ -136,9 +136,9 @@ export default function Dashboard() {
         <div className="py-10 px-8 w-full">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[14px] bg-brand-500 flex items-center justify-center shadow-[0_0_20px_rgba(159,53,232,0.2)]">
-              <img src="favicon.svg" alt="Tip Lnk" className="w-6 h-6" />
+              <img src="favicon.svg" alt="Tip Stack" className="w-6 h-6" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-white">TipLnk</span>
+            <span className="font-bold text-xl tracking-tight text-white">Tip Stack</span>
           </div>
         </div>
 
@@ -611,7 +611,7 @@ function OnboardingPromptModal({ onClose, onContinue }) {
 
           <h3 className="text-3xl font-black mb-4 tracking-tighter text-white">Complete Your Profile</h3>
           <p className="text-white/50 text-sm leading-relaxed mb-10 px-4">
-            You're connected, but your profile is incomplete. Claim your <span className="text-brand-400 font-bold">.tiplnk.sol</span> handle now to unlock verified status and real-time revenue analytics.
+            You're connected, but your profile is incomplete. Claim your <span className="text-brand-400 font-bold">.tipstack.sol</span> handle now to unlock verified status and real-time revenue analytics.
           </p>
 
           <div className="space-y-4 w-full">

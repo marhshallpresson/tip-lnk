@@ -19,7 +19,7 @@ export const DYNAMIC_LABS_CONFIG = {
   // Set in Dynamic dashboard: Settings → Allowed Origins
   allowedOrigins: [
     'https://tip-lnk.vercel.app',
-    'https://tiplnk.app',
+    'https://tipstack.fun',
     process.env.VITE_APP_URL || 'http://localhost:5173',
   ],
 

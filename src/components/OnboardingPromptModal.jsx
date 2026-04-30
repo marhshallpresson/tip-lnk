@@ -18,7 +18,7 @@ export default function OnboardingPromptModal({ onClose, onContinue }) {
           
           <h3 className="text-2xl font-bold mb-3 tracking-tight">Finish Your Setup</h3>
           <p className="text-white/40 text-sm leading-relaxed mb-8">
-            Complete your onboarding to claim your unique .tiplnk.sol handle and unlock real-time analytics.
+            Complete your onboarding to claim your unique .tipstack.sol handle and unlock real-time analytics.
           </p>
 
           <div className="space-y-3 w-full">

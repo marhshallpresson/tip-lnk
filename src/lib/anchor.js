@@ -1,12 +1,12 @@
 import { Program, AnchorProvider } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import idl from "../../tiplnk_anchor/target/idl/tiplnk.json";
+import idl from "../../tiplnk_anchor/target/idl/tipstack.json";
 
 export const PROGRAM_ID = new PublicKey(idl.metadata.address);
 
 /**
  * Professional Anchor Program Interface
- * Encapsulates all on-chain tipping logic for TipLnk.
+ * Encapsulates all on-chain tipping logic for Tip Stack.
  */
 export function getTiplnkProgram(connection, wallet) {
   if (!wallet) return null;

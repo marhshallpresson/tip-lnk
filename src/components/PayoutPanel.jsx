@@ -359,7 +359,7 @@ export default function PayoutPanel() {
           </div>
         </div>
 
-        {/* Standard Fiat/Crypto Payouts (Simplified for TipLnk Style) */}
+        {/* Standard Fiat/Crypto Payouts (Simplified for Tip Stack Style) */}
         <div className="glass-card p-6 border-white/5 flex flex-col justify-between">
            <div>
               <h3 className="text-lg font-bold flex items-center gap-2 mb-2">

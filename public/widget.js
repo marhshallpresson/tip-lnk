@@ -1,39 +1,39 @@
 (function() {
-  const SCRIPT_URL = 'https://tiplnk.me/widget.js';
-  const IFRAME_BASE = 'https://tiplnk.me/checkout';
+  const SCRIPT_URL = 'https://tipstack.fun/widget.js';
+  const IFRAME_BASE = 'https://tipstack.fun/checkout';
 
-  class TipLnkWidget {
+  class TipStackWidget {
     constructor() {
       this.init();
     }
 
     init() {
-      // Find all buttons with data-tiplnk-id
-      const targets = document.querySelectorAll('[data-tiplnk-id]');
+      // Find all buttons with data-tipstack-id
+      const targets = document.querySelectorAll('[data-tipstack-id]');
       targets.forEach(target => {
-        if (target.dataset.tiplnkInitialized) return;
+        if (target.dataset.tipstackInitialized) return;
         this.renderButton(target);
-        target.dataset.tiplnkInitialized = 'true';
+        target.dataset.tipstackInitialized = 'true';
       });
 
       // Listen for messages from the iframe
       window.addEventListener('message', (event) => {
-        if (event.origin !== 'https://tiplnk.me') return;
-        if (event.data === 'tiplnk-close') {
+        if (event.origin !== 'https://tipstack.fun') return;
+        if (event.data === 'tipstack-close') {
           this.closeModal();
         }
       });
     }
 
     renderButton(container) {
-      const wallet = container.dataset.tiplnkId;
-      const theme = container.dataset.tiplnkTheme || 'dark';
-      const color = container.dataset.tiplnkColor || '#00D265';
+      const wallet = container.dataset.tipstackId;
+      const theme = container.dataset.tipstackTheme || 'dark';
+      const color = container.dataset.tipstackColor || '#00D265';
 
       const button = document.createElement('button');
       button.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        Tip me on TipLnk
+        Tip me on TipStack
       `;
       
       const isDark = theme === 'dark';
@@ -160,8 +160,8 @@
 
   // Initialize on load
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => new TipLnkWidget());
+    document.addEventListener('DOMContentLoaded', () => new TipStackWidget());
   } else {
-    new TipLnkWidget();
+    new TipStackWidget();
   }
 })();

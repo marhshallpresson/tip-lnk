@@ -1,12 +1,12 @@
 [package]
-name = "tiplnk"
+name = "tipstack"
 version = "0.1.0"
 description = "Get tips and donation doing what you love"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "tiplnk"
+name = "tipstack"
 
 [features]
 no-entrypoint = []

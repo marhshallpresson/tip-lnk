@@ -5,8 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 async function createAdmin() {
   console.log('🛡️ Creating Elite Admin...');
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@tiplnk.me';
-    const password = 'tiplnk-elite-admin-2026-god-mode'; 
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@tipstack.fun';
+    const password = 'tipstack-elite-admin-2026-god-mode'; 
     const hash = await bcrypt.hash(password, 10);
     
     const existing = await db('user').where({ email: adminEmail }).first();

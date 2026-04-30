@@ -117,8 +117,8 @@ export default function CreatorPage() {
       </main>
 
       <footer className="py-20 border-t border-white/5 text-center mt-20">
-        <img src="/logo.svg" className="h-6 mx-auto mb-6 opacity-20 grayscale" alt="TipLnk" />
-        <p className="text-surface-600 text-[10px] font-bold uppercase tracking-[0.4em]">Powered by TipLnk Protocol • Decentralized Support</p>
+        <img src="/logo.svg" className="h-6 mx-auto mb-6 opacity-20 grayscale" alt="Tip Stack" />
+        <p className="text-surface-600 text-[10px] font-bold uppercase tracking-[0.4em]">Powered by Tip Stack Protocol • Decentralized Support</p>
       </footer>
     </div>
   );
@@ -206,7 +206,7 @@ const CreatorHeader = ({ profile, supporterCount, totalVolume }) => {
                 }}
                 className="h-14 px-10 rounded-2xl bg-brand-500 text-black font-black uppercase tracking-widest text-xs hover:bg-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-brand-500/20 flex items-center gap-3"
               >
-                <img src="/favicon.svg" alt="TipLnk" className="w-6 h-6" />
+                <img src="/favicon.svg" alt="Tip Stack" className="w-6 h-6" />
                 Support
               </button>
             </div>

@@ -1,5 +1,5 @@
 /**
- * TipLnk API Client
+ * Tip Stack API Client
  * Handles CSRF tokens, Bearer tokens, and base URL
  */
 

@@ -1,5 +1,5 @@
 /**
- * Elite TipLnk Universal Deep Linking
+ * Elite Tip Stack Universal Deep Linking
  * Forces mobile browsers to route into secure Solana in-app browsers.
  */
 
@@ -47,7 +47,7 @@ export const getBackpackDeepLink = (url) => {
 
 export const getSolanaPayUri = (creatorAddress, amount, inputTokenMint) => {
   const isProd = import.meta.env.PROD;
-  const baseUrl = isProd ? 'https://tiplnk.me' : window.location.origin;
+  const baseUrl = isProd ? 'https://tipstack.fun' : window.location.origin;
   
   const actionUrl = new URL(`${baseUrl}/api/solana/actions/tip/${creatorAddress}`);
   if (amount) actionUrl.searchParams.set('amount', amount.toString());

@@ -4,7 +4,7 @@ import { useApp } from '../contexts/AppContext';
 
 const STEPS = [
   {
-    title: "Welcome to TipLnk",
+    title: "Welcome to Tip Stack",
     description: "Your professional hub for Solana tips and creator growth. Let's get you settled in.",
     icon: <Zap className="text-brand-500" />,
     target: "stats-overview"

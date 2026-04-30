@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await sendMail({
       to: email,
-      subject: 'Reset your password - TipLnk',
+      subject: 'Reset your password - Tip Stack',
       text: `Click the link to reset your password: ${resetLink}`,
       html: templates.resetPassword(user.name || 'Creator', resetLink),
     })

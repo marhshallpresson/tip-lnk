@@ -86,7 +86,7 @@ export default function RoleSelection({ onComplete }) {
       <div className="mb-8">
         <h2 className="text-2xl md:text-3xl font-black mb-2 tracking-tight">Setup your profile</h2>
         <p className="text-white/40 text-sm md:text-base">
-          Tell us how you'll use TipLnk to customize your experience.
+          Tell us how you'll use Tip Stack to customize your experience.
         </p>
       </div>
 

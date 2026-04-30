@@ -10,13 +10,13 @@ const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
 
   const buttonHtml = `<a href="${profileUrl}" target="_blank" style="display: inline-flex; align-items: center; background: ${accentColor}; color: #000; padding: 12px 24px; border-radius: 12px; font-weight: 800; text-decoration: none; font-family: sans-serif; gap: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-  Tip me on TipLnk
+  Tip me on Tip Stack
 </a>`;
 
   const widgetHtml = `<div 
-  data-tiplnk-id="${creatorAddress}" 
-  data-tiplnk-theme="${theme}" 
-  data-tiplnk-color="${accentColor}">
+  data-tipstack-id="${creatorAddress}" 
+  data-tipstack-theme="${theme}" 
+  data-tipstack-color="${accentColor}">
 </div>
 <script src="${window.location.origin}/widget.js"></script>`;
 
@@ -108,7 +108,7 @@ const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
               <div className="flex-1 flex items-center justify-center bg-main-bg/50 rounded-[24px] border border-dashed border-surface-800 mb-6 p-10 min-h-[160px]">
                 <a href={profileUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', background: accentColor, color: '#000', padding: '12px 24px', borderRadius: '12px', fontWeight: '800', textDecoration: 'none', fontFamily: 'sans-serif', gap: '8px', boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                  Tip me on TipLnk
+                  Tip me on Tip Stack
                 </a>
               </div>
 

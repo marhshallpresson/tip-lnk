@@ -47,7 +47,7 @@ export const sendMail = async (args: {
   try {
     const hostname = new URL(env('APP_URL') ).hostname
     const fromAddress = env('SMTP_FROM') || env('SMTP_USER') || `no-reply@${hostname}`
-    const fromName = env('SMTP_FROM_NAME') || env('APP_NAME') || 'TipLnk Support'
+    const fromName = env('SMTP_FROM_NAME') || env('APP_NAME') || 'Tip Stack Support'
     
     const transport = smtpTransport()     
     

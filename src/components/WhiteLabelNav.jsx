@@ -3,14 +3,14 @@ import { Share2, Zap, MoreHorizontal } from 'lucide-react';
 
 /**
  * WhiteLabelNav - A premium, minimal navigation bar for Creator Pages.
- * Shows TipLnk branding as a seal of quality while keeping focus on the creator.
+ * Shows Tip Stack branding as a seal of quality while keeping focus on the creator.
  */
 export default function WhiteLabelNav({ creatorName = 'Creator' }) {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${creatorName} on TipLnk`,
-        text: `Support ${creatorName} directly on Solana with TipLnk!`,
+        title: `${creatorName} on Tip Stack`,
+        text: `Support ${creatorName} directly on Solana with Tip Stack!`,
         url: window.location.href,
       }).catch(console.error);
     } else {

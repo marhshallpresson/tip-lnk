@@ -64,8 +64,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'GET') {
       const payload: ActionGetResponse = {
-        icon: `https://tiplnk.me/api/og/${creatorAddress}`,
-        title: `Tip ${creatorName} on TipLnk`,
+        icon: `https://tipstack.fun/api/og/${creatorAddress}`,
+        title: `Tip ${creatorName} on Tip Stack`,
         description: `Support ${creatorName} with a direct SOL or USDC tip. 0% platform fees.`,
         label: "Tip Now",
         links: {

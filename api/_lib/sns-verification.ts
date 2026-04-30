@@ -96,7 +96,7 @@ export async function resolveSNSDomain(
   connection: Connection
 ): Promise<string | null> {
   try {
-    // Format: handle the SNS domain (e.g., "creator.tiplnk.sol" → "creator.tiplnk")
+    // Format: handle the SNS domain (e.g., "creator.tipstack.sol" → "creator.tipstack")
     const domainName = snsDomain.replace(/\.sol$/, '')
 
     // Get the domain key (PDAs for SNS registry)

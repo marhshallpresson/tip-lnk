@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .where({ twitterHandle: handle })
       .orWhere({ discordHandle: handle })
       .orWhere({ solDomain: handle })
-      .orWhere({ solDomain: `${handle}.tiplnk.sol` })
+      .orWhere({ solDomain: `${handle}.tipstack.sol` })
       .first()
 
     if (!user || !user.walletAddress) {

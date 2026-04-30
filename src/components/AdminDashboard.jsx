@@ -34,7 +34,7 @@ export default function AdminDashboard() {
       const isProd = import.meta.env.PROD;
       const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
       
-      const adminSecret = 'tiplnk-elite-admin-2026-god-mode'; 
+      const adminSecret = 'tipstack-elite-admin-2026-god-mode'; 
       const headers = { 'x-admin-secret': adminSecret };
       
       const [statsRes, creatorsRes] = await Promise.all([
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
             <ShieldCheck size={24} className="text-red-500" />
           </div>
           <h2 className="text-2xl font-bold text-center mb-2">Admin Access</h2>
-          <p className="text-white/40 text-sm text-center mb-10">Sign in to manage the TipLnk protocol.</p>
+          <p className="text-white/40 text-sm text-center mb-10">Sign in to manage the Tip Stack protocol.</p>
           
           {error && (
             <div className="bg-red-500/5 border border-red-500/10 text-red-500 p-4 rounded-lg mb-8 text-xs flex items-center gap-2">

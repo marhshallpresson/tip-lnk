@@ -1,6 +1,6 @@
 const ALLOWED_ORIGINS = [
   ...(process.env.CORS_ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) || []),
-  ...(process.env.NODE_ENV === 'production' ? ['https://tiplnk.me', 'https://www.tiplnk.me'] : []),
+  ...(process.env.NODE_ENV === 'production' ? ['https://tipstack.fun', 'https://www.tipstack.fun'] : []),
   ...(process.env.NODE_ENV === 'development' ? ['http://localhost:5173'] : [])
 ]
 

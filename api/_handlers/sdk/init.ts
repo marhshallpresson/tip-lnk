@@ -52,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       config: {
         creatorAddress: creator.walletAddress,
         acceptedTokens: ['SOL', 'USDC'],
-        embedUrl: `https://tiplnk.me/checkout/${creator.walletAddress}?theme=${theme}`
+        embedUrl: `https://tipstack.fun/checkout/${creator.walletAddress}?theme=${theme}`
       }
     })
 

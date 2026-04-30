@@ -76,7 +76,7 @@ export const issueEmailVerification = async (userId: string, email: string, name
 
   await sendMail({
     to: email,
-    subject: 'Verify your email - TipLnk',
+    subject: 'Verify your email - Tip Stack',
     text: `Your verification code is ${code}`,
     html: templates.verifyEmailCode(name, code),
   }).catch(err => {
