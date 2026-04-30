@@ -31,6 +31,7 @@ import { default as solanaSendSmart } from './_handlers/solana/send-smart.js'
 import { default as solanaPriorityFee } from './_handlers/solana/priority-fee.js'
 import { default as solanaSnsCheck } from './_handlers/solana/sns-check.js'
 import { default as solanaTipsGet } from './_handlers/solana/tips/get.js'
+import { default as solanaTipsCreate } from './_handlers/solana/tips/create.js'
 import { default as solanaTipsMessage } from './_handlers/solana/tips/message.js'
 import { default as solanaTipsStream } from './_handlers/solana/tips/stream.js'
 import { default as solanaWebhookHelius } from './_handlers/solana/webhooks/helius.js'
@@ -90,6 +91,7 @@ const ROUTES: Record<string, Function> = {
   'solana/actions/tip': solanaActionsTip,
   'solana/tips': solanaTipsGet,
   'solana/tips/get': solanaTipsGet,
+  'solana/tips/create': solanaTipsCreate,
   'solana/tips/stream': solanaTipsStream,
   'solana/webhooks/helius': solanaWebhookHelius,
   'solana/jupiter/swap': solanaJupiterSwap,

@@ -15,6 +15,14 @@ export default defineConfig({
         if (source === 'qrcode' && importer && importer.includes('@dynamic-labs')) {
           return this.resolve('qrcode', importer, { skipSelf: true, ...options });
         }
+        
+        // Patch for 404s in production: redirect src/ references to build entry points
+        if (importer && importer.includes('@dynamic-labs') && source.includes('/src/')) {
+           const pkgMatch = importer.match(/node_modules\/(@dynamic-labs\/[^/]+)/);
+           if (pkgMatch) {
+             return this.resolve(pkgMatch[1], importer, { skipSelf: true, ...options });
+           }
+        }
         return null;
       },
     },
@@ -81,6 +89,10 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
+      // Explicitly alias problematic deep imports if they are still hitting the browser
+      '@dynamic-labs/sdk-api-core/src/models/UpgradeEmbeddedWalletToV2Request': '@dynamic-labs/sdk-api-core',
+      '@dynamic-labs/sdk-react-core/src/lib/views/AccountUpgradedView/AccountUpgradedView': '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeEmbeddedWallet/useUpgradeEmbeddedWallet': '@dynamic-labs/sdk-react-core',
     },
   },
 });

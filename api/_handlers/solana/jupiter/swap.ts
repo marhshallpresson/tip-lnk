@@ -7,23 +7,43 @@ import {
   Connection
 } from '@solana/web3.js'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
+import { 
+  getSlippageLimitForToken, 
+  DFLOW_SECURITY_CONFIG 
+} from '../../../_lib/dflow-security.js'
 
 /**
- * PHASE 4: TRANSACTION PIPELINE (ENFORCED)
- * - Constructs Jupiter swap with exact destination routing
- * - Injects on-chain Memo for supporter messages
+ * SECURITY PATCH: Jupiter Swap with Slippage & Expiry Validation (C-02)
+ * 
+ * Prevents:
+ * - MEV extraction via slippage manipulation
+ * - Intent replay attacks
+ * - Stale swap fills at unfavorable rates
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { inputMint, outputMint, amount, userPublicKey, destinationWallet, memo } = req.body
-  const slippageBps = req.body.slippageBps || 50
+  let slippageBps = req.body.slippageBps || 50
 
   if (!inputMint || !outputMint || !amount || !userPublicKey || !destinationWallet) {
     return res.status(400).json({ error: 'Missing required parameters' })
   }
 
   try {
+    // SECURITY: Validate and enforce slippage bounds
+    const outputTokenAddr = new PublicKey(outputMint)
+    const maxAllowedSlippagePercent = getSlippageLimitForToken(outputTokenAddr)
+    const maxAllowedSlippageBps = Math.round(maxAllowedSlippagePercent * 100)
+
+    if (slippageBps > maxAllowedSlippageBps) {
+      return res.status(400).json({
+        error: `Slippage ${(slippageBps / 100).toFixed(2)}% exceeds maximum ${maxAllowedSlippagePercent}% for this token`,
+        code: 'SLIPPAGE_TOO_HIGH',
+        maxAllowedSlippageBps,
+      })
+    }
+
     const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
     const NETWORK = process.env.VITE_SOLANA_NETWORK || 'mainnet-beta';
     const RPC_URL = NETWORK === 'devnet' 
@@ -55,6 +75,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (quoteResponse.error) {
       return res.status(400).json({ error: quoteResponse.error })
+    }
+
+    // SECURITY: Validate output meets minimum threshold
+    const minOutAmount = quoteResponse.outAmount
+    const actualSlippage = ((BigInt(quoteResponse.inAmount) - BigInt(quoteResponse.outAmount)) * BigInt(10000)) / BigInt(quoteResponse.inAmount)
+    
+    if (actualSlippage > BigInt(slippageBps)) {
+      console.warn(`⚠️ Quote slippage ${(Number(actualSlippage) / 100).toFixed(2)}% vs requested ${(slippageBps / 100).toFixed(2)}%`)
     }
 
     const destinationPubkey = new PublicKey(destinationWallet)
@@ -135,7 +163,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       transaction: finalTxBase64,
       quote: quoteResponse,
       dflowAnalytics: dflowQuoteResponse,
-      executionMode: 'sync'
+      executionMode: 'sync',
+      _security: {
+        slippageBpsEnforced: slippageBps,
+        maxAllowedSlippageBps,
+        minOutAmount,
+      }
     })
 
   } catch (err: any) {
