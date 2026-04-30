@@ -33,7 +33,13 @@ export default defineConfig({
     ],
     exclude: [
       '@solana/web3.js', 
-      'tweetnacl'
+      'tweetnacl',
+      '@dynamic-labs/sdk-react-core/src/lib/views/WaasUpgradeView/WaasUpgradeView',
+      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeEmbeddedWallet/useUpgradeEmbeddedWallet',
+      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeToDynamicWaasFlow/useUpgradeToDynamicWaasFlow',
+      '@dynamic-labs/sdk-react-core/src/lib/views/AccountUpgradedView/AccountUpgradedView',
+      '@dynamic-labs/sdk-react-core/src/lib/views/WalletUpgradeFlowView/WalletUpgradeFlowView',
+      '@dynamic-labs/sdk-api-core/src/models/UpgradeEmbeddedWalletToV2Request'
     ],
     esbuildOptions: {
       define: {
@@ -80,15 +86,6 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
-      // SURGICAL FIX: Redirect exact failing paths to their parent package indices
-      // This prevents 404s while avoiding Rollup circularity by pointing to the main package
-      '@dynamic-labs/sdk-api-core/src/models/UpgradeEmbeddedWalletToV2Request': '@dynamic-labs/sdk-api-core',
-      '@dynamic-labs/sdk-react-core/src/lib/views/AccountUpgradedView/AccountUpgradedView': '@dynamic-labs/sdk-react-core',
-      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeEmbeddedWallet/useUpgradeEmbeddedWallet': '@dynamic-labs/sdk-react-core',
-      '@dynamic-labs/sdk-react-core/src/lib/views/WaasUpgradeView/WaasUpgradeView': '@dynamic-labs/sdk-react-core',
-      '@dynamic-labs/sdk-react-core/src/lib/views/WalletUpgradeFlowView/WalletUpgradeFlowView': '@dynamic-labs/sdk-react-core',
-      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeToDynamicWaasFlow/useUpgradeToDynamicWaasFlow': '@dynamic-labs/sdk-react-core',
-      'qrcode': 'qrcode'
     },
   },
 });

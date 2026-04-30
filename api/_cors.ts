@@ -19,6 +19,27 @@ export function applyCors(req: any, res: any): boolean {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-csrf-token, Content-Encoding, Accept-Encoding, X-Accept-Blockchain-IDs, X-Accept-Action-Version')
   res.setHeader('Access-Control-Allow-Credentials', 'true')
 
+  // Professional CSP Headers - prevents XSS and enforces security standards
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com",
+    "connect-src 'self' https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://solana-mainnet.rpc.extnode.com https://api.torquemarketing.xyz https://api.fossapay.com https://api.pajcash.com https://api.dynamic.xyz wss://*.dynamic.xyz",
+    "frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "upgrade-insecure-requests"
+  ]
+
+  res.setHeader('Content-Security-Policy', cspDirectives.join('; '))
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+  res.setHeader('X-XSS-Protection', '1; mode=block')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+
   if (req.method === 'OPTIONS') {
     res.status(204).end()
     return false
