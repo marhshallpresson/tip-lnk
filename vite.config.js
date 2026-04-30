@@ -32,13 +32,14 @@ export default defineConfig({
       '@dynamic-labs/iconic',
       'string_decoder',
       '@phantom/client',
-      '@phantom/openapi-wallet-service'
+      '@phantom/openapi-wallet-service',
+      'rpc-websockets',
+      'eventemitter3',
+      'jayson'
     ],
     exclude: [
       '@solana/web3.js', 
-      'tweetnacl',
-      '@dynamic-labs/sdk-api-core',
-      '@dynamic-labs/sdk-react-core'
+      'tweetnacl'
     ],
     esbuildOptions: {
       define: {
