@@ -8,27 +8,11 @@ export default defineConfig({
     nodePolyfills({
       include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder', 'process', 'events'],
     }),
-    {
-      name: 'dynamic-qrcode-fix',
-      enforce: 'pre',
-      resolveId(source, importer, options) {
-        if (source === 'qrcode' && importer && importer.includes('@dynamic-labs')) {
-          return this.resolve('qrcode', importer, { skipSelf: true, ...options });
-        }
-        
-        // Patch for 404s in production: redirect src/ references to build entry points
-        if (importer && importer.includes('@dynamic-labs') && source.includes('/src/')) {
-           const pkgMatch = importer.match(/node_modules\/(@dynamic-labs\/[^/]+)/);
-           if (pkgMatch) {
-             return this.resolve(pkgMatch[1], importer, { skipSelf: true, ...options });
-           }
-        }
-        return null;
-      },
-    },
   ],
   define: {
     'global': 'globalThis',
+    // PATCH: Intercept hardcoded browser-side node_modules references that cause 404s
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
   optimizeDeps: {
     include: [
@@ -43,7 +27,9 @@ export default defineConfig({
       '@phantom/openapi-wallet-service',
       'rpc-websockets',
       'eventemitter3',
-      'jayson'
+      'jayson',
+      'react-dom/client',
+      'qrcode'
     ],
     exclude: [
       '@solana/web3.js', 
@@ -57,7 +43,7 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 2000,
     commonjsOptions: {
       transformMixedEsModules: true,
       include: [/@dynamic-labs/, /node_modules/],
@@ -75,7 +61,12 @@ export default defineConfig({
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
+        entryFileNames: 'assets/[name]-[hash].js',
+        manualChunks(id) {
+          if (id.includes('@dynamic-labs')) {
+            return 'dynamic-sdk';
+          }
+        }
       },
     }
   },
@@ -89,10 +80,15 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
-      // Explicitly alias problematic deep imports if they are still hitting the browser
+      // SURGICAL FIX: Redirect exact failing paths to their parent package indices
+      // This prevents 404s while avoiding Rollup circularity by pointing to the main package
       '@dynamic-labs/sdk-api-core/src/models/UpgradeEmbeddedWalletToV2Request': '@dynamic-labs/sdk-api-core',
       '@dynamic-labs/sdk-react-core/src/lib/views/AccountUpgradedView/AccountUpgradedView': '@dynamic-labs/sdk-react-core',
       '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeEmbeddedWallet/useUpgradeEmbeddedWallet': '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/sdk-react-core/src/lib/views/WaasUpgradeView/WaasUpgradeView': '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/sdk-react-core/src/lib/views/WalletUpgradeFlowView/WalletUpgradeFlowView': '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeToDynamicWaasFlow/useUpgradeToDynamicWaasFlow': '@dynamic-labs/sdk-react-core',
+      'qrcode': 'qrcode'
     },
   },
 });
