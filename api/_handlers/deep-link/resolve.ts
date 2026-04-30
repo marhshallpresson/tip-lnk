@@ -16,6 +16,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await db('user')
       .where({ twitterHandle: handle })
       .orWhere({ discordHandle: handle })
+      .orWhere({ solDomain: handle })
+      .orWhere({ solDomain: `${handle}.tiplnk.sol` })
       .first()
 
     if (!user || !user.walletAddress) {

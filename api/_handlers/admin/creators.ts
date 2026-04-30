@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const creators = await db('user')
-      .select('id', 'email', 'name', 'walletAddress', 'twitterHandle', 'discordHandle', 'created_at', 'lastLoginAt')
+      .select('id', 'email', 'name', 'walletAddress', 'twitterHandle', 'discordHandle', 'solDomain', 'created_at', 'lastLoginAt')
       .orderBy('created_at', 'desc')
       .limit(100)
 

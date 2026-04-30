@@ -106,7 +106,10 @@ export default function AdminDashboard() {
   const filteredCreators = creators.filter(c => 
     c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.walletAddress?.toLowerCase().includes(searchQuery.toLowerCase())
+    c.walletAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.twitterHandle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.discordHandle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.solDomain?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (!isAuthenticated) {

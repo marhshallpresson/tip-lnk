@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder'],
+      include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder', 'process', 'events'],
     }),
     {
       name: 'dynamic-qrcode-fix',
@@ -34,12 +34,17 @@ export default defineConfig({
       '@phantom/client',
       '@phantom/openapi-wallet-service'
     ],
+    exclude: [
+      '@solana/web3.js', 
+      'tweetnacl',
+      '@dynamic-labs/sdk-api-core',
+      '@dynamic-labs/sdk-react-core'
+    ],
     esbuildOptions: {
       define: {
         global: 'globalThis',
       },
     },
-    exclude: ['@solana/web3.js', 'tweetnacl']
   },
   build: {
     target: 'esnext',

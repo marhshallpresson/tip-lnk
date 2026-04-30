@@ -114,9 +114,10 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
 
   const filteredTokens = useMemo(() => {
     if (!searchTerm) return tokens;
+    const term = searchTerm.toLowerCase();
     return tokens.filter(t =>
-      t.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      t.symbol.toLowerCase().includes(term) ||
+      (t.name && t.name.toLowerCase().includes(term))
     );
   }, [tokens, searchTerm]);
 

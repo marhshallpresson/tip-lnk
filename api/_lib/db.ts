@@ -90,10 +90,10 @@ initSchema().catch(err => {
  * Automatically creates and hardens tables on your Supabase instance.
  */
 export async function initSchema() {
-
   try {
-
+    console.log('🛡️ initSchema: Starting...');
     if (!(await db.schema.hasTable('user'))) {
+      console.log('🛡️ initSchema: Creating user table...');
       await db.schema.createTable('user', (table) => {
         table.string('id').primary(); 
         table.string('email').unique();
@@ -136,7 +136,10 @@ export async function initSchema() {
 
     if (!(await db.schema.hasTable('transactions_raw'))) {
       await db.schema.createTable('transactions_raw', (table) => {
-        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.uuid('id').primary();
+        if (db.client.config.client === 'pg') {
+          table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()')).alter();
+        }
         table.string('signature').unique().notNullable();
         table.text('payload').notNullable();
         table.string('source').defaultTo('helius_webhook');
@@ -237,8 +240,12 @@ export async function initSchema() {
     }
 
     if (!(await db.schema.hasTable('payouts'))) {
+      console.log('🛡️ initSchema: Creating payouts table...');
       await db.schema.createTable('payouts', (table) => {
-        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.uuid('id').primary();
+        if (db.client.config.client === 'pg') {
+           table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()')).alter();
+        }
         table.string('pajcash_reference').unique().notNullable();
         table.string('status').notNullable();
         table.decimal('amount_ngn', 20, 2).notNullable();
@@ -319,6 +326,7 @@ export async function initSchema() {
         console.error('🛡️ Recovery: Failed to execute automated account restoration:', e.message);
     }
 
-  } catch (err) {
+  } catch (err: any) {
+      console.error('🛡️ initSchema: CRITICAL FAULT:', err.message);
   }
 }
