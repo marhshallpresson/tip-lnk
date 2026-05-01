@@ -28,6 +28,12 @@ export const DYNAMIC_CONFIG = {
       backpack: true,
     },
 
+    // Disable WaaS upgrade features to prevent 404 errors
+    waas: {
+      enabled: false,
+      upgradeEnabled: false,
+    },
+
     // Default chain
     defaultChain: 'SOL',
     supportedChains: ['SOL'],
@@ -74,6 +80,8 @@ export const DYNAMIC_CONFIG = {
     logo: '/logo.svg',
     signupFlow: 'email-first',
     showSignupForm: true,
+    // Disable WaaS related UI
+    showWaasUpgrade: false,
   },
 
   // Callbacks
