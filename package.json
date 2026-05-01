@@ -45,7 +45,7 @@
     "openid-client": "6.3.3",
     "paj_ramp": "^1.5.4",
     "pg": "8.20.0",
-    "postcss": "8.4.49",
+    "postcss": "8.5.13",
     "postgres": "3.4.9",
     "qrcode.react": "4.2.0",
     "react": "18.3.1",
