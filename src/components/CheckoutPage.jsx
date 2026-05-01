@@ -98,8 +98,8 @@ export default function CheckoutPage() {
         <div className="max-w-sm mx-auto">
            <TipWidget 
              fixedRecipient={{
-               username: profile.solDomain || profile.displayName || profile.walletAddress.slice(0, 8),
-               address: profile.walletAddress
+               username: profile.solDomain || profile.displayName || profile.id.slice(0, 8),
+               address: profile.id
              }} 
              theme={theme}
              accent={accent}

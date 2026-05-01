@@ -11,23 +11,16 @@ export default defineConfig({
   ],
   define: {
     'global': 'globalThis',
-    // PATCH: Intercept hardcoded browser-side node_modules references that cause 404s
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
   optimizeDeps: {
     include: [
-      '@dynamic-labs/sdk-react-core',
       '@dynamic-labs/solana',
       '@dynamic-labs/wallet-connector-core',
+      '@dynamic-labs/sdk-react-core',
       '@dynamic-labs/sdk-api-core',
       '@dynamic-labs/multi-wallet',
       '@dynamic-labs/iconic',
-      '@dynamic-labs/sdk-react-core/src/lib/views/WaasUpgradeView/WaasUpgradeView',
-      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeEmbeddedWallet/useUpgradeEmbeddedWallet',
-      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeToDynamicWaasFlow/useUpgradeToDynamicWaasFlow',
-      '@dynamic-labs/sdk-react-core/src/lib/views/AccountUpgradedView/AccountUpgradedView',
-      '@dynamic-labs/sdk-react-core/src/lib/views/WalletUpgradeFlowView/WalletUpgradeFlowView',
-      '@dynamic-labs/sdk-api-core/src/models/UpgradeEmbeddedWalletToV2Request',
       'string_decoder',
       '@phantom/client',
       '@phantom/openapi-wallet-service',
@@ -68,10 +61,11 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
-        manualChunks(id) {
-          if (id.includes('@dynamic-labs')) {
-            return 'dynamic-sdk';
-          }
+        manualChunks: {
+          dynamic: [
+            '@dynamic-labs/sdk-react-core',
+            '@dynamic-labs/sdk-api-core'
+          ]
         }
       },
     }
@@ -87,5 +81,9 @@ export default defineConfig({
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
     },
+    dedupe: [
+      '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/sdk-api-core'
+    ]
   },
 });

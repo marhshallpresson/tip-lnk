@@ -67,21 +67,18 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
-        if (recipientInput.startsWith('@')) {
+        if (recipientInput.startsWith('@') || recipientInput.includes('.')) {
           const res = await fetch(`${API_BASE_URL}/api/deep-link/resolve?handle=${recipientInput}`);
           if (res.ok) {
-            const { walletAddress } = await res.json();
-            setResolvedAddress(walletAddress);
+            const { id } = await res.json();
+            setResolvedAddress(id);
             setIsResolving(false);
             return;
           }
         }
 
-        if (recipientInput.length >= 32 && recipientInput.length <= 44) {
-          setResolvedAddress(recipientInput);
-        } else {
-          setResolvedAddress(null);
-        }
+        // ZERO-KNOWLEDGE: Manual wallet address entry is disabled to protect creator privacy.
+        setResolvedAddress(null);
       } catch (err) {
         console.error('Resolution error:', err);
         setResolvedAddress(null);
@@ -152,7 +149,7 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
       if (onSuccess) onSuccess(result);
       addTip({
         recipient: recipientInput,
-        recipientAddress: resolvedAddress,
+        recipientId: resolvedAddress,
         inputToken: selectedToken.symbol,
         inputAmount: amount,
         amountUSDC: result.outAmount,
@@ -454,7 +451,7 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
         {/* --- SNS Impersonation Safety (Task 3.3) --- */}
         {recipientInput.includes('.sol') && (
           <div className="mb-6 animate-fade-in">
-            <SNSWarning snsName={recipientInput} walletAddress={resolvedAddress} />
+            <SNSWarning snsName={recipientInput} />
           </div>
         )}
 

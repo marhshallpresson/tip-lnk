@@ -4,6 +4,7 @@ import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
 import { SolanaWalletConnectors } from '@dynamic-labs/solana';
+import { EthereumWalletConnectors } from '@dynamic-labs/ethereum';
 import StepIndicator from './components/StepIndicator';
 import RoleSelection from './components/RoleSelection';
 import CategorySelection from './components/CategorySelection';
@@ -348,10 +349,8 @@ export default function App() {
     <DynamicContextProvider
       theme="dark"
       settings={{
-        ...DYNAMIC_LABS_CONFIG.walletConfig,
-        environmentId: DYNAMIC_LABS_CONFIG.environmentId || 'sandbox',
-        walletConnectors: [SolanaWalletConnectors],
-        shadowDOMEnabled: false,
+        environmentId: DYNAMIC_LABS_CONFIG.environment.id || 'sandbox',
+        walletConnectors: [EthereumWalletConnectors, SolanaWalletConnectors],
       }}
     >
       <SolanaWalletProvider>

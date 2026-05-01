@@ -121,8 +121,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.onboardingComplete = Boolean(user.onboardingComplete)
 
     const displayName = profile.displayName || user.name || 'Solana Creator'
-    const avatarUrl = profile.avatarUrl || `https://tipstack.fun/api/og/${user.walletAddress}`
+    const identifier = user.solDomain || user.twitterHandle || user.id
+    const avatarUrl = profile.avatarUrl || `https://tipstack.fun/api/og/${identifier}`
     
+    // STRIP SENSITIVE DATA: walletAddress must never leave the server except during payment
+    delete profile.walletAddress
+
     const metadata = {
         title: `${displayName} (@${user.twitterHandle || 'tipstack'})`,
         description: profile.bio || `Support ${displayName} with SOL/USDC on Tip Stack. 0% platform fees.`,
@@ -130,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         card: 'summary_large_image'
     }
 
-    const responseData = { success: true, profile, metadata };
+    const responseData = { success: true, profile: { ...profile, id: user.id }, metadata };
     
     if (user.walletAddress) {
       const tips = await db('tips')

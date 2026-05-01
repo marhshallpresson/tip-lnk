@@ -136,13 +136,12 @@ export function useTipping(creatorAddress) {
       try {
         const token = tokens.find((t) => t.symbol === tokenSymbol);
         if (!token) throw new Error('Token not found');
-        const amountInLamports = toLamports(tokenAmount, token.decimals);
 
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
         const payload = {
-          creatorId: creatorAddress,
+          creatorId,
           inputTokenMint: token.mint,
           amount: tokenAmount.toString(),
           paymentMethod: 'external_wallet',
@@ -189,7 +188,7 @@ export function useTipping(creatorAddress) {
         setError('Routing engine unavailable. Please try again.');
       }
     },
-    [publicKey, creatorAddress]
+    [publicKey, creatorId, tokens]
   );
 
   const executeTip = useCallback(
@@ -209,49 +208,26 @@ export function useTipping(creatorAddress) {
 
         let signature;
 
-        const isDirect = selectedToken.mint === 'So11111111111111111111111111111111111111112' || selectedToken.symbol === 'USDC';
-        
-        if (isDirect && !route.transaction.includes('swap')) { 
-           console.log('🛡️ Anchor: Executing on-chain fortified tip.');
-           const program = getTiplnkProgram(connection, dynamicWallet);
-           const amountBN = new (await import('bn.js')).default(toLamports(amount, selectedToken.decimals).toString());
+        // ZERO-KNOWLEDGE: Frontend never builds transactions. It only signs buffers from the backend.
+        const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
+        const signedTx = await signTransaction(tx);
 
-           if (selectedToken.symbol === 'SOL') {
-              signature = await program.methods
-                .sendSolTip(amountBN, note)
-                .accounts({
-                  sender: publicKey,
-                  creator: new PublicKey(creatorAddress),
-                  systemProgram: PublicKey.default,
-                })
-                .rpc();
-           } else {
-              const accounts = await getSendTokenAccounts(
-                publicKey, 
-                new PublicKey(creatorAddress), 
-                new PublicKey(selectedToken.mint)
-              );
-              signature = await program.methods
-                .sendTokenTip(amountBN, note)
-                .accounts(accounts)
-                .rpc();
-           }
-        } else {
-          const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
-          const signedTx = await signTransaction(tx);
+        const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transaction: Buffer.from(signedTx.serialize()).toString('base64'),
+            note: note
+          }),
+        });
 
-          const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              transaction: Buffer.from(signedTx.serialize()).toString('base64'),
-              note: note
-            }),
-          });
-
-          const submitData = await submitRes.json();
-          signature = submitData.result;
+        if (!submitRes.ok) {
+           const errData = await submitRes.json();
+           throw new Error(errData.error || 'Transaction submission failed.');
         }
+
+        const submitData = await submitRes.json();
+        signature = submitData.result;
 
         if (!signature) {
           throw new Error('Transaction submission failed.');
@@ -267,7 +243,7 @@ export function useTipping(creatorAddress) {
           totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
           timestamp: Date.now(),
           sender: senderName || 'Anonymous',
-          recipientAddress: creatorAddress,
+          recipientId: creatorId,
         };
 
         setTxResult(result);

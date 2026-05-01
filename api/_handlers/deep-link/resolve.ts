@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.json({
       success: true,
       handle: `@${handle}`,
-      walletAddress: user.walletAddress,
+      id: user.id,
       profile: JSON.parse(user.profileData || '{}')
     })
   } catch (err) {

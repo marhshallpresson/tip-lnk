@@ -137,7 +137,7 @@ tiplnk/
 ## Core Features
 
 ### 1. Creator Profiles
-- SNS subdomain support (e.g., creator.tiplnk.sol)
+- SNS subdomain support (e.g., creator.tipstack.sol)
 - Bio, avatar, and social links
 - Tip history & statistics
 - Payout settings and preferences

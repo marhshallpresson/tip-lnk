@@ -96,8 +96,8 @@ export default function CreatorPage() {
             <div className="sticky top-28 space-y-8">
               <div id="tip-widget" className="animate-slide-up">
                 <TipWidget fixedRecipient={{
-                  username: profile.solDomain || profile.displayName || profile.walletAddress.slice(0, 8),
-                  address: profile.walletAddress
+                  username: profile.solDomain || profile.displayName || profile.id.slice(0, 8),
+                  address: profile.id
                 }} />
               </div>
 
@@ -126,7 +126,7 @@ export default function CreatorPage() {
 
 const CreatorHeader = ({ profile, supporterCount, totalVolume }) => {
   const displayName = profile.displayName || profile.name || 'Anonymous Creator';
-  const avatarFallback = profile.walletAddress ? profile.walletAddress.slice(0, 2).toUpperCase() : '?';
+  const avatarFallback = profile.id ? profile.id.slice(0, 2).toUpperCase() : '?';
 
   return (
     <div className="relative">
@@ -167,7 +167,7 @@ const CreatorHeader = ({ profile, supporterCount, totalVolume }) => {
                 </div>
               )}
             </div>
-            {profile.walletAddress && (
+            {profile.id && (
               <div className="absolute bottom-2 right-2 w-12 h-12 rounded-2xl bg-brand-500 text-black flex items-center justify-center shadow-2xl border-4 border-surface-950 animate-bounce-slow" title="Verified Creator">
                 <ShieldCheck size={24} />
               </div>

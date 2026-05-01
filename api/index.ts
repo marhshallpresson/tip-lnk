@@ -50,6 +50,7 @@ import { default as payoutsWithdraw } from './_handlers/payouts/withdraw.js'
 import { default as adminStats } from './_handlers/admin/stats.js'
 import { default as adminCreators } from './_handlers/admin/creators.js'
 import { default as adminLedger } from './_handlers/admin/ledger.js'
+import { default as adminMigration } from './_handlers/admin/migration.js'
 
 import { default as creatorAnalytics } from './_handlers/creators/analytics.js'
 
@@ -107,6 +108,7 @@ const ROUTES: Record<string, Function> = {
   'admin/stats': adminStats,
   'admin/creators': adminCreators,
   'admin/ledger': adminLedger,
+  'admin/migration': adminMigration,
 
   'payments/intent': paymentsIntent,
   'payments/fiat/webhook': paymentsFiatWebhook,
