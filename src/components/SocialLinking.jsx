@@ -85,7 +85,7 @@ export default function SocialLinking({ onComplete, onBack }) {
 
     const popup = window.open(
       url,
-      'TipLnkVerify',
+      'Tip StackVerify',
       `width=${width},height=${height},left=${left},top=${top},status=no,location=no,toolbar=no,menubar=no`
     );
 

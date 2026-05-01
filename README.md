@@ -1,8 +1,8 @@
-# TipLnk ⚡
+# Tip Stack ⚡
 
 **The fastest way to monetize your craft on Solana** – A premier non-custodial tipping and monetization protocol for the Solana ecosystem.
 
-TipLnk is a decentralized tipping infrastructure designed to seamlessly bridge the gap between Web2 onboarding and Web3 execution. We empower creators, developers, and platforms to monetize their audiences instantly, without intermediaries, custody risks, or complex wallet setups.
+Tip Stack is a decentralized tipping infrastructure designed to seamlessly bridge the gap between Web2 onboarding and Web3 execution. We empower creators, developers, and platforms to monetize their audiences instantly, without intermediaries, custody risks, or complex wallet setups.
 
 ---
 
@@ -33,8 +33,8 @@ TipLnk is a decentralized tipping infrastructure designed to seamlessly bridge t
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/tiplnk.git
-cd tiplnk
+git clone https://github.com/your-username/tipstack.git
+cd tipstack
 
 # Install dependencies
 pnpm install
@@ -59,7 +59,7 @@ pnpm dev
 
 ```bash
 # Navigate to contracts
-cd tiplnk_anchor
+cd tipstack_anchor
 
 # Install dependencies
 anchor build
@@ -73,7 +73,7 @@ anchor test
 ## Project Structure
 
 ```
-tiplnk/
+tipstack/
 ├── src/                     # React frontend application
 │   ├── components/          # Reusable React components
 │   ├── contexts/            # Context providers (Wallet, Auth)
@@ -89,7 +89,7 @@ tiplnk/
 │   │   ├── social/          # Social integration
 │   │   └── solana/          # Blockchain interactions
 │   └── _lib/                # Shared library functions
-├── tiplnk_anchor/           # Solana smart contracts
+├── tipstack_anchor/           # Solana smart contracts
 │   └── programs/            # Anchor programs
 ├── skills/                  # Agent/MCP skills
 ├── public/                  # Static assets
@@ -172,17 +172,17 @@ tiplnk/
 
 ## Embedded Tip Widget
 
-Integrate TipLnk into your platform in seconds:
+Integrate Tip Stack into your platform in seconds:
 
 ```html
-<!-- 1. Include the TipLnk Widget Script -->
-<script src="https://tiplnk.fun/widget.js"></script>
+<!-- 1. Include the Tip Stack Widget Script -->
+<script src="https://tipstack.fun/widget.js"></script>
 
 <!-- 2. Place the button wherever you want -->
 <div 
-  data-tiplnk-id="YOUR_WALLET_ADDRESS_OR_HANDLE" 
-  data-tiplnk-theme="dark" 
-  data-tiplnk-color="#00D265">
+  data-tipstack-id="YOUR_WALLET_ADDRESS_OR_HANDLE" 
+  data-tipstack-theme="dark" 
+  data-tipstack-color="#00D265">
 </div>
 ```
 
@@ -302,7 +302,7 @@ pnpm build
 
 ### 🧑‍🎨 For Creators (The Receiver)
 1. **Onboard:** Connect via Dynamic using an existing wallet or email (MPC wallet provisioned instantly)
-2. **Distribute:** Share your TipLnk profile or embed the TipLnk Widget on your site
+2. **Distribute:** Share your Tip Stack profile or embed the Tip Stack Widget on your site
 3. **Monetize:** Receive crypto directly into your self-custody wallet from any supporter
 4. **Offramp:** Convert earnings to local currency (e.g., NGN via Pajcash) instantly from the dashboard
 
@@ -408,7 +408,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 For questions and support:
 
-• Create an [issue](https://github.com/your-username/tiplnk/issues)
+• Create an [issue](https://github.com/your-username/tipstack/issues)
 • Join our Discord community
 • Follow us on [Twitter](https://twitter.com/your-twitter)
 

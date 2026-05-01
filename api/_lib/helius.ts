@@ -137,12 +137,12 @@ export async function backfillTransactions(address: string, limit = 100) {
     if (!data.result) return [];
 
     const parsedTips: HeliusTip[] = data.result.map((tx: any) => {
-      const isTipLnkTx = tx.instructions?.some((ix: any) => 
+      const isTip StackTx = tx.instructions?.some((ix: any) => 
         ix.programId === 'MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848' || 
         (ix.data && ix.data.includes('tipstack'))
       );
 
-      if (!isTipLnkTx) return null;
+      if (!isTip StackTx) return null;
 
       const nativeTransfer = tx.nativeTransfers[0];
       const tokenTransfer = tx.tokenTransfers[0];

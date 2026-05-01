@@ -16,5 +16,5 @@
 
   <!-- Text part with Link Sans -->
   <text x="64" y="42" fill="white" font-family="'Link Sans', 'Inter', sans-serif" font-weight="800" font-size="32" letter-spacing="-1.5">Tip</text>
-  <text x="118" y="42" fill="#9f35e8" font-family="'Link Sans', 'Inter', sans-serif" font-weight="800" font-size="32" letter-spacing="-1.5">Lnk</text>
+  <text x="118" y="42" fill="#9f35e8" font-family="'Link Sans', 'Inter', sans-serif" font-weight="800" font-size="32" letter-spacing="-1.5">Stack</text>
 </svg>

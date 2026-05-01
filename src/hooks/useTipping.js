@@ -5,7 +5,7 @@ import { isValidAddress, toLamports, fromLamports } from '../utils/security';
 
 const TREASURY_WALLET = import.meta.env.VITE_TREASURY_WALLET ;
 
-import { getTiplnkProgram, getSendTokenAccounts } from '../lib/anchor';
+import { getTipstackProgram, getSendTokenAccounts } from '../lib/anchor';
 
 /**
  * Professional Tipping Engine (Sender-Pays Fee Standard)

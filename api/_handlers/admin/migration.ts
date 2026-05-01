@@ -12,11 +12,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   try {
-    // 1. Update solDomain: replace .tiplnk.sol with .tipstack.sol
-    const users = await db('user').where('solDomain', 'like', '%.tiplnk.sol')
+    // 1. Update solDomain: replace .tipstack.sol with .tipstack.sol
+    const users = await db('user').where('solDomain', 'like', '%.tipstack.sol')
     for (const user of users) {
       try {
-        const newDomain = user.solDomain.replace('.tiplnk.sol', '.tipstack.sol')
+        const newDomain = user.solDomain.replace('.tipstack.sol', '.tipstack.sol')
         await db('user').where({ id: user.id }).update({ solDomain: newDomain })
         results.migratedDomains++
       } catch (e: any) {

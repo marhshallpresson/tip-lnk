@@ -176,7 +176,7 @@ export default function LandingPage({ onGetStarted }) {
           <div className="flex gap-6">
             <a href="/terms" className="text-white/40 hover:text-brand-500 transition-colors text-sm">Terms</a>
             <a href="/privacy" className="text-white/40 hover:text-brand-500 transition-colors text-sm">Privacy</a>
-            <a href="x.com/useTipLnk" className="text-white/40 hover:text-brand-500 transition-colors">
+            <a href="x.com/useTip Stack" className="text-white/40 hover:text-brand-500 transition-colors">
               <TwitterIcon />
             </a>
             <a href="https://github.com/marhshallpresson/tip-lnk" className="text-white/40 hover:text-brand-500 transition-colors">

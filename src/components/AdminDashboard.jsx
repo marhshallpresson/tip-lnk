@@ -77,7 +77,7 @@ export default function AdminDashboard() {
         const data = await response.json();
         if (data.success) {
             setIsAuthenticated(true);
-            localStorage.setItem('tiplnk_admin_session', 'active');
+            localStorage.setItem('tipstack_admin_session', 'active');
             fetchAdminData();
         } else {
             throw new Error(data.error || 'Invalid admin credentials');
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    const session = localStorage.getItem('tiplnk_admin_session');
+    const session = localStorage.getItem('tipstack_admin_session');
     if (session === 'active') {
       setIsAuthenticated(true);
       fetchAdminData();
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
   }, []);
 
   const handleLogout = () => {
-      localStorage.removeItem('tiplnk_admin_session');
+      localStorage.removeItem('tipstack_admin_session');
       setIsAuthenticated(false);
       setPassword('');
   };

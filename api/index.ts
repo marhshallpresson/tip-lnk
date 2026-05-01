@@ -126,7 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const parts = path.split('/').filter(Boolean)
   
   if (parts.length <= 1) {
-    return res.status(200).json({ service: 'tiplnkapi', status: 'online' })
+    return res.status(200).json({ service: 'tipstackapi', status: 'online' })
   }
 
   const moduleName = parts[1]

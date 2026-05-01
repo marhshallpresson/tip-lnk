@@ -11,15 +11,15 @@ const API_BASE_URL = (isProd
 class ApiClient {
   constructor() {
     this.csrfToken = null;
-    this.accessToken = localStorage.getItem('tiplnk_access_token');
+    this.accessToken = localStorage.getItem('tipstack_access_token');
   }
 
   setAccessToken(token) {
     this.accessToken = token;
     if (token) {
-      localStorage.setItem('tiplnk_access_token', token);
+      localStorage.setItem('tipstack_access_token', token);
     } else {
-      localStorage.removeItem('tiplnk_access_token');
+      localStorage.removeItem('tipstack_access_token');
     }
   }
 
