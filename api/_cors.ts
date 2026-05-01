@@ -22,7 +22,7 @@ export function applyCors(req: any, res: any): boolean {
   // Professional CSP Headers - prevents XSS and enforces security standards
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io 'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com",

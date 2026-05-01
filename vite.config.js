@@ -33,13 +33,7 @@ export default defineConfig({
     ],
     exclude: [
       '@solana/web3.js', 
-      'tweetnacl',
-      '@dynamic-labs/sdk-react-core/src/lib/views/WaasUpgradeView/WaasUpgradeView',
-      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeEmbeddedWallet/useUpgradeEmbeddedWallet',
-      '@dynamic-labs/sdk-react-core/src/lib/utils/hooks/useUpgradeToDynamicWaasFlow/useUpgradeToDynamicWaasFlow',
-      '@dynamic-labs/sdk-react-core/src/lib/views/AccountUpgradedView/AccountUpgradedView',
-      '@dynamic-labs/sdk-react-core/src/lib/views/WalletUpgradeFlowView/WalletUpgradeFlowView',
-      '@dynamic-labs/sdk-api-core/src/models/UpgradeEmbeddedWalletToV2Request'
+      'tweetnacl'
     ],
     esbuildOptions: {
       define: {

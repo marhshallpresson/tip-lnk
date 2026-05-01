@@ -35,7 +35,7 @@
       "@type": "SoftwareApplication",
       "name": "TipStack",
       "operatingSystem": "Web",
-      "applicationCategory": "FinancialApplication",
+      "applicationCategory": "ConsumerApplication",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -56,14 +56,9 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet" />
 
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io 'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com; connect-src 'self' https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://solana-mainnet.rpc.extnode.com https://api.torquemarketing.xyz https://api.fossapay.com https://api.pajcash.com https://api.dynamic.xyz wss://*.dynamic.xyz; frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io;">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io 'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://*.helius-rpc.com https://*.solana.com wss://*.solana.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag https://api.jup.ag wss://relay.walletconnect.com wss://relay.walletconnect.org https://*.walletconnect.com https://api.eitherway.ai https://*.discord.com https://discord.com https://*.brevo.com https://api.brevo.com https://*.dynamic-js.com https://*.dynamic-js.io https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://www.tipstack.fun https://tipstack.fun; img-src 'self' data: https: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io; frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 
-  <script>
-    // ─── Professional Wallet Standard Polyfill ───
-    if (typeof window !== 'undefined' && window.navigator && !window.navigator.wallets) {
-      window.navigator.wallets = [];
-    }
-  </script>
 </head>
 
 <body class="bg-surface-950 text-white antialiased " style="zoom: 85%;">

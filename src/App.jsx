@@ -341,18 +341,15 @@ function AuthCallbackHandler() {
   );
 }
 
+import { DYNAMIC_LABS_CONFIG } from './config/dynamic-labs-security';
+
 export default function App() {
-  const dynamicEnvId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID;
-
-  if (!dynamicEnvId) {
-    console.warn('VITE_DYNAMIC_ENVIRONMENT_ID is not defined. Dynamic wallet connection may fail.');
-  }
-
   return (
     <DynamicContextProvider
       theme="dark"
       settings={{
-        environmentId: dynamicEnvId || 'sandbox',
+        ...DYNAMIC_LABS_CONFIG.walletConfig,
+        environmentId: DYNAMIC_LABS_CONFIG.environmentId || 'sandbox',
         walletConnectors: [SolanaWalletConnectors],
         shadowDOMEnabled: false,
       }}
