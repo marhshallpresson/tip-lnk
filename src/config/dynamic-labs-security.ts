@@ -90,6 +90,7 @@ export const DYNAMIC_CONFIG = {
   },
 };
 
+export const DYNAMIC_LABS_CONFIG = DYNAMIC_CONFIG;
 export const initializeDynamicLabs = () => {
   if (!DYNAMIC_CONFIG.environment.id) {
     console.warn('Dynamic Labs environment ID not configured');
