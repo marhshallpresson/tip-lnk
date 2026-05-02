@@ -17,7 +17,7 @@ const WalletContext = createContext();
 const ConnectionContext = createContext();
 
 function WalletProviderInner({ children }) {
-  const { publicKey, connected, signTransaction, signMessage, disconnect, wallet, connect, select, wallets } = useSolanaWallet();
+  const { publicKey, connected, signTransaction, signMessage, sendTransaction, disconnect, wallet, connect, select, wallets } = useSolanaWallet();
   const [connection] = useState(() => new Connection(QUICKNODE_SOLANA_RPC));
   const [solBalance, setSolBalance] = useState(0);
   const [usdcBalance, setUsdcBalance] = useState(0);
@@ -106,6 +106,7 @@ function WalletProviderInner({ children }) {
     connected,
     signTransaction,
     signMessage,
+    sendTransaction,
     disconnect,
     wallet,
     connect,
@@ -120,7 +121,7 @@ function WalletProviderInner({ children }) {
     swapSolToUsdc,
     swapUsdcToSol,
   }), [
-    publicKey, connected, signTransaction, signMessage, disconnect, wallet, connect, select, wallets,
+    publicKey, connected, signTransaction, signMessage, sendTransaction, disconnect, wallet, connect, select, wallets,
     solBalance, usdcBalance, getBalance, executeSwap, swapSolToUsdc, swapUsdcToSol
   ]);
 

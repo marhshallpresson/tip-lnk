@@ -3,6 +3,9 @@ import { randomUUID } from "crypto"
 import bs58 from "bs58"
 import { db } from "../../_lib/db.js"
 import { hashAddress, encrypt, verifySignature } from "../../_lib/crypto.js"
+import { createSession, getUserRoles } from "../../_lib/session.js"
+import { logError, serializeError } from "../../_lib/logger.js"
+import { patchResponse } from "./_utils.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Phantom Google Callback

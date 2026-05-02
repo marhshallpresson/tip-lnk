@@ -13,7 +13,7 @@ import { getTipstackProgram, getSendTokenAccounts } from '../lib/anchor';
  * Elite Upgrade: Anchor On-chain Integration & DFlow Elite Routing.
  */
 export function useTipping(creatorAddress) {
-  const { publicKey, signTransaction, wallet } = useWallet();
+  const { publicKey, signTransaction, sendTransaction, wallet } = useWallet();
   const { connection } = useConnection();
 
   const DEFAULT_TOKENS = [
@@ -210,24 +210,31 @@ export function useTipping(creatorAddress) {
 
         // ZERO-KNOWLEDGE: Frontend never builds transactions. It only signs buffers from the backend.
         const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
-        const signedTx = await signTransaction(tx);
 
-        const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transaction: Buffer.from(signedTx.serialize()).toString('base64'),
-            note: note
-          }),
-        });
+        // DETECT EMBEDDED WALLET: Embedded wallets (Google login) do not support signTransaction.
+        if (!signTransaction) {
+          console.log('⚡ Detected embedded wallet (no signTransaction). Using sendTransaction...');
+          signature = await sendTransaction(tx, connection);
+        } else {
+          console.log('⚡ Detected extension wallet. Using signTransaction + backend submission...');
+          const signedTx = await signTransaction(tx);
+          const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              transaction: Buffer.from(signedTx.serialize()).toString('base64'),
+              note: note
+            }),
+          });
 
-        if (!submitRes.ok) {
-           const errData = await submitRes.json();
-           throw new Error(errData.error || 'Transaction submission failed.');
+          if (!submitRes.ok) {
+            const errData = await submitRes.json();
+            throw new Error(errData.error || 'Transaction submission failed.');
+          }
+
+          const submitData = await submitRes.json();
+          signature = submitData.result;
         }
-
-        const submitData = await submitRes.json();
-        signature = submitData.result;
 
         if (!signature) {
           throw new Error('Transaction submission failed.');
