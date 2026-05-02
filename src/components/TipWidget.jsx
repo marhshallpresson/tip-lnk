@@ -33,6 +33,18 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 
 /**
+ * Solana Pay URI Generator
+ */
+const getSolanaPayUri = (recipient, amount, mint) => {
+  const url = new URL(`solana:${recipient}`);
+  url.searchParams.append('amount', amount);
+  url.searchParams.append('spl-token', mint);
+  url.searchParams.append('label', 'Tip Stack');
+  url.searchParams.append('message', 'Direct Creator Tip');
+  return url.toString();
+};
+
+/**
  * Advanced Creator-to-Creator Tipping Widget
  * Features: Mobile Deep Linking, Transaction Simulation, Sender-Pays 5% Fee.
  */

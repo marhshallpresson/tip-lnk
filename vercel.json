@@ -18,7 +18,7 @@
       "destination": "/api/index"
     },
     {
-      "source": "/(.*\\.(?:js|css|wasm|png|jpg|jpeg|gif|svg|ico|json|map))$",
+      "source": "/(.*\\.(?:js|css|wasm|png|jpg|jpeg|gif|svg|ico|json|map|svg|png|jpg|ico))$",
       "destination": "/$1"
     },
     {

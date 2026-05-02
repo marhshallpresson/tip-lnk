@@ -31,14 +31,14 @@ function WalletProviderInner({ children }) {
       setSolBalance(solBalanceVal / LAMPORTS_PER_SOL);
 
       // Get USDC balance
-      const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
         mint: USDC_MINT,
       });
       
       if (tokenAccounts.value.length > 0) {
         const tokenAccount = tokenAccounts.value[0];
-        const accountInfo = await getAccount(connection, tokenAccount.pubkey);
-        setUsdcBalance(Number(accountInfo.amount) / 1e6); // USDC has 6 decimals
+        const accountInfo = tokenAccount.account.data.parsed.info.tokenAmount;
+        setUsdcBalance(Number(accountInfo.uiAmount));
       } else {
         setUsdcBalance(0);
       }
