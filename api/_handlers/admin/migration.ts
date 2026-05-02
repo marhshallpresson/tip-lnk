@@ -7,7 +7,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   console.log('🚀 Starting Privacy & Domain Migration...')
   const results = {
-    migratedDomains: 0,
     scrubbedProfiles: 0,
     encryptedWallets: 0,
     linkedTips: 0,
