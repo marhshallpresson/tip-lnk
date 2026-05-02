@@ -37,6 +37,8 @@ export default function WalletConnect({ onConnected }) {
   const { publicKey, connected, connect, select, wallets, signMessage } = useWallet();
   const { setVisible } = useWalletModal();
   const { login, register, user, loginWithWallet, refreshUser } = useAuth();
+  const isSolflare = useIsSolflare();
+  const isPhantom = useIsPhantom();
   
   const detectedWallets = useMemo(() => 
     wallets.filter(w => w.readyState === 'Installed' || w.readyState === 'Loadable'),
