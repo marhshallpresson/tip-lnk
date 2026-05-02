@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useMemo, useEffect, useState, useCallback } from 'react';
 import { ConnectionProvider, WalletProvider, useWallet as useSolanaWallet } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { 
+  PhantomWalletAdapter, 
+  SolflareWalletAdapter 
+} from '@solana/wallet-adapter-wallets';
 import { SolanaMobileWalletAdapter, createDefaultAddressSelector, createDefaultAuthorizationResultCache, createDefaultWalletNotFoundHandler } from '@solana-mobile/wallet-adapter-mobile';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAccount } from '@solana/spl-token';
@@ -133,6 +137,8 @@ export function SolanaWalletProvider({ children }) {
   const endpoint = QUICKNODE_SOLANA_RPC;
 
   const wallets = useMemo(() => [
+    new PhantomWalletAdapter(),
+    new SolflareWalletAdapter(),
     new SolanaMobileWalletAdapter({
         addressSelector: createDefaultAddressSelector(),
         appIdentity: {
