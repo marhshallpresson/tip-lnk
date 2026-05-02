@@ -30,14 +30,17 @@ function WalletProviderInner({ children }) {
       const solBalanceVal = await connection.getBalance(publicKey);
       setSolBalance(solBalanceVal / LAMPORTS_PER_SOL);
 
-      // Get USDC balance
+      // Get USDC balance - Fetch all and filter for maximum RPC compatibility
       const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        mint: USDC_MINT,
+        programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
       });
       
-      if (tokenAccounts.value.length > 0) {
-        const tokenAccount = tokenAccounts.value[0];
-        const accountInfo = tokenAccount.account.data.parsed.info.tokenAmount;
+      const usdcAccount = tokenAccounts.value.find(
+        (acc) => acc.account.data.parsed.info.mint === USDC_MINT.toBase58()
+      );
+
+      if (usdcAccount) {
+        const accountInfo = usdcAccount.account.data.parsed.info.tokenAmount;
         setUsdcBalance(Number(accountInfo.uiAmount));
       } else {
         setUsdcBalance(0);

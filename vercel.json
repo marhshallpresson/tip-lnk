@@ -15,10 +15,10 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "/api/index"
+      "destination": "/api/index.ts"
     },
     {
-      "source": "/(.*\\.(?:js|css|wasm|png|jpg|jpeg|gif|svg|ico|json|map|svg|png|jpg|ico))$",
+      "source": "/(.*\\.(?:js|css|wasm|png|jpg|jpeg|gif|svg|ico|json|map))$",
       "destination": "/$1"
     },
     {
