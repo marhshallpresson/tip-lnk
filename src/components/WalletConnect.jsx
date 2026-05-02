@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useWallet } from '../contexts/WalletContext';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Smartphone, CheckCircle, Loader2, X, ChevronLeft, Mail, Chrome, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { Smartphone, CheckCircle, Loader2, X, ChevronLeft, Mail, Chrome, User, Lock, Eye, EyeOff, Wallet as WalletIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { phantomSdk } from '../lib/phantom';
@@ -35,10 +35,14 @@ function useIsPhantom() {
 
 export default function WalletConnect({ onConnected }) {
   const { publicKey, connected, connect, select, wallets, signMessage } = useWallet();
+  const { setVisible } = useWalletModal();
   const { login, register, user, loginWithWallet, refreshUser } = useAuth();
-  const isSolflare = useIsSolflare();
-  const isPhantom = useIsPhantom();
   
+  const detectedWallets = useMemo(() => 
+    wallets.filter(w => w.readyState === 'Installed' || w.readyState === 'Loadable'),
+    [wallets]
+  );
+
   const [view, setView] = useState('wallets'); 
   const [advancing, setAdvancing] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
@@ -46,6 +50,23 @@ export default function WalletConnect({ onConnected }) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', code: '' });
   const navigate = useNavigate();
+
+  const handleWalletSelect = async (walletName) => {
+    try {
+      setLoadingProvider(walletName);
+      select(walletName);
+      // The connect() will be handled by the useEffect or autoConnect
+    } catch (err) {
+      setAuthError('Failed to select wallet.');
+      setLoadingProvider(null);
+    }
+  };
+
+  useEffect(() => {
+    if (loadingProvider && wallets.find(w => w.adapter.name === loadingProvider)?.adapter.connected) {
+        setLoadingProvider(null);
+    }
+  }, [wallets, loadingProvider]);
 
   const performSiwsLogin = useCallback(async (addr, providerType = 'adapter') => {
     try {
@@ -392,8 +413,32 @@ Request ID: ${requestId}`;
         </div>
 
         {!connected ? (
-            <div className="flex flex-col gap-3">
-                <div className="flex justify-center transition-opacity"><WalletMultiButton /></div>
+            <div className="flex flex-col gap-2">
+                {detectedWallets.map((wallet) => (
+                    <button
+                        key={wallet.adapter.name}
+                        onClick={() => handleWalletSelect(wallet.adapter.name)}
+                        disabled={loadingProvider !== null}
+                        className="w-full h-14 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-between px-6 group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <img src={wallet.adapter.icon} alt={wallet.adapter.name} className="w-6 h-6" />
+                            <span className="font-bold text-sm">{wallet.adapter.name}</span>
+                        </div>
+                        {loadingProvider === wallet.adapter.name ? (
+                            <Loader2 size={16} className="animate-spin text-white/40" />
+                        ) : (
+                            <ChevronLeft size={16} className="text-white/20 rotate-180 group-hover:text-white transition-colors" />
+                        )}
+                    </button>
+                ))}
+                
+                <button 
+                    onClick={() => setVisible(true)}
+                    className="mt-2 w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors flex items-center justify-center gap-2"
+                >
+                    <WalletIcon size={12} /> More Wallets
+                </button>
             </div>
         ) : (
             <div className="bg-brand-500/10 border border-brand-500/20 rounded-xl p-6 text-center animate-scale-in">
