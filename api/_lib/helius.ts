@@ -136,16 +136,17 @@ export async function backfillTransactions(address: string, limit = 100) {
 
     if (!data.result) return [];
 
-    const parsedTips: HeliusTip[] = data.result.map((tx: any) => {
-      const isTip StackTx = tx.instructions?.some((ix: any) => 
+    const results = data.result;
+    const parsedTips: HeliusTip[] = results.map((tx: any) => {
+      const isTipStackTx = tx.instructions?.some((ix: any) => 
         ix.programId === 'MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848' || 
         (ix.data && ix.data.includes('tipstack'))
       );
 
-      if (!isTip StackTx) return null;
+      if (!isTipStackTx) return null;
 
-      const nativeTransfer = tx.nativeTransfers[0];
-      const tokenTransfer = tx.tokenTransfers[0];
+      const nativeTransfer = tx.nativeTransfers?.[0];
+      const tokenTransfer = tx.tokenTransfers?.[0];
 
       if (nativeTransfer) {
         return {
@@ -175,7 +176,7 @@ export async function backfillTransactions(address: string, limit = 100) {
         };
       }
       return null;
-    }).filter(Boolean);
+    }).filter((t: any) => t !== null);
 
     for (const tip of parsedTips) {
       await db('tips').insert(tip).onConflict('signature').merge();
