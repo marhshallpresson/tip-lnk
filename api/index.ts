@@ -20,7 +20,6 @@ import { default as authResetPasswordStart } from './_handlers/auth/reset-passwo
 import { default as authResetPasswordVerify } from './_handlers/auth/reset-password-verify.js'
 import { default as authTwitterCallback } from './_handlers/auth/twitter/callback.js'
 import { default as authDiscordCallback } from './_handlers/auth/discord/callback.js'
-import { default as authDynamicVerify } from './_handlers/auth/dynamic-verify.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
 import { default as solanaProfileGet } from './_handlers/solana/profile/get.js'
@@ -78,7 +77,6 @@ const ROUTES: Record<string, Function> = {
   'auth/reset-password-verify': authResetPasswordVerify,
   'auth/twitter/callback': authTwitterCallback,
   'auth/discord/callback': authDiscordCallback,
-  'auth/dynamic/verify': authDynamicVerify,
 
   'solana/profile': solanaProfile,
   'solana/profile/get': solanaProfileGet,
@@ -146,7 +144,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
   const bypassCsrf = [
     'auth/csrf', 
-    'auth/dynamic/verify',
     'payouts/webhook', 
     'payments/fiat/webhook',
     'solana/webhooks/helius', 
