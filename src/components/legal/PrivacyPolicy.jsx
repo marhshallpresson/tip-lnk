@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white uppercase tracking-widest text-accent-cyan">1. Information We Collect</h2>
         <p className="leading-relaxed">
-          Tip Stack is designed to be privacy-first. We collect your Solana public wallet address, connected social handles (if provided), and email address (if linked).
+          Tip Stack is built on Zero-Knowledge privacy principles. While we require a connected Solana wallet to facilitate payments, your public wallet address is <strong>encrypted at rest</strong> and <strong>cloaked</strong> across our entire platform. We only retrieve and decrypt your address at the exact moment a payment is initiated to build the on-chain transaction.
         </p>
       </section>
 

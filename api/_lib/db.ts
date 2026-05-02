@@ -41,17 +41,25 @@ export { dbInstance as knex };
 export default dbInstance;
 
 import { getSolPrice } from './price.js';
+import { decrypt } from './crypto.js';
 
 /**
  * Professional Ledger Utility
- * Calculates current spendable balance for a wallet address.
+ * Calculates current spendable balance for a user.
  */
-export async function getCreatorBalance(walletAddress: string) {
-    if (!walletAddress) return { totalTips: 0, totalWithdrawn: 0, balance: 0 };
+export async function getCreatorBalance(userId: string) {
+    if (!userId) return { totalTipsUSD: 0, totalWithdrawnUSD: 0, balance: 0 };
 
     try {
+        const user = await db('user').where({ id: userId }).first();
+        if (!user) return { totalTipsUSD: 0, totalWithdrawnUSD: 0, balance: 0 };
+
+        const address = user.walletAddress || (user.encryptedWalletAddress ? decrypt(user.encryptedWalletAddress) : null);
+        if (!address) return { totalTipsUSD: 0, totalWithdrawnUSD: 0, balance: 0 };
+
         const tips = await db('tips')
-            .where({ recipient: walletAddress, status: 'confirmed' });
+            .where({ recipient_id: userId, status: 'confirmed' })
+            .orWhere({ recipient: address, status: 'confirmed' });
         
         const solPrice = await getSolPrice();
 
@@ -64,7 +72,7 @@ export async function getCreatorBalance(walletAddress: string) {
         }, 0);
         
         const payouts = await db('payouts')
-            .where({ wallet_address: walletAddress })
+            .where({ wallet_address: address })
             .whereIn('status', ['pending', 'completed'])
             .sum('amount_ngn as total');
 
@@ -102,7 +110,9 @@ export async function initSchema() {
         table.string('googleSub');
         table.string('twitterHandle').unique();
         table.string('discordHandle').unique();
-        table.string('walletAddress').unique();
+        table.string('walletAddress').unique(); // Deprecated: move to encrypted
+        table.string('encryptedWalletAddress');
+        table.string('walletAddressHash').unique().index();
         table.string('solDomain').unique();
         table.boolean('auto_convert_usdc').defaultTo(true);
         table.boolean('onboardingComplete').defaultTo(false);
@@ -132,6 +142,32 @@ export async function initSchema() {
             });
             console.log('🛡️ Migration: Added onboardingComplete column to user table.');
         }
+
+        const hasEncryptedWallet = await db.schema.hasColumn('user', 'encryptedWalletAddress');
+        if (!hasEncryptedWallet) {
+            await db.schema.table('user', (table) => {
+                table.string('encryptedWalletAddress');
+                table.string('walletAddressHash').unique().index();
+            });
+            console.log('🛡️ Migration: Added encrypted address columns to user table.');
+        }
+
+        const hasTipIds = await db.schema.hasColumn('tips', 'recipient_id');
+        if (!hasTipIds) {
+            await db.schema.table('tips', (table) => {
+                table.string('sender_id').references('id').inTable('user').onDelete('SET NULL');
+                table.string('recipient_id').references('id').inTable('user').onDelete('SET NULL');
+            });
+            console.log('🛡️ Migration: Added user ID relations to tips table.');
+        }
+
+        const hasPayoutUserId = await db.schema.hasColumn('payouts', 'user_id');
+        if (!hasPayoutUserId) {
+            await db.schema.table('payouts', (table) => {
+                table.string('user_id').references('id').inTable('user').onDelete('SET NULL');
+            });
+            console.log('🛡️ Migration: Added user_id column to payouts table.');
+        }
     }
 
     if (!(await db.schema.hasTable('transactions_raw'))) {
@@ -154,9 +190,11 @@ export async function initSchema() {
         table.bigInteger('slot').notNullable();
         table.dateTime('timestamp').notNullable();
         table.string('sender').notNullable().index();
+        table.string('sender_id').references('id').inTable('user').onDelete('SET NULL');
         table.string('sender_name');
         table.text('message');
         table.string('recipient').notNullable().index();
+        table.string('recipient_id').references('id').inTable('user').onDelete('SET NULL');
         table.decimal('amount', 20, 8).notNullable();
         table.decimal('fee_amount', 20, 8).defaultTo(0);
         table.string('treasury_address');
@@ -250,6 +288,7 @@ export async function initSchema() {
         table.string('status').notNullable();
         table.decimal('amount_ngn', 20, 2).notNullable();
         table.string('wallet_address').notNullable();
+        table.string('user_id').references('id').inTable('user').onDelete('SET NULL');
         table.text('raw_payload');
         table.timestamps(true, true);
       });

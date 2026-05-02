@@ -56,6 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!user) {
+        user = await db('user')
+            .where({ twitterHandle: wallet.replace(/^@/, '') })
+            .orWhere({ discordHandle: wallet.replace(/^@/, '') })
+            .orWhere({ solDomain: wallet })
+            .first()
+    }
+
+    if (!user) {
         user = await db('user').where({ walletAddress: wallet }).first()
     }
     
@@ -66,12 +74,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!user && wallet.includes('.sol')) {
         const onChainWallet = await resolveSnsDomain(wallet)
         if (onChainWallet) {
+            const maskedAddress = `${onChainWallet.slice(0, 4)}...${onChainWallet.slice(-4)}`;
             const responseData = { 
                 success: true, 
                 profile: { 
                     displayName: wallet.replace('.sol', ''),
                     solDomain: wallet,
-                    walletAddress: onChainWallet,
+                    walletAddress: maskedAddress, // MASKED
                     isExternal: true
                 },
                 metadata: {
@@ -83,11 +92,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 });
             return res.json(responseData)
         }
-        user = await db('user').where({ solDomain: wallet }).first()
     }
     
     if (!user && !isInternalId) {
         const isAddress = wallet.length >= 32 && wallet.length <= 44 && !wallet.includes('.') && !wallet.startsWith('auth_')
+        // ZERO-KNOWLEDGE: Auto-provisioning by raw address is discouraged but allowed if it's a valid pubkey
         if (isAddress) {
             const userId = randomUUID()
             await db('user').insert({
@@ -114,7 +123,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const socialMetrics = await aggregateSocialMetrics(user.twitterHandle, user.discordHandle)
     
     profile.socialMetrics = socialMetrics
-    profile.walletAddress = user.walletAddress
     profile.twitterHandle = user.twitterHandle
     profile.discordHandle = user.discordHandle
     profile.solDomain = user.solDomain
@@ -136,19 +144,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const responseData = { success: true, profile: { ...profile, id: user.id }, metadata };
     
-    if (user.walletAddress) {
-      const tips = await db('tips')
-        .where('recipient', user.walletAddress)
-        .orderBy('timestamp', 'desc')
-        .limit(20)
-      
-      const solPrice = await getSolPrice()
-      responseData.profile.tipsReceived = tips.map(tip => ({
-        ...tip,
-        amount: Number(tip.amount),
-        amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount) : Number(tip.amount) * solPrice
-      }))
-    }
+    // Use recipient_id or legacy address for history
+    const tips = await db('tips')
+      .where({ recipient_id: user.id })
+      .orWhere({ recipient: user.walletAddress })
+      .orderBy('timestamp', 'desc')
+      .limit(20)
+    
+    const solPrice = await getSolPrice()
+    responseData.profile.tipsReceived = tips.map(tip => ({
+      ...tip,
+      sender: `${tip.sender.slice(0, 4)}...`, // Masked
+      amount: Number(tip.amount),
+      amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount) : Number(tip.amount) * solPrice
+    }))
 
     if (redis) {
         await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 });

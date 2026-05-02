@@ -65,7 +65,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   };
 
   const address = publicKey?.toBase58() || '';
-  const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Not Connected';
+  const maskedAddress = address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Not Connected';
 
   const getInitials = (name) => {
     if (!name) return '??';
@@ -300,7 +300,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     <div>
                       <h4 className="font-bold text-white text-sm">Solana Wallet</h4>
                       <p className="text-[10px] font-medium text-surface-500 uppercase tracking-tighter mt-0.5">
-                        {connected ? address : 'No Wallet Connected'}
+                        {connected ? maskedAddress : 'No Wallet Connected'}
                       </p>
                       {authUser?.email && (
                         <p className="text-[10px] font-bold text-brand-500/60 uppercase tracking-wider mt-1 flex items-center gap-1.5">

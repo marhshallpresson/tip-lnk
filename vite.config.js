@@ -15,12 +15,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
-      '@dynamic-labs/solana',
-      '@dynamic-labs/wallet-connector-core',
-      '@dynamic-labs/sdk-react-core',
-      '@dynamic-labs/sdk-api-core',
-      '@dynamic-labs/multi-wallet',
-      '@dynamic-labs/iconic',
       'string_decoder',
       '@phantom/client',
       '@phantom/openapi-wallet-service',
@@ -45,7 +39,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 2000,
     commonjsOptions: {
       transformMixedEsModules: true,
-      include: [/@dynamic-labs/, /node_modules/],
+      include: [/node_modules/],
     },
     rollupOptions: {
       onwarn(warning, warn) {
@@ -61,12 +55,6 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
-        manualChunks: {
-          dynamic: [
-            '@dynamic-labs/sdk-react-core',
-            '@dynamic-labs/sdk-api-core'
-          ]
-        }
       },
     }
   },
@@ -81,9 +69,5 @@ export default defineConfig({
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
     },
-    dedupe: [
-      '@dynamic-labs/sdk-react-core',
-      '@dynamic-labs/sdk-api-core'
-    ]
   },
 });

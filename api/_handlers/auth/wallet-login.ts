@@ -3,9 +3,8 @@ import { db } from "../../_lib/db.js"
 import { createSession, getSessionUser, getUserRoles } from "../../_lib/session.js"
 import { logError, serializeError } from "../../_lib/logger.js"
 import { randomUUID } from "crypto"
-import nacl from 'tweetnacl'
-import bs58 from 'bs58'
 import { patchResponse } from "./_utils.js"
+import { verifySignature, hashAddress, encrypt } from "../../_lib/crypto.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -19,39 +18,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ success: false, error: 'Wallet address, signature, and message are required.' });
     }
 
-    try {
-      const signatureBytes = bs58.decode(signature);
-      const messageBytes = new TextEncoder().encode(message);
-      const publicKeyBytes = bs58.decode(walletAddress);
+    // SIWS Verification
+    if (!verifySignature(message, signature, walletAddress)) {
+      console.warn('🛡️ SIWS: Signature Verification Failed', { walletAddress, message });
+      return res.status(401).json({ success: false, error: 'Invalid signature proof' });
+    }
 
-      if (publicKeyBytes.length !== 32) {
-        return res.status(400).json({ success: false, error: 'Invalid public key format.' });
-      }
-
-      const verified = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
-      
-      if (!verified) {
-        console.warn('🛡️ SIWS: Signature Verification Failed', { walletAddress, message });
-        return res.status(401).json({ success: false, error: 'Invalid signature. Please ensure your wallet date/time is correct.' });
-      }
-
-      const timestampMatch = message.match(/Issued At: (.*)/);
-      if (!timestampMatch) return res.status(400).json({ success: false, error: 'Missing Issued At timestamp in message.' });
+    const timestampMatch = message.match(/Issued At: (.*)/);
+    if (timestampMatch) {
       const issuedAt = new Date(timestampMatch[1]).getTime();
       const now = Date.now();
       const TEN_MINUTES = 10 * 60 * 1000;
       if (isNaN(issuedAt) || Math.abs(now - issuedAt) > TEN_MINUTES) {
         return res.status(401).json({ success: false, error: 'Signature expired or invalid timestamp. Please try again.' });
       }
-    } catch (e) {
-        logError('siws_signature_verification_error', { error: serializeError(e), walletAddress });
-        return res.status(401).json({ success: false, error: 'Signature verification failed.' });
     }
+
+    const addressHash = hashAddress(walletAddress);
+    const encryptedAddress = encrypt(walletAddress);
+    const maskedAddress = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
     
     try {
       const sessionUser = await getSessionUser(req as any);
       if (sessionUser) {
-        const existingWalletUser = await db('user').where({ walletAddress }).whereNot({ id: sessionUser.id }).first();
+        const existingWalletUser = await db('user')
+          .where({ walletAddressHash: addressHash })
+          .whereNot({ id: sessionUser.id })
+          .first();
+
         if (existingWalletUser) {
           if (!existingWalletUser.email && !existingWalletUser.passwordHash && !existingWalletUser.googleSub) {
             await db('user').where({ id: existingWalletUser.id }).delete();
@@ -59,13 +53,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(409).json({ success: false, error: 'Wallet already linked to another account.' });
           }
         }
-        await db('user').where({ id: sessionUser.id }).update({ walletAddress, updated_at: new Date() });
+        await db('user').where({ id: sessionUser.id }).update({ 
+          walletAddressHash: addressHash,
+          encryptedWalletAddress: encryptedAddress,
+          updated_at: new Date() 
+        });
         const updatedUser = await db('user').where({ id: sessionUser.id }).first();
         const roles = await getUserRoles(sessionUser.id);
         return res.status(200).json({ 
           success: true, 
           user: {
             ...updatedUser,
+            walletAddress: maskedAddress,
             roles,
             onboardingComplete: Boolean(updatedUser.onboardingComplete)
           } 
@@ -74,14 +73,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (sessionErr) {
     }
 
-    let user = await db('user').where({ walletAddress }).first();
+    let user = await db('user')
+      .where({ walletAddressHash: addressHash })
+      .orWhere({ walletAddress }) // Legacy support during transition
+      .first();
+
     if (!user) {
       const userId = randomUUID();
       await db('user').insert({
         id: userId,
         email: null,
         name: null,
-        walletAddress,
+        walletAddressHash: addressHash,
+        encryptedWalletAddress: encryptedAddress,
         profileData: JSON.stringify({}),
         created_at: new Date(),
         updated_at: new Date(),
@@ -89,6 +93,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       user = await db('user').where({ id: userId }).first();
       const role = await db('roles').where({ name: 'user' }).first();
       if (role) await db('user_roles').insert({ userId, roleId: role.id });
+    } else if (!user.walletAddressHash) {
+      // Automatic migration on login
+      await db('user').where({ id: user.id }).update({
+        walletAddressHash: addressHash,
+        encryptedWalletAddress: encryptedAddress
+      });
     }
 
     await db('user').where({ id: user.id }).update({ lastLoginAt: new Date() });
@@ -103,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         name: user.name, 
         full_name: user.name,
         first_name: user.name ? user.name.split(' ')[0] : null,
-        walletAddress, 
+        walletAddress: maskedAddress, 
         roles, 
         emailVerifiedAt: user.emailVerifiedAt,
         onboardingComplete: Boolean(user.onboardingComplete),

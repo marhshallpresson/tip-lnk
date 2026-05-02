@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await emitTorqueEvent({
       event_type: 'embed_loaded',
       metadata: {
-        creator_id: creator.walletAddress,
+        creator_id: creator.id, // Use UUID
         origin_domain: originUrl,
         source: 'backend'
       }
@@ -50,9 +50,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       sessionToken,
       config: {
-        creatorAddress: creator.walletAddress,
+        creatorId: creator.id,
+        creatorAddress: `${(creator.walletAddress || '0000').slice(0, 4)}...`, // Masked
         acceptedTokens: ['SOL', 'USDC'],
-        embedUrl: `https://tipstack.fun/checkout/${creator.walletAddress}?theme=${theme}`
+        embedUrl: `https://tipstack.fun/checkout/${creator.id}?theme=${theme}`
       }
     })
 

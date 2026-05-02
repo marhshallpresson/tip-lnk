@@ -5,7 +5,10 @@ import { Copy, Check, ExternalLink } from 'lucide-react';
 
 export default function ShareQRPanel() {
   const { profile } = useApp();
-  const tipUrl = `https://${profile.solDomain }`;
+  const { user } = useAuth();
+  
+  const identifier = profile.solDomain || profile.twitterHandle || profile.discordHandle || user?.id || 'creator';
+  const tipUrl = `${window.location.origin}/${identifier}`;
   const [copied, setCopied] = useState(false);
 
   const copyUrl = () => {

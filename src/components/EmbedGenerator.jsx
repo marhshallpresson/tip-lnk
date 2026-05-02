@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Copy, Check, Zap, Code, Link as LinkIcon, ExternalLink, Settings, Layout } from 'lucide-react';
 
-const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
+const EmbedGenerator = ({ creatorId, handle = 'creator' }) => {
   const [copied, setCopied] = useState({ link: false, html: false, iframe: false });
   const [accentColor, setAccentColor] = useState('#00D265');
   const [theme, setTheme] = useState('dark');
@@ -14,7 +14,7 @@ const EmbedGenerator = ({ creatorAddress, handle = 'creator' }) => {
 </a>`;
 
   const widgetHtml = `<div 
-  data-tipstack-id="${creatorAddress}" 
+  data-tipstack-id="${handle || creatorId}" 
   data-tipstack-theme="${theme}" 
   data-tipstack-color="${accentColor}">
 </div>

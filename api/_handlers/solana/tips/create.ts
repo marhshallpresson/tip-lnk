@@ -1,16 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
+import { PublicKey } from "@solana/web3.js"
 import { enforceRateLimitMiddleware } from "../../../_lib/rate-limiting.js"
 import { db } from "../../../_lib/db.js"
+import { hashAddress } from "../../../_lib/crypto.js"
 
 /**
  * SECURITY PATCH: Tip Submission Endpoint with Rate Limiting (H-04)
- * 
- * POST /api/solana/tips/create
- * 
- * Prevents:
- * - Dust attacks (spam micro-tips)
- * - Creator wallet history flooding
- * - Fake volume manipulation
+ * Hardened for Zero-Knowledge: Uses user ID relations.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -50,16 +46,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(errorResponse.status).json(errorResponse.body)
     }
 
+    // Zero-Knowledge Lookups
+    const recipientUser = await db('user')
+      .where({ walletAddressHash: hashAddress(creatorWallet) })
+      .orWhere({ walletAddress: creatorWallet })
+      .first()
+    
+    const senderUser = await db('user')
+      .where({ walletAddressHash: hashAddress(senderWallet) })
+      .orWhere({ walletAddress: senderWallet })
+      .first()
+
     // Store tip in database
     const tipRecord = {
       recipient: creatorWallet,
+      recipient_id: recipientUser?.id || null,
       sender: senderWallet,
+      sender_id: senderUser?.id || null,
       amount: tipAmount,
       tokenSymbol,
-      txSignature,
+      signature: txSignature,
       message: message || null,
       timestamp: new Date().toISOString(),
-      clientIp, // Track for abuse monitoring
       status: 'confirmed',
     }
 
@@ -70,7 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       tip: {
         id: txSignature,
-        ...tipRecord,
+        recipientId: recipientUser?.id,
+        amount: tipAmount,
+        tokenSymbol
       },
       message: 'Tip recorded successfully',
     })

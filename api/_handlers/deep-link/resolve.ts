@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .orWhere({ solDomain: `${handle}.tipstack.sol` })
       .first()
 
-    if (!user || !user.walletAddress) {
+    if (!user || (!user.walletAddress && !user.encryptedWalletAddress)) {
       return res.status(404).json({ success: false, error: 'Handle not linked to a wallet.' })
     }
 
@@ -28,6 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       handle: `@${handle}`,
       id: user.id,
+      username: handle,
       profile: JSON.parse(user.profileData || '{}')
     })
   } catch (err) {

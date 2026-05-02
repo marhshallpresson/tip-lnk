@@ -2,9 +2,6 @@ import { useWallet } from './contexts/WalletContext';
 import { SolanaWalletProvider } from './contexts/WalletContext';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
-import { SolanaWalletConnectors } from '@dynamic-labs/solana';
-import { EthereumWalletConnectors } from '@dynamic-labs/ethereum';
 import StepIndicator from './components/StepIndicator';
 import RoleSelection from './components/RoleSelection';
 import CategorySelection from './components/CategorySelection';
@@ -342,26 +339,16 @@ function AuthCallbackHandler() {
   );
 }
 
-import { DYNAMIC_LABS_CONFIG } from './config/dynamic-labs-security';
-
 export default function App() {
   return (
-    <DynamicContextProvider
-      theme="dark"
-      settings={{
-        environmentId: DYNAMIC_LABS_CONFIG.environment.id || 'sandbox',
-        walletConnectors: [EthereumWalletConnectors, SolanaWalletConnectors],
-      }}
-    >
-      <SolanaWalletProvider>
-        <AuthProvider>
-          <AppProvider>
-            <div className="min-h-screen bg-surface-950 text-white">
-              <AppContent />
-            </div>
-          </AppProvider>
-        </AuthProvider>
-      </SolanaWalletProvider>
-    </DynamicContextProvider>
+    <SolanaWalletProvider>
+      <AuthProvider>
+        <AppProvider>
+          <div className="min-h-screen bg-surface-950 text-white">
+            <AppContent />
+          </div>
+        </AppProvider>
+      </AuthProvider>
+    </SolanaWalletProvider>
   );
 }

@@ -13,7 +13,7 @@ import { getTipstackProgram, getSendTokenAccounts } from '../lib/anchor';
  * Elite Upgrade: Anchor On-chain Integration & DFlow Elite Routing.
  */
 export function useTipping(creatorAddress) {
-  const { publicKey, signTransaction, wallet: dynamicWallet } = useWallet();
+  const { publicKey, signTransaction, wallet } = useWallet();
   const { connection } = useConnection();
 
   const DEFAULT_TOKENS = [
@@ -141,7 +141,7 @@ export function useTipping(creatorAddress) {
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
         const payload = {
-          creatorId,
+          creatorId: creatorAddress,
           inputTokenMint: token.mint,
           amount: tokenAmount.toString(),
           paymentMethod: 'external_wallet',
@@ -188,12 +188,12 @@ export function useTipping(creatorAddress) {
         setError('Routing engine unavailable. Please try again.');
       }
     },
-    [publicKey, creatorId, tokens]
+    [publicKey, creatorAddress, tokens]
   );
 
   const executeTip = useCallback(
     async (senderName, note = '') => {
-      if (!route || !publicKey || !signTransaction || !connection || !dynamicWallet) {
+      if (!route || !publicKey || !signTransaction || !connection || !wallet) {
         setError('Missing transaction data or wallet connection.');
         return;
       }
@@ -243,7 +243,7 @@ export function useTipping(creatorAddress) {
           totalCharged: parseFloat(fromLamports(BigInt(route.totalAmount), 6)),
           timestamp: Date.now(),
           sender: senderName || 'Anonymous',
-          recipientId: creatorId,
+          recipientId: creatorAddress,
         };
 
         setTxResult(result);
@@ -286,7 +286,7 @@ export function useTipping(creatorAddress) {
         setProcessing(false);
       }
     },
-    [route, publicKey, signTransaction, creatorAddress, connection, dynamicWallet, selectedToken, amount]
+    [route, publicKey, signTransaction, creatorAddress, connection, wallet, selectedToken, amount]
   );
 
   const reset = useCallback(() => {

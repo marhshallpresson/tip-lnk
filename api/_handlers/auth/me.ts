@@ -10,7 +10,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(401).json({ success: false, error: 'Unauthorized' })
       return
     }
-    res.status(200).json({ success: true, user: sessionUser })
+
+    const maskedAddress = sessionUser.walletAddress 
+        ? `${sessionUser.walletAddress.slice(0, 4)}...${sessionUser.walletAddress.slice(-4)}`
+        : null;
+
+    res.status(200).json({ 
+        success: true, 
+        user: {
+            ...sessionUser,
+            walletAddress: maskedAddress
+        } 
+    })
   } catch (err: any) {
     res.status(500).json({ success: false, error: 'Internal server error' })
   }

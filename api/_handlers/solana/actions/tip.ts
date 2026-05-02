@@ -19,10 +19,12 @@ import {
 } from "@solana/spl-token"
 import { rpcManager } from "../../../_lib/rpc.js"
 import { db } from "../../../_lib/db.js"
+import { decrypt } from "../../../_lib/crypto.js"
 
 /**
  * PHASE 1: Solana Blinks (Actions)
  * Implements the tipping action for a specific wallet or creator handle.
+ * Hardened for Zero-Knowledge: Decrypts payout address internally.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   Object.entries(ACTIONS_CORS_HEADERS).forEach(([key, value]) => {
@@ -42,19 +44,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    let creatorAddress = walletStr
-    let creatorName = 'Creator'
-
     const user = await db('user')
-      .where({ walletAddress: walletStr })
+      .where({ id: walletStr.replace('auth_', '') })
+      .orWhere({ twitterHandle: walletStr.replace(/^@/, '') })
+      .orWhere({ discordHandle: walletStr.replace(/^@/, '') })
       .orWhere({ solDomain: walletStr })
-      .orWhere({ id: walletStr.replace('auth_', '') })
+      .orWhere({ walletAddress: walletStr }) // Legacy support
       .first()
 
-    if (user) {
-      creatorAddress = user.walletAddress
-      creatorName = user.solDomain || user.name || 'Creator'
+    if (!user) {
+      return res.status(404).json({ error: 'Creator not found' })
     }
+
+    // Decrypt the cloaked payout address
+    let creatorAddress = user.walletAddress;
+    if (!creatorAddress && user.encryptedWalletAddress) {
+        try {
+            creatorAddress = decrypt(user.encryptedWalletAddress);
+        } catch (e) {
+            return res.status(500).json({ error: 'Failed to decrypt creator payout address' })
+        }
+    }
+
+    if (!creatorAddress) {
+      return res.status(404).json({ error: 'Creator missing payout address' })
+    }
+
+    const creatorName = user.solDomain || user.name || user.twitterHandle || 'Creator'
 
     try {
       new PublicKey(creatorAddress)
@@ -64,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'GET') {
       const payload: ActionGetResponse = {
-        icon: `https://tipstack.fun/api/og/${creatorAddress}`,
+        icon: `https://tipstack.fun/api/og/${user.id}`, // Use UUID for OG
         title: `Tip ${creatorName} on Tip Stack`,
         description: `Support ${creatorName} with a direct SOL or USDC tip. 0% platform fees.`,
         label: "Tip Now",

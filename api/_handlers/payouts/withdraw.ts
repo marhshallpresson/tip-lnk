@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const user = await getSessionUser(req as any)
-    if (!user || !user.walletAddress) {
+    if (!user) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
@@ -24,12 +24,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid amount' })
     }
 
-    const ledger = await getCreatorBalance(user.walletAddress)
+    const ledger = await getCreatorBalance(user.id)
     if (withdrawAmount > ledger.balance) {
         return res.status(400).json({ 
             error: 'Insufficient Balance', 
             message: `You attempted to withdraw $${withdrawAmount} but only have $${ledger.balance.toFixed(2)} available.` 
         })
+    }
+
+    if (!user.walletAddress) {
+        return res.status(400).json({ error: 'No wallet address linked to account' })
     }
 
     let ngnRate = 1600;
@@ -60,6 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       status: 'pending',
       amount_ngn: amountNGN,
       wallet_address: user.walletAddress,
+      user_id: user.id,
       updated_at: new Date()
     })
 

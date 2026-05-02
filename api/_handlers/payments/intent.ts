@@ -5,9 +5,12 @@ import { PublicKey } from "@solana/web3.js"
 import axios from "axios"
 import { randomUUID } from "crypto"
 
+import { decrypt } from "../../_lib/crypto.js"
+
 /**
  * PHASE 2: Unified Intent Engine
  * Generates a PaymentIntent encompassing Crypto (Jupiter V6) or Fiat Onramp.
+ * Hardened for Zero-Knowledge: Decrypts creator address internally.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -26,14 +29,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Creator ID and amount required' })
     }
 
+    // Resolve creator: ID, Handle, or Domain (Zero-Knowledge reference)
     const creator = await db('user')
-      .where({ walletAddress: creatorId })
+      .where({ id: creatorId.replace('auth_', '') })
+      .orWhere({ twitterHandle: creatorId.replace(/^@/, '') })
+      .orWhere({ discordHandle: creatorId.replace(/^@/, '') })
       .orWhere({ solDomain: creatorId })
-      .orWhere({ id: creatorId.replace('auth_', '') })
+      .orWhere({ walletAddress: creatorId }) // Legacy support
       .first()
 
-    if (!creator || !creator.walletAddress) {
-      return res.status(404).json({ error: 'Creator not found or missing payout address' })
+    if (!creator) {
+      return res.status(404).json({ error: 'Creator not found' })
+    }
+
+    // Decrypt the cloaked payout address
+    let payoutAddress = creator.walletAddress;
+    if (!payoutAddress && creator.encryptedWalletAddress) {
+        try {
+            payoutAddress = decrypt(creator.encryptedWalletAddress);
+        } catch (e) {
+            return res.status(500).json({ error: 'Failed to decrypt creator payout address' })
+        }
+    }
+
+    if (!payoutAddress) {
+      return res.status(404).json({ error: 'Creator missing payout address' })
     }
 
     const intentId = `pi_${randomUUID().replace(/-/g, '')}`
@@ -44,14 +64,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       new PublicKey(sourceWalletAddress)
-      new PublicKey(creator.walletAddress)
+      new PublicKey(payoutAddress)
       new PublicKey(inputTokenMint)
     } catch {
       return res.status(400).json({ error: 'Invalid wallet or token address' })
     }
 
     const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-    let outputMint = creator.walletAddress
+    let outputMint = payoutAddress
     
     if (creator.auto_convert_usdc !== false) {
        outputMint = USDC_MINT
@@ -125,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const swapPayload = {
         quoteResponse: quote,
         userPublicKey: sourceWalletAddress,
-        destinationWallet: creator.walletAddress,
+        destinationWallet: payoutAddress,
         wrapAndUnwrapSol: true,
         feeAccount: process.env.VITE_TREASURY_WALLET,
         dynamicComputeUnitLimit: true,

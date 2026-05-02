@@ -218,7 +218,7 @@ export default function Dashboard() {
             <Route index element={<OverviewTab />} />
             <Route path="overview" element={<OverviewTab />} />
             <Route path="analytics" element={<CreatorAnalyticsPanel />} />
-            <Route path="embed" element={<EmbedGenerator creatorAddress={address} handle={profile.solDomain || profile.displayName || address} />} />
+            <Route path="embed" element={<EmbedGenerator creatorId={authUser?.id} handle={profile.solDomain || profile.displayName || authUser?.id} />} />
             <Route path="history" element={<TransactionHistoryTab />} />
             <Route path="payouts" element={<PayoutPanel />} />
             <Route path="settings" element={<SettingTab onInvite={() => setIsReferralOpen(true)} onOpenSettings={() => setIsSettingsOpen(true)} />} />

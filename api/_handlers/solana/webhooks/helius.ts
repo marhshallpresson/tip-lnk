@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
 import { emitTorqueEvent } from "../../../_lib/torque.js"
+import { hashAddress } from "../../../_lib/crypto.js"
 import { Redis } from '@upstash/redis'
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
@@ -12,7 +13,7 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
 
 /**
  * PHASE 5 & PHASE 1: SCALABLE WEBHOOK-ONLY LEDGER
- * Implements Event Sourcing, Idempotent Processing, and Redis Queuing.
+ * Hardened for Zero-Knowledge: Maps transfers to User UUIDs.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -70,6 +71,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const isNative = tx.nativeTransfers?.length > 0
         const amount = isNative ? (transfer.amount / 1e9) : transfer.tokenAmount
 
+        // Zero-Knowledge Lookups
+        const recipientUser = await db('user')
+          .where({ walletAddressHash: hashAddress(recipient) })
+          .orWhere({ walletAddress: recipient })
+          .first()
+        
+        const senderUser = await db('user')
+          .where({ walletAddressHash: hashAddress(sender) })
+          .orWhere({ walletAddress: sender })
+          .first()
+
         let message = null;
         const memoIx = tx.instructions?.find((ix: any) => ix.programId === 'MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848');
         if (memoIx && memoIx.data) {
@@ -88,7 +100,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           slot: tx.slot,
           timestamp,
           sender,
+          sender_id: senderUser?.id || null,
           recipient,
+          recipient_id: recipientUser?.id || null,
           amount,
           message,
           tokenSymbol,
@@ -100,14 +114,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`)
 
         if (insertResult && (insertResult as any).length > 0) {
-            const previousTips = await db('tips').where({ recipient }).count('signature as count').first();
+            const previousTips = await db('tips').where({ recipient_id: recipientUser?.id || 'MISSING' }).count('signature as count').first();
             const isFirstTip = parseInt(String(previousTips?.count || '0')) === 1;
 
-            if (isFirstTip) {
+            if (isFirstTip && recipientUser) {
                 await emitTorqueEvent({
                     event_type: 'creator_first_tip',
                     metadata: {
-                        creator_id: recipient,
+                        creator_id: recipientUser.id,
                         tx_signature: signature,
                         source: 'helius_webhook'
                     }
@@ -117,8 +131,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             await emitTorqueEvent({
                 event_type: 'tip_completed',
                 metadata: {
-                    wallet_address: sender,
-                    creator_id: recipient,
+                    user_id: senderUser?.id || null,
+                    creator_id: recipientUser?.id || null,
                     amount_usd: amount,
                     token_symbol: tokenSymbol,
                     tx_signature: signature,
@@ -130,7 +144,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (redis) {
              await redis.publish('live-tips', JSON.stringify({
                  signature,
-                 recipient,
+                 recipientId: recipientUser?.id || null,
                  amount,
                  timestamp
              }));

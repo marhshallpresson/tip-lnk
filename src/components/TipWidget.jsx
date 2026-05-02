@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useWallet, useConnection } from '../contexts/WalletContext';
-import { DynamicWidget, useIsLoggedIn } from '@dynamic-labs/sdk-react-core';
+import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
 import { useSecurityGuardian } from '../hooks/useSecurityGuardian';
@@ -39,6 +39,7 @@ import { QRCodeSVG } from 'qrcode.react';
 export default function TipWidget({ fixedRecipient = null, theme = 'dark', accent = '#00D265', onSuccess }) {
   const { publicKey } = useWallet();
   const { addTip, profile } = useApp();
+  const { setShowWalletModal } = useAuth();
   const { connection } = useConnection();
   const { assessRecipient } = useSecurityGuardian();
   const { simulate, simulating, simulation, error: simError } = useTransactionSimulation();
@@ -521,7 +522,12 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
             </div>
           ) : !publicKey ? (
             <div className="flex justify-center w-full mt-4 border-t border-white/10 pt-6">
-              <DynamicWidget />
+              <button 
+                onClick={() => setShowWalletModal(true)}
+                className="btn-primary w-full !h-12"
+              >
+                <Zap size={18} /> Connect Wallet to Pay
+              </button>
             </div>
           ) : (
             <button

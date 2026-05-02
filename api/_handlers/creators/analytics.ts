@@ -24,13 +24,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .select('sender as name')
       .sum('amount as total_amount')
       .count('signature as tip_count')
-      .where({ recipient: user.walletAddress, status: 'confirmed' })
+      .where({ recipient_id: user.id, status: 'confirmed' })
       .groupBy('sender')
       .orderBy('total_amount', 'desc')
       .limit(10)
 
+    // Mask supporter addresses in results
+    const maskedSupporters = topSupporters.map((s: any) => ({
+        ...s,
+        name: s.name.length > 20 ? `${s.name.slice(0, 4)}...${s.name.slice(-4)}` : s.name
+    }))
+
     const summary = await db('tips')
-      .where({ recipient: user.walletAddress, status: 'confirmed' })
+      .where({ recipient_id: user.id, status: 'confirmed' })
       .select(
         db.raw('count(distinct sender) as unique_supporters'),
         db.raw('count(signature) as total_tips'),
@@ -48,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           avgTipSize: summary?.total_tips > 0 ? parseFloat(summary?.total_volume || '0') / parseInt(summary?.total_tips) : 0
         },
         timeSeries: analytics,
-        topSupporters
+        topSupporters: maskedSupporters
       }
     })
 

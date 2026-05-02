@@ -10,6 +10,7 @@ export const extractBearerToken = (req: Request): string | null => {
   return null
 }
 import { signSessionToken, verifySessionToken } from './jwt.js'
+import { decrypt } from './crypto.js'
 
 export const SESSION_COOKIE_NAME = 'sid'
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000
@@ -177,6 +178,15 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
           profileData = typeof user.profileData === 'string' ? JSON.parse(user.profileData) : (user.profileData || {});
       } catch (parseErr) {}
 
+      let walletAddress = user.walletAddress;
+      if (!walletAddress && user.encryptedWalletAddress) {
+          try {
+              walletAddress = decrypt(user.encryptedWalletAddress);
+          } catch (e) {
+              console.error('🛡️ Decryption failure in session:', user.id);
+          }
+      }
+
       return {
           id: user.id,
           email: user.email,
@@ -188,7 +198,7 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
           onboardingComplete: Boolean(user.onboardingComplete),
           onboarding_complete: Boolean(user.onboardingComplete),
           sessionId: sid,
-          walletAddress: user.walletAddress,
+          walletAddress,
           profileData
       }
     } catch (e) {
