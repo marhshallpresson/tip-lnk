@@ -15,7 +15,7 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "/api/index.ts"
+      "destination": "/api/index"
     },
     {
       "source": "/(.*\\.(?:js|css|wasm|png|jpg|jpeg|gif|svg|ico|json|map))$",
@@ -56,7 +56,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io 'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://*.helius-rpc.com https://*.solana.com wss://*.solana.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag https://api.jup.ag wss://relay.walletconnect.com wss://relay.walletconnect.org https://*.walletconnect.com https://api.eitherway.ai https://*.discord.com https://discord.com https://*.brevo.com https://api.brevo.com https://*.dynamic-js.com https://*.dynamic-js.io https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://www.tipstack.fun https://tipstack.fun; img-src 'self' data: https: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io; frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://www.google.com https://*.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://*.helius-rpc.com https://*.solana.com wss://*.solana.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag https://api.jup.ag wss://relay.walletconnect.com wss://relay.walletconnect.org https://*.walletconnect.com https://api.eitherway.ai https://*.discord.com https://discord.com https://*.brevo.com https://api.brevo.com https://www.tipstack.fun https://tipstack.fun; img-src 'self' data: https: blob:; frame-src 'self' https://tipstack.fun ; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
     },
