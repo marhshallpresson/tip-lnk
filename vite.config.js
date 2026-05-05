@@ -60,6 +60,23 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@solana') || id.includes('@coral-xyz')) {
+              return 'vendor-solana';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@phantom') || id.includes('@dynamic') || id.includes('@walletconnect')) {
+              return 'vendor-wallets';
+            }
+            if (id.includes('@kamino-finance') || id.includes('@jup-ag')) {
+              return 'vendor-defi';
+            }
+            return 'vendor';
+          }
+        },
       },
     }
   },

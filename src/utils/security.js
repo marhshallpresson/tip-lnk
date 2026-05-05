@@ -1,5 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
+import nacl from 'tweetnacl';
 
 /**
  * Professional Security Utilities
@@ -46,7 +47,7 @@ export function fromLamports(lamports, decimals) {
  */
 export async function verifySignature(publicKey, message, signature) {
   try {
-    const { sign } = await import('tweetnacl');
+    const { sign } = nacl;
     const msgUint8 = new TextEncoder().encode(message);
     const pubKeyUint8 = bs58.decode(publicKey);
     const sigUint8 = bs58.decode(signature);

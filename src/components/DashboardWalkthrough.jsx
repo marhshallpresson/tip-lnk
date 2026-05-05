@@ -6,7 +6,7 @@ const STEPS = [
   {
     title: "Welcome to Tip Stack",
     description: "Your professional hub for Solana tips and creator growth. Let's get you settled in.",
-    icon: <Zap className="text-brand-500" />,
+    icon: <img src="/logo.svg" className="h-14" alt="Tip Stack" />,
     target: "stats-overview"
   },
   {
