@@ -32,49 +32,52 @@ export default function AppNavbar({
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
-      <nav className={`transition-all duration-300 ${scrolled || isDashboard || mobileMenuOpen
-          ? 'bg-[#0d1117]/90 backdrop-blur-lg border-b border-brand-500/20'
+      <nav className={`transition-all duration-500 ${scrolled || isDashboard || mobileMenuOpen
+          ? 'bg-[#050505]/80 backdrop-blur-xl border-b border-white/5'
           : 'bg-transparent'
         }`}>
-        <div className="max-w-[1300px] mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={onViewProfile}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={onViewProfile}>
             <img src="/logo.svg" className="h-10 max-w-[150px] md:max-w-none" alt="Tip Stack" />
+
           </div>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8 font-bold">
+          <div className="hidden md:flex items-center gap-10">
             {!isDashboard ? (
               <>
-                <a href="#features" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Features</a>
-                <a href="#compare" className="text-sm text-surface-400 hover:text-brand-400 transition-colors">Compare</a>
+                <a href="#features" className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-brand-500 transition-colors">Features</a>
+                <a href="#compare" className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-brand-500 transition-colors">Yields</a>
                 {onboardingComplete && (
                   <button
                     onClick={onViewDashboard}
-                    className="flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 font-bold transition-all"
+                    className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-500 hover:text-brand-400 transition-all"
                   >
                     Dashboard
                   </button>
                 )}
               </>
-            ) : null}
+            ) : (
+                <div className="grass-pill !bg-white/5 border-white/10">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/60 italic">Creator Console</span>
+                </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {!connected && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={onGetStarted}
-                  className="btn-secondary text-sm !px-5 hidden sm:block !min-h-[44px]"
+                  className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white hidden sm:block"
                 >
                   Log In
                 </button>
                 <button
                   onClick={onGetStarted}
-                  className="btn-primary text-sm !px-5 flex items-center gap-2 !min-h-[44px]"
+                  className="px-5 py-2.5 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5"
                 >
-                  <span className="hidden xs:inline">Start Earning</span>
-                  <span className="xs:hidden">Join</span>
-                  <ArrowRight size={16} />
+                  Start Earning
                 </button>
               </div>
             )}
@@ -83,45 +86,34 @@ export default function AppNavbar({
 
             {/* Mobile Menu Toggle */}
             <button 
-              className="md:hidden p-2 text-surface-400 hover:text-white"
+              className="md:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
 
         {/* Mobile Menu Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-[#0d1117] border-b border-surface-800 animate-in slide-in-from-top duration-300">
-            <div className="px-6 py-8 space-y-6">
+          <div className="md:hidden bg-[#050505] border-b border-white/5 animate-in slide-in-from-top duration-500">
+            <div className="px-8 py-10 space-y-8">
               {!isDashboard && (
                 <>
                   <a 
                     href="#features" 
-                    className="block text-lg font-bold text-surface-300 hover:text-brand-400"
+                    className="block text-2xl font-black tracking-tighter text-white"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Features
                   </a>
                   <a 
                     href="#compare" 
-                    className="block text-lg font-bold text-surface-300 hover:text-brand-400"
+                    className="block text-2xl font-black tracking-tighter text-white"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Compare
+                    Yield Metrics
                   </a>
-                  {onboardingComplete && (
-                    <button
-                      onClick={() => {
-                        onViewDashboard();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left text-lg font-bold text-brand-400"
-                    >
-                      Dashboard
-                    </button>
-                  )}
                 </>
               )}
               {!connected && (
@@ -130,9 +122,9 @@ export default function AppNavbar({
                     onGetStarted();
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full btn-secondary text-base py-4"
+                  className="w-full py-5 bg-brand-500 text-black text-sm font-black uppercase tracking-widest rounded-2xl"
                 >
-                  Sign In
+                  Start Earning
                 </button>
               )}
             </div>

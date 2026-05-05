@@ -55,6 +55,7 @@ import { default as adminMigration } from './_handlers/admin/migration.js'
 import { default as creatorAnalytics } from './_handlers/creators/analytics.js'
 
 import { default as paymentsIntent } from './_handlers/payments/intent.js'
+import { default as paymentsFiatIntent } from './_handlers/payments/fiat/intent.js'
 import { default as paymentsFiatWebhook } from './_handlers/payments/fiat/webhook.js'
 
 import { default as sdkInit } from './_handlers/sdk/init.js'
@@ -111,6 +112,7 @@ const ROUTES: Record<string, Function> = {
   'admin/migration': adminMigration,
 
   'payments/intent': paymentsIntent,
+  'payments/fiat/intent': paymentsFiatIntent,
   'payments/fiat/webhook': paymentsFiatWebhook,
 
   'sdk/init': sdkInit,

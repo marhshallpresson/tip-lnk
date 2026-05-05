@@ -6,6 +6,7 @@ import axios from "axios"
 import { randomUUID } from "crypto"
 
 import { decrypt } from "../../_lib/crypto.js"
+import { rateLimit } from "../../_ratelimit.js"
 
 /**
  * PHASE 2: Unified Intent Engine
@@ -15,6 +16,9 @@ import { decrypt } from "../../_lib/crypto.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  // SECURITY PATCH: Enforce global rate limiting
+  if (!(await rateLimit(req, res))) return;
+
   try {
     const { 
       creatorId, 
@@ -22,6 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       inputTokenMint, 
       paymentMethod = 'external_wallet', 
       sourceWalletAddress,
+      yield: yieldEnabled = false,
       memo = '' 
     } = req.body
 
@@ -39,21 +44,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .first()
 
     if (!creator) {
-      return res.status(404).json({ error: 'Creator not found' })
+      return res.status(404).json({ 
+        error: 'Creator not found',
+        actionMessage: 'Please check the creator handle or wallet address and try again.',
+        retryable: true
+      })
     }
 
-    // Decrypt the cloaked payout address
+    // Decrypt the cloaked payout address with better error handling
     let payoutAddress = creator.walletAddress;
     if (!payoutAddress && creator.encryptedWalletAddress) {
         try {
             payoutAddress = decrypt(creator.encryptedWalletAddress);
         } catch (e) {
-            return res.status(500).json({ error: 'Failed to decrypt creator payout address' })
+            console.error('Decryption error:', e);
+            return res.status(500).json({ 
+              error: 'Failed to retrieve creator payout details',
+              actionMessage: 'The creator account may need to be re-configured. Please contact support.',
+              retryable: false
+            })
         }
     }
 
     if (!payoutAddress) {
-      return res.status(404).json({ error: 'Creator missing payout address' })
+      return res.status(404).json({ 
+        error: 'Creator missing payout address',
+        actionMessage: 'This creator has not set up their payout wallet yet. Please ask them to complete their profile setup.',
+        retryable: false,
+        supportUrl: 'https://tipstack.fun/docs/creators/setup'
+      })
     }
 
     const intentId = `pi_${randomUUID().replace(/-/g, '')}`
@@ -71,49 +90,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-    let outputMint = payoutAddress
+    const JITOSOL_MINT = 'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn'
     
-    if (creator.auto_convert_usdc !== false) {
-       outputMint = USDC_MINT
-    } else {
-       outputMint = inputTokenMint
+    let outputMint = JITOSOL_MINT // Default to Yield if requested
+    
+    if (!yieldEnabled) {
+      if (creator.auto_convert_usdc !== false) {
+         outputMint = USDC_MINT
+      } else {
+         outputMint = inputTokenMint
+      }
     }
 
     const isDirect = inputTokenMint === outputMint
-    let feeAccount = undefined;
-    let feeBpsParam = '';
-
-    if (!isDirect && process.env.VITE_TREASURY_WALLET) {
-        feeAccount = process.env.VITE_TREASURY_WALLET;
-        feeBpsParam = `&platformFeeBps=500`;
-    }
-
+    
     let order = null;
     let executionMode = 'sync';
 
     try {
-      const DFLOW_API = 'https://quote-api.dflow.net'
-      const DFLOW_API_KEY = process.env.VITE_DFLOW_API_KEY
-      const platformFeeBps = isDirect ? 0 : 500
+      // PHASE 3: Jupiter Ultra Swap (Unified API)
+      const JUP_ULTRA_API = 'https://api.jup.ag/ultra/v1'
+      const JUP_API_KEY = process.env.JUPITER_API_KEY
+
+      if (!JUP_API_KEY) {
+        throw new Error('JUPITER_API_KEY is missing in environment')
+      }
+
+      const isGasless = req.body.gasless === true && creator.gasless_enabled === true;
+
+      console.log(`🚀 Jupiter Ultra: Fetching order for ${amount} ${inputTokenMint} -> ${outputMint} (Gasless: ${isGasless})`)
 
       const orderParams = new URLSearchParams({
         inputMint: inputTokenMint,
         outputMint: outputMint,
         amount: amount.toString(),
-        slippageBps: '50',
         userPublicKey: sourceWalletAddress,
-        platformFeeBps: platformFeeBps.toString(),
-        prioritizationFeeLamports: 'auto'
+        slippageBps: '50',
+        // Managed landing is required for gasless abstraction
+        managedLanding: isGasless ? 'true' : 'false'
       })
 
-      const dflowResponse = await axios.get(`${DFLOW_API}/order?${orderParams}`, {
-        headers: DFLOW_API_KEY ? { 'x-api-key': DFLOW_API_KEY } : {},
-        timeout: 3000
+      const ultraResponse = await axios.get(`${JUP_ULTRA_API}/order?${orderParams}`, {
+        headers: { 'x-api-key': JUP_API_KEY },
+        timeout: 5000
       })
       
-      order = dflowResponse.data
-      executionMode = order.executionMode || 'sync'
-      console.log('🛡️ Failover Model: DFlow Primary success.')
+      order = ultraResponse.data
       
       return res.json({
         success: true,
@@ -124,22 +146,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           priceImpactPct: order.priceImpactPct
         },
         transaction: order.transaction, 
-        executionMode,
+        executionMode: isGasless ? 'async' : 'sync', // Gasless usually requires async landing
         lastValidBlockHeight: order.lastValidBlockHeight,
-        provider: 'dflow'
+        provider: 'jupiter-ultra',
+        isGasless
       })
 
-    } catch (dflowErr: any) {
-      console.warn('⚠️ Failover Model: DFlow Primary failed, falling back to Jupiter V6.', dflowErr.message)
+    } catch (ultraErr: any) {
+      console.error('❌ Jupiter Ultra Error:', ultraErr.response?.data || ultraErr.message)
       
-      const JUP_API = 'https://quote-api.jup.ag/v6'
-      const quoteUrl = `${JUP_API}/quote?inputMint=${inputTokenMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50${feeBpsParam}`
+      // Secondary Fallback: Jupiter V6 (Classic)
+      const JUP_V6_API = 'https://quote-api.jup.ag/v6'
+      const platformFeeBps = isDirect ? 0 : 500
+      const feeBpsParam = platformFeeBps > 0 ? `&platformFeeBps=${platformFeeBps}` : ''
+      
+      const quoteUrl = `${JUP_V6_API}/quote?inputMint=${inputTokenMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50${feeBpsParam}`
       
       const quoteResponse = await axios.get(quoteUrl)
       const quote = quoteResponse.data
 
       if (!quote) {
-        throw new Error('All routing engines (DFlow & Jupiter) failed.')
+        throw new Error('Both Ultra and V6 engines failed.')
       }
 
       const swapPayload = {
@@ -152,7 +179,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         prioritizationFeeLamports: 'auto'
       }
 
-      const swapResponse = await axios.post(`${JUP_API}/swap`, swapPayload, {
+      const swapResponse = await axios.post(`${JUP_V6_API}/swap`, swapPayload, {
         headers: { 'Content-Type': 'application/json' }
       })
 
@@ -168,7 +195,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         transaction: swapTransaction,
         executionMode: 'sync',
-        provider: 'jupiter'
+        provider: 'jupiter-v6'
       })
     }
 

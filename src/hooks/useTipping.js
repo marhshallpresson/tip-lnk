@@ -121,24 +121,85 @@ export function useTipping(creatorAddress) {
     }
   }, [tokens]);
 
+  const [recurringRoute, setRecurringRoute] = useState(null);
+
+  const calculateRecurringRoute = useCallback(
+    async (tokenSymbol, tokenAmount, frequency = 'monthly', cycles = 12) => {
+      if (!tokenAmount || isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) {
+        setRecurringRoute(null);
+        return;
+      }
+
+      setError(null);
+      try {
+        const token = tokens.find((t) => t.symbol === tokenSymbol);
+        if (!token) throw new Error(`Token ${tokenSymbol} not found`);
+
+        const isProd = import.meta.env.PROD;
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+        
+        // frequency mapped to seconds
+        const frequencyMap = { 'weekly': 604800, 'monthly': 2592000, 'daily': 86400 };
+        const frequencySeconds = frequencyMap[frequency] || 2592000;
+
+        const payload = {
+          creatorId: creatorAddress,
+          inputTokenMint: token.mint,
+          amountPerCycle: toLamports(parseFloat(tokenAmount), token.decimals).toString(),
+          sourceWalletAddress: publicKey?.toBase58(),
+          frequencySeconds,
+          cycles
+        };
+
+        const response = await fetch(`${API_BASE_URL}/api/payments/recurring`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Failed to calculate subscription route');
+
+        const subData = await response.json();
+        setRecurringRoute(subData);
+        console.log('✅ Subscription route calculated:', subData);
+      } catch (err) {
+        console.error('❌ Subscription Error:', err);
+        setError(err.message);
+      }
+    },
+    [publicKey, creatorAddress, tokens]
+  );
+
   const calculateRoute = useCallback(
-    async (tokenSymbol, tokenAmount, note = '') => {
+    async (tokenSymbol, tokenAmount, note = '', gasless = false, yieldTip = false) => {
       if (!tokenAmount || isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) {
         setRoute(null);
         setTipAmountUSDC('0');
         setFeeAmountUSDC('0');
         setTotalChargedUSDC('0');
+        console.log('🚫 Route calculation skipped: Invalid amount', { tokenAmount });
         return;
       }
 
+      console.log('📊 Starting route calculation...', { tokenSymbol, tokenAmount, creatorAddress, gasless, yieldTip });
       setError(null);
 
       try {
         const token = tokens.find((t) => t.symbol === tokenSymbol);
-        if (!token) throw new Error('Token not found');
+        if (!token) {
+          console.error('❌ Token not found:', tokenSymbol, 'Available:', tokens.map(t => t.symbol));
+          throw new Error(`Token ${tokenSymbol} not found in available tokens`);
+        }
+
+        if (!creatorAddress) {
+          console.error('❌ Creator address missing:', creatorAddress);
+          throw new Error('Creator address not resolved');
+        }
 
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+        
+        console.log('🔗 API Base URL:', API_BASE_URL);
         
         const payload = {
           creatorId: creatorAddress,
@@ -146,8 +207,12 @@ export function useTipping(creatorAddress) {
           amount: tokenAmount.toString(),
           paymentMethod: 'external_wallet',
           sourceWalletAddress: publicKey?.toBase58() || '',
-          memo: note
+          memo: note,
+          gasless, // STRATEGIC ROADMAP: Gasless Ultra (P2)
+          yield: yieldTip // STRATEGIC ROADMAP: Yield-Bearing Tips (P1)
         };
+
+        console.log('📤 Sending payment intent payload:', payload);
 
         const response = await fetch(`${API_BASE_URL}/api/payments/intent`, {
           method: 'POST',
@@ -155,13 +220,24 @@ export function useTipping(creatorAddress) {
           body: JSON.stringify(payload)
         });
         
-        if (!response.ok) throw new Error('Payment Intent engine failed');
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error('❌ API Response Error:', response.status, errText);
+          throw new Error(`Payment Intent API Error: ${response.status} - ${errText}`);
+        }
 
         const intentData = await response.json();
+        console.log('✅ Payment intent received:', intentData);
+
+        if (!intentData.quote || !intentData.transaction) {
+          console.error('❌ Invalid intent response - missing quote or transaction:', intentData);
+          throw new Error('Invalid payment intent response structure');
+        }
+
         const order = {
           outAmount: intentData.quote.outAmount,
           transaction: intentData.transaction,
-          executionMode: intentData.executionMode,
+          executionMode: intentData.executionMode || 'sync',
           intentId: intentData.intentId
         };
 
@@ -176,16 +252,23 @@ export function useTipping(creatorAddress) {
         setFeeAmountUSDC(fromLamports(platformFee, 6));
         setTotalChargedUSDC(fromLamports(totalAuthorization, 6));
 
-        setRoute({
+        const newRoute = {
           ...order,
           baseAmount: baseOutAmount.toString(),
           feeAmount: platformFee.toString(),
           totalAmount: totalAuthorization.toString(),
           estimatedTime: order.executionMode === 'async' ? '~15s (Jito Optimized)' : '~4s (Helius Fast)'
-        });
+        };
+
+        console.log('✅ Route calculated successfully:', newRoute);
+        setRoute(newRoute);
       } catch (err) {
-        console.error('Routing Engine Error:', err);
-        setError('Routing engine unavailable. Please try again.');
+        console.error('❌ Routing Engine Error:', err.message, err);
+        setRoute(null);
+        setTipAmountUSDC('0');
+        setFeeAmountUSDC('0');
+        setTotalChargedUSDC('0');
+        setError(`Route calculation failed: ${err.message}`);
       }
     },
     [publicKey, creatorAddress, tokens]
@@ -296,12 +379,60 @@ export function useTipping(creatorAddress) {
     [route, publicKey, signTransaction, creatorAddress, connection, wallet, selectedToken, amount]
   );
 
+  const executeSubscription = useCallback(
+    async (senderName) => {
+      if (!recurringRoute || !publicKey || !signTransaction || !connection) {
+        setError('Missing subscription data or wallet connection.');
+        return;
+      }
+      setProcessing(true);
+      setError(null);
+
+      try {
+        const isProd = import.meta.env.PROD;
+        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+        
+        const tx = VersionedTransaction.deserialize(Buffer.from(recurringRoute.transaction, 'base64'));
+        const signedTx = await signTransaction(tx);
+        
+        const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transaction: Buffer.from(signedTx.serialize()).toString('base64'),
+            note: `Subscription: ${recurringRoute.intentId}`
+          }),
+        });
+
+        if (!submitRes.ok) throw new Error('Subscription submission failed');
+
+        const submitData = await submitRes.json();
+        
+        setTxResult({
+          success: true,
+          signature: submitData.result,
+          type: 'subscription_created',
+          orderAddress: recurringRoute.orderAddress
+        });
+
+        return submitData;
+      } catch (err) {
+        console.error('Subscription Execution Fault:', err);
+        setError(err.message);
+      } finally {
+        setProcessing(false);
+      }
+    },
+    [recurringRoute, publicKey, signTransaction, connection]
+  );
+
   const reset = useCallback(() => {
     setAmount('');
     setTipAmountUSDC('0');
     setFeeAmountUSDC('0');
     setTotalChargedUSDC('0');
     setRoute(null);
+    setRecurringRoute(null);
     setTxResult(null);
     setError(null);
   }, []);
@@ -316,9 +447,12 @@ export function useTipping(creatorAddress) {
     feeAmountUSDC,
     totalAuthorizedUSDC: totalChargedUSDC,
     calculateRoute,
+    calculateRecurringRoute,
     route,
+    recurringRoute,
     processing,
     executeTip,
+    executeSubscription,
     txResult,
     setTxResult,
     reset,

@@ -18,9 +18,9 @@ const config = process.env.DATABASE_URL
         ssl: { rejectUnauthorized: false }
       },
       pool: {
-        min: 2,
-        max: 10,
-        idleTimeoutMillis: 30000,
+        min: 0,
+        max: 5,
+        idleTimeoutMillis: 10000,
         createTimeoutMillis: 30000,
         acquireTimeoutMillis: 30000,
         propagateCreateError: false
@@ -167,6 +167,22 @@ export async function initSchema() {
                 table.string('user_id').references('id').inTable('user').onDelete('SET NULL');
             });
             console.log('🛡️ Migration: Added user_id column to payouts table.');
+        }
+
+        const hasWhitelistedOrigins = await db.schema.hasColumn('user', 'whitelisted_origins');
+        if (!hasWhitelistedOrigins) {
+            await db.schema.table('user', (table) => {
+                table.text('whitelisted_origins'); // JSON array of strings
+            });
+            console.log('🛡️ Migration: Added whitelisted_origins column to user table.');
+        }
+
+        const hasTotalTips = await db.schema.hasColumn('user', 'totalTipsUSDC');
+        if (!hasTotalTips) {
+            await db.schema.table('user', (table) => {
+                table.decimal('totalTipsUSDC', 20, 8).defaultTo(0);
+            });
+            console.log('🛡️ Migration: Added totalTipsUSDC column to user table.');
         }
     }
 

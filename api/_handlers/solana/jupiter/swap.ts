@@ -52,16 +52,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const connection = new Connection(RPC_URL, 'confirmed');
 
-    const dflowQuoteResponse = await fetch(
-      `https://quote-api.dflow.net/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}`
-    ).then((r) => r.json()).catch(() => null)
-    
-    const isDirect = inputMint === outputMint;
-    let feeBps = isDirect ? 0 : 500;
-    const TREASURY_WALLET = process.env.VITE_TREASURY_WALLET;
-    
-    if (!TREASURY_WALLET) feeBps = 0;
-
     const quoteUrl = new URL('https://quote-api.jup.ag/v6/quote');
     quoteUrl.searchParams.append('inputMint', inputMint);
     quoteUrl.searchParams.append('outputMint', outputMint);
@@ -79,12 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // SECURITY: Validate output meets minimum threshold
     const minOutAmount = quoteResponse.outAmount
-    const actualSlippage = ((BigInt(quoteResponse.inAmount) - BigInt(quoteResponse.outAmount)) * BigInt(10000)) / BigInt(quoteResponse.inAmount)
     
-    if (actualSlippage > BigInt(slippageBps)) {
-      console.warn(`⚠️ Quote slippage ${(Number(actualSlippage) / 100).toFixed(2)}% vs requested ${(slippageBps / 100).toFixed(2)}%`)
-    }
-
     const destinationPubkey = new PublicKey(destinationWallet)
     const outputMintPubkey = new PublicKey(outputMint)
     
@@ -162,7 +147,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({
       transaction: finalTxBase64,
       quote: quoteResponse,
-      dflowAnalytics: dflowQuoteResponse,
       executionMode: 'sync',
       _security: {
         slippageBpsEnforced: slippageBps,

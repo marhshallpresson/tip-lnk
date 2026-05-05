@@ -35,7 +35,7 @@ export default {
           green: '#34d399',
           red: '#f87171',
           orange: '#fb923c',
-          purple: '#a78bfa',
+          purple: 'rgb(167, 139, 250)',
           cyan: '#22d3ee',
           yellow: '#fbbf24',
           white: '#ffffffff'
@@ -51,10 +51,38 @@ export default {
         'phantom-dark': '#5B21B6',
       },
       fontFamily: {
-        sans: ['"Link Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        // Prioritized Inter for the primary layouts
+        sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
-        brand: ['"Link Sans"', 'sans-serif'],
+        // Mapped the canvas 'font-brand' directly to Inter
+        brand: ['Inter', 'system-ui', 'sans-serif'], 
       },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '50%': { transform: 'translateY(-20px) rotate(2deg)' },
+        },
+        'float-reverse': {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '50%': { transform: 'translateY(-15px) rotate(-3deg)' },
+        },
+        'slide-up': {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        }
+      },
+      animation: {
+        // Layout animations used in the canvas
+        'float': 'float 5s ease-in-out infinite',
+        'float-delayed': 'float-reverse 6s ease-in-out 2s infinite',
+        'float-fast': 'float 4s ease-in-out 1s infinite',
+        'slide-up': 'slide-up 0.8s ease-out forwards',
+        'fade-in': 'fade-in 1s ease-out forwards',
+      }
     },
   },
   plugins: [],

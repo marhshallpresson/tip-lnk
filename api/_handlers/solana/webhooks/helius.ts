@@ -21,7 +21,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const webhookKey = req.headers['authorization']
   const SECRET = process.env.HELIUS_WEBHOOK_SECRET
 
-  if (SECRET && webhookKey !== SECRET) {
+  if (!SECRET) {
+      console.error('CRITICAL: HELIUS_WEBHOOK_SECRET is not set in environment.')
+      return res.status(500).json({ error: 'Server configuration error' })
+  }
+
+  if (webhookKey !== SECRET) {
       console.warn('⚠️ Webhook blocked: Invalid authorization key')
       return res.status(401).json({ error: 'Unauthorized' })
   }
@@ -30,8 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!Array.isArray(transactions)) return res.status(400).end()
 
   try {
-    for (const tx of transactions) {
-        if (tx.transactionError) continue;
+    const promises = transactions.map(async (tx) => {
+        if (tx.transactionError) return;
 
         const signature = tx.signature
         
@@ -47,14 +52,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (redis) {
                 await redis.lpush('dlq:webhooks', JSON.stringify(tx));
             }
-            continue;
+            return;
         }
 
         if (redis) {
             const isDuplicate = await redis.set(`lock:tx:${signature}`, '1', { nx: true, ex: 600 });
             if (!isDuplicate) {
                 console.log(`🛡️ Webhook: Skipped duplicate processing for ${signature}`);
-                continue;
+                return;
             }
         }
 
@@ -64,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const transfer = tx.nativeTransfers?.[0] || tx.tokenTransfers?.[0]
         if (!transfer) {
              await db('transactions_raw').where({ signature }).update({ status: 'skipped' });
-             continue;
+             return;
         }
 
         const recipient = transfer.toUserAccount
@@ -91,10 +96,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (amount <= 0 || sender === recipient) {
             console.warn(`🛡️ Webhook: Rejected invalid transfer for ${signature}`);
             await db('transactions_raw').where({ signature }).update({ status: 'rejected_fraud' });
-            continue;
+            return;
         }
 
         const tokenSymbol = tx.nativeTransfers?.length > 0 ? 'SOL' : (transfer.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'USDC' : 'TOKEN');
+
+        // STRATEGIC ROADMAP: Wash-Trading Detection (P1)
+        // Check for circular pairs (Recipient -> Sender) within last 24h
+        let isSuspicious = false;
+        if (senderUser && recipientUser) {
+           const circularMatch = await db('tips')
+             .where({ sender_id: recipientUser.id, recipient_id: senderUser.id })
+             .where('timestamp', '>', new Date(Date.now() - 86400000))
+             .first();
+           if (circularMatch) {
+             console.warn(`🕵️ Wash-Trading detected: Circular pair ${senderUser.id} <-> ${recipientUser.id}`);
+             isSuspicious = true;
+           }
+        }
+
         const insertResult = await db('tips').insert({
           signature,
           slot: tx.slot,
@@ -107,13 +127,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           message,
           tokenSymbol,
           status: 'confirmed',
-          type: 'webhook_indexed'
+          type: 'webhook_indexed',
+          // New column for trust scores (will be added to schema if not exists)
+          metadata: JSON.stringify({ isSuspicious })
         }).onConflict('signature').ignore()
         
         await db('transactions_raw').where({ signature }).update({ status: 'processed' });
-        console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`)
+        
+        // SECURITY: Deterministic check for new insertion to prevent duplicate analytics
+        // insertResult.rowCount (PG) or insertResult[0] (SQLite/PG)
+        const isNewTip = insertResult && ((insertResult as any).rowCount > 0 || (Array.isArray(insertResult) && insertResult.length > 0));
 
-        if (insertResult && (insertResult as any).length > 0) {
+        if (isNewTip) {
+            console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`)
             const previousTips = await db('tips').where({ recipient_id: recipientUser?.id || 'MISSING' }).count('signature as count').first();
             const isFirstTip = parseInt(String(previousTips?.count || '0')) === 1;
 
@@ -149,7 +175,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                  timestamp
              }));
         }
-    }
+    })
+    
+    await Promise.allSettled(promises)
     res.status(200).json({ success: true })
   } catch (err) {
     console.error('Webhook Error:', err)

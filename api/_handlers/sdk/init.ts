@@ -35,7 +35,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Creator not found' })
     }
 
+    // SECURITY PATCH: Validate originUrl against Whitelisted Origins
+    const whitelisted = creator.whitelisted_origins ? JSON.parse(creator.whitelisted_origins) : [];
+    const isLocal = originUrl.includes('localhost') || originUrl.includes('127.0.0.1');
+    const isWhitelisted = whitelisted.includes(originUrl) || isLocal;
+
+    if (!isWhitelisted) {
+      console.warn(`🛡️ SDK Security: Unauthorized embed attempt from ${originUrl} for creator ${creator.id}`);
+      return res.status(403).json({ 
+        error: 'Unauthorized Origin', 
+        message: 'This domain is not authorized to embed this TipLnk widget. Please add it in your creator dashboard.' 
+      })
+    }
+
     const sessionToken = `sdk_sess_${randomUUID()}`
+
+    // SECURITY PATCH: Enforce CSP and Frame-Ancestors to prevent Clickjacking
+    res.setHeader('Content-Security-Policy', `frame-ancestors 'self' ${originUrl}`);
+    res.setHeader('X-Frame-Options', `ALLOW-FROM ${originUrl}`);
 
     await emitTorqueEvent({
       event_type: 'embed_loaded',

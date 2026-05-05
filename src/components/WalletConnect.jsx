@@ -401,8 +401,7 @@ Request ID: ${requestId}`;
     <div className="glass-card !bg-[#0f0f11] !border-white/5 p-6 sm:p-8 max-w-[400px] mx-auto animate-slide-up relative overflow-hidden">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-xl font-bold text-white">Connect Tip Stack</h2>
-        <button onClick={() => navigate(-1)} className="p-1 rounded-lg text-white/40 hover:text-white transition-colors"><X size={20} /></button>
-      </div>
+         </div>
 
       <div className="space-y-3">
         <button onClick={() => handleSocialSelect('google')} disabled={loadingProvider !== null} className="w-full h-14 rounded-xl bg-white text-black hover:bg-white/90 transition-all font-bold flex items-center justify-center gap-3">

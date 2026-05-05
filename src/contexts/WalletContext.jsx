@@ -11,7 +11,7 @@ import { getAccount } from '@solana/spl-token';
 import { QUICKNODE_SOLANA_RPC } from '../config';
 
 // USDC token on Solana
-const USDC_MINT = new PublicKey('EPjFWaLb3odccjf2cj6ipjAutoMTQ5c6UnNvpy3ZB93A');
+const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
 
 const WalletContext = createContext();
 const ConnectionContext = createContext();
@@ -60,43 +60,51 @@ function WalletProviderInner({ children }) {
     }
   }, [connected, publicKey, getBalance]);
 
-  // Jupiter swap function
+  // Security-hardened Jupiter swap function
   const executeSwap = useCallback(async (inputMint, outputMint, amount, slippage = 0.5) => {
     if (!publicKey || !signTransaction) throw new Error('Wallet not connected or does not support signing');
     
     try {
-      // Get quote from Jupiter
-      const quoteResponse = await fetch(
-        `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint.toString()}&outputMint=${outputMint.toString()}&amount=${Math.floor(amount * (inputMint.equals(USDC_MINT) ? 1e6 : LAMPORTS_PER_SOL))}&slippageBps=${slippage * 100}`
-      );
-      const quote = await quoteResponse.json();
+      const isProd = import.meta.env.PROD;
+      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
-      // Get swap instructions
-      const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
+      const response = await fetch(`${API_BASE_URL}/api/solana/jupiter/swap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          quoteResponse: quote,
+          inputMint: inputMint.toString(),
+          outputMint: outputMint.toString(),
+          amount: Math.floor(amount * (inputMint.equals(USDC_MINT) ? 1e6 : LAMPORTS_PER_SOL)).toString(),
           userPublicKey: publicKey.toString(),
-          wrapAndUnwrapSol: true,
+          destinationWallet: publicKey.toString(),
+          slippageBps: slippage * 100,
         }),
       });
-      const swapData = await swapResponse.json();
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Swap preparation failed');
+      }
+
+      const { transaction: txBase64 } = await response.json();
 
       // Deserialize and sign the transaction
-      const swapTransaction = Buffer.from(swapData.swapTransaction, 'base64');
-      const transaction = await connection.parseTransaction(swapTransaction);
+      const tx = VersionedTransaction.deserialize(Buffer.from(txBase64, 'base64'));
       
-      const signedTx = await signTransaction(transaction);
-      const txHash = await connection.sendRawTransaction(signedTx.serialize());
+      const signedTx = await signTransaction(tx);
+      const txHash = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: true,
+        maxRetries: 2
+      });
       
-      await connection.confirmTransaction(txHash);
+      await connection.confirmTransaction(txHash, 'confirmed');
+      getBalance();
       return txHash;
     } catch (e) {
       console.error('Swap failed:', e);
       throw e;
     }
-  }, [publicKey, signTransaction, connection]);
+  }, [publicKey, signTransaction, connection, getBalance]);
 
   const swapSolToUsdc = useCallback((amount, slippage = 0.5) => 
     executeSwap(new PublicKey('So11111111111111111111111111111111111111112'), USDC_MINT, amount, slippage), [executeSwap]);
@@ -146,7 +154,7 @@ export function SolanaWalletProvider({ children }) {
     new SolanaMobileWalletAdapter({
         addressSelector: createDefaultAddressSelector(),
         appIdentity: {
-            name: 'TipLnk',
+            name: 'Tip Stack',
             uri: window.location.origin,
             icon: '/favicon.svg',
         },

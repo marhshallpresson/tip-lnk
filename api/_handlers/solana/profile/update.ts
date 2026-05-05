@@ -49,9 +49,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const incomingName = profile.displayName || profile.name;
     const finalName = incomingName && incomingName.trim().length > 0 ? incomingName.trim() : authUser.name;
-    
-    const twitterHandle = profile.twitterHandle || (profile.socials && profile.socials.twitter);
-    const discordHandle = profile.discordHandle || (profile.socials && profile.socials.discord);
 
     const profileToSave = { ...profile };
     delete profileToSave.twitterHandle;
@@ -63,8 +60,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .update({ 
         profileData: JSON.stringify(profileToSave),
         solDomain: solDomain || null,
-        twitterHandle: twitterHandle || null,
-        discordHandle: discordHandle || null,
+        // SECURITY PATCH: Do not update social handles from client payload.
+        // Must be updated via OAuth backend callbacks only.
         name: finalName,
         onboardingComplete: profile.onboardingComplete === true,
         updated_at: new Date()

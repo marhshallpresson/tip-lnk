@@ -60,26 +60,6 @@ export function AppProvider({ children }) {
 
   const [state, setState] = useState(defaultState);
   const [dbSynced, setDbSynced] = useState(false);
-  const [agent, setAgent] = useState(null);
-
-  useEffect(() => {
-    const initAgent = async () => {
-      if (connected && wallet && pubkeyStr) {
-        try {
-          setAgent({
-            id: 'tipstack-agent-01',
-            status: 'active',
-            capabilities: ['rebalance', 'autostake', 'airdrop']
-          });
-        } catch (err) {
-          console.error('Agent Init Error:', err);
-        }
-      } else {
-        setAgent(null);
-      }
-    };
-    initAgent();
-  }, [connected, wallet, pubkeyStr]);
 
   useEffect(() => {
     if (pubkeyStr) {
@@ -130,10 +110,40 @@ export function AppProvider({ children }) {
   }, [pubkeyStr, dbSynced]);
 
   useEffect(() => {
-    if (!pubkeyStr) {
-      setDbSynced(false);
-    }
-  }, [pubkeyStr]);
+    const fetchTips = async () => {
+      if (pubkeyStr && connected) {
+        try {
+          const isProd = import.meta.env.PROD;
+          const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+          
+          const res = await fetch(`${API_BASE_URL}/api/solana/tips/history?address=${pubkeyStr}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+              const allTips = data.tips || [];
+              // Filter for received tips only for the revenue total
+              const receivedTips = allTips.filter(t => t.recipient === pubkeyStr).map(t => ({
+                ...t,
+                amountUSDC: t.valueUsd // Map API field to UI expected field
+              }));
+              
+              const total = receivedTips.reduce((acc, tip) => acc + (tip.amountUSDC || 0), 0);
+              
+              setState(prev => ({
+                ...prev,
+                tipsReceived: receivedTips,
+                tipsSent: allTips.filter(t => t.sender === pubkeyStr),
+                totalTipsUSDC: total
+              }));
+            }
+          }
+        } catch (err) {
+          console.error('🛡️ AppContext: Tip hydration fault.', err);
+        }
+      }
+    };
+    fetchTips();
+  }, [pubkeyStr, connected]);
 
   useEffect(() => {
     if (pubkeyStr && state !== defaultState) {
@@ -201,7 +211,7 @@ export function AppProvider({ children }) {
         newState.tipsSent = [tip, ...prev.tipsSent];
       } else {
         newState.tipsReceived = [tip, ...prev.tipsReceived];
-        newState.totalTipsUSDC = prev.totalTipsUSDC + tip.amountUSDC;
+        newState.totalTipsUSDC = prev.totalTipsUSDC + (tip.amountUSDC || tip.valueUsd || 0);
       }
       return newState;
     });
@@ -233,7 +243,7 @@ export function AppProvider({ children }) {
   }, [pubkeyStr]);
 
   return (
-    <AppContext.Provider value={{ ...state, role, dbSynced, agent, update, updateProfile, claimHandle, addTip, resetOnboarding, publicKey, connected, authUser, authLoading }}>
+    <AppContext.Provider value={{ ...state, role, dbSynced, update, updateProfile, claimHandle, addTip, resetOnboarding, publicKey, connected, authUser, authLoading }}>
       {children}
     </AppContext.Provider>
   );

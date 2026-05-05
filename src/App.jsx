@@ -186,16 +186,21 @@ function RequireAuth({ children, requiredRole }) {
     return <Navigate to="/auth/complete" state={{ from: location }} replace />;
   }
 
-  if (requiredRole === 'creator' && (role === 'user' || role === 'creator')) {
+  // Strict role enforcement
+  if (requiredRole === 'creator') {
+    // Only creators can access creator routes
+    if (role !== 'creator') {
+      return <Navigate to="/dashboard" replace />;
+    }
     return children;
   }
 
-  if (requiredRole === 'user' && role === 'user') {
+  if (requiredRole === 'user') {
+    // Only users can access user routes
+    if (role !== 'user') {
+      return <Navigate to="/dashboard" replace />;
+    }
     return children;
-  }
-
-  if (requiredRole === 'user' && role === 'creator') {
-    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

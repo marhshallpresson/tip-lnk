@@ -5,9 +5,13 @@ import { createSession } from "../../_lib/session.js"
 import { logError, serializeError } from "../../_lib/logger.js"
 import { randomUUID } from "crypto"
 import { normalizeEmail, normalizeName, issueEmailVerification, patchResponse } from "./_utils.js"
+import { rateLimit } from "../../_ratelimit.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // SECURITY PATCH: Enforce global rate limiting
+  if (!(await rateLimit(req, res))) return;
 
   patchResponse(res)
 
@@ -44,6 +48,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const session = await createSession(req as any, res as any, userId)
     void issueEmailVerification(userId, email, name).catch(() => null)
+
+    // STRATEGIC ROADMAP: Conversion Tracking
+    import('../../_lib/torque.js').then(({ emitTorqueEvent }) => {
+        emitTorqueEvent({
+            event_type: 'user_signup',
+            metadata: {
+                user_id: userId,
+                source: 'backend'
+            }
+        });
+    });
 
     res.status(200).json({
       success: true,

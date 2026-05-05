@@ -9,10 +9,19 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
 
+  // Initialize from localStorage on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem('tipstack_auth_token');
+    if (storedToken) {
+      api.setAccessToken(storedToken);
+    }
+  }, []);
+
   const fetchMe = async () => {
     if (!api.accessToken) {
       setUser(null);
       setLoading(false);
+      localStorage.removeItem('tipstack_auth_token');
       return;
     }
 
@@ -21,13 +30,17 @@ export const AuthProvider = ({ children }) => {
       const { data, ok } = await api.get('/auth/me');
       if (ok && data.success) {
         setUser(data.user);
+        // Persist token to localStorage for session recovery
+        localStorage.setItem('tipstack_auth_token', api.accessToken);
       } else {
         setUser(null);
         api.setAccessToken(null);
+        localStorage.removeItem('tipstack_auth_token');
       }
     } catch (err) {
       console.debug('Session check: No active user session found.');
       setUser(null);
+      localStorage.removeItem('tipstack_auth_token');
     } finally {
       setLoading(false);
     }
@@ -43,6 +56,8 @@ export const AuthProvider = ({ children }) => {
       const { data, ok } = await api.post('/auth/login', { email, password });
       if (ok && data.success) {
         api.setAccessToken(data.auth.accessToken);
+        // Persist token for session recovery
+        localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
         setUser(data.user);
         return { success: true };
       } else {
@@ -61,6 +76,8 @@ export const AuthProvider = ({ children }) => {
       const { data, ok } = await api.post('/auth/register', { name, email, password });
       if (ok && data.success) {
         api.setAccessToken(data.auth.accessToken);
+        // Persist token for session recovery
+        localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
         setUser(data.user);
         return { success: true };
       } else {
@@ -80,6 +97,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout request failed:', err);
     } finally {
       api.setAccessToken(null);
+      localStorage.removeItem('tipstack_auth_token');
       setUser(null);
       window.location.href = '/';
     }
@@ -99,6 +117,8 @@ export const AuthProvider = ({ children }) => {
       if (ok && data.success) {
         if (data.auth?.accessToken) {
           api.setAccessToken(data.auth.accessToken);
+          // Persist token for session recovery
+          localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
         }
         setUser(data.user);
         return { success: true, user: data.user };

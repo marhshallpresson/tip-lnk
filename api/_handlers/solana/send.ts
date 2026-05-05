@@ -24,8 +24,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? 'https://api.devnet.solana.com' 
         : `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
 
-    // SECURITY: If simulate=true, validate transaction before submission
-    if (simulate === true || process.env.REQUIRE_TX_SIMULATION === 'true') {
+    // SECURITY: ALWAYS validate transaction before submission
+    {
       const connection = new Connection(RPC_URL)
       const tx = Transaction.from(Buffer.from(transaction, 'base64'))
       

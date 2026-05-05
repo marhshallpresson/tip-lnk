@@ -1,197 +1,345 @@
-import { useState, useEffect } from 'react';
-import { Zap, Shield, Globe, ArrowRight, Wallet, TrendingUp, ChevronRight, ExternalLink, Star, Users, Coins, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Zap, 
+  Shield, 
+  Globe, 
+  Plus, 
+  X, 
+  ArrowRight,
+  Link as LinkIcon,
+  CreditCard,
+  Wallet,
+  CheckCircle2,
+} from 'lucide-react'; 
 
-function FeatureBlock({ title, description, icon: Icon, reversed }) {
+// --- DATA ---
+const stories = [
+  {
+    id: 1,
+    question: "The Problem 🛑",
+    answer: "For years, creators have been 'behind the curtain' of giant platforms—losing 30%, waiting weeks for payouts, and owning zero data. We are changing that.",
+  },
+  {
+    id: 2,
+    question: "What do we stand for? ✊",
+    answer: "Absolute ownership. Tip Stack is a bridge built on Solana that puts the engine entirely in your hands. No middlemen, no custody, no delays.",   
+  },
+  {
+    id: 3,
+    question: "What makes us different? 📈",
+    answer: "Unlike standard tip jars, your tips don't just sit there. They earn real-time interest via Kamino DeFi vaults the moment they land in your wallet.",
+  },
+  {
+    id: 4,
+    question: "Where are we headed? 🚀",
+    answer: "To a fully decentralized creator economy where you keep 99% of your revenue, settle instantly, and operate anywhere on the social web.",        
+  }
+];
+
+const faqs = [
+  {
+    q: "Do my fans need crypto to tip me?",
+    a: "Not at all. Fans can pay using standard credit cards, Apple Pay, or bank transfers. We route everything behind the scenes via institutional-grade execution."
+  },
+  {
+    q: "How does the passive yield work?",
+    a: "The moment a tip is processed, it is instantly routed into Kamino DeFi vaults. Your balance automatically grows through real-time compounding interest."
+  },
+  {
+    q: "What are the platform fees?",
+    a: "We charge a flat 1% protocol fee. Compare that to the standard 10% - 30% taken by traditional social platforms."
+  },
+  {
+    q: "How fast do I get paid?",
+    a: "Instant. Because Tip Stack is built on Solana, settlement happens in ~400ms directly to your non-custodial wallet."
+  },
+  {
+    q: "Is it safe to connect my wallet?",
+    a: "Yes. Tip Stack is fully non-custodial. We never have access to your private keys or your funds. You are always in complete control."
+  }
+];
+
+export default function LandingPage({ onGetStarted = () => {}, onboardingComplete = false, connected = false, onViewDashboard = () => {}, onViewProfile = () => {} }) {
+  const [handle, setHandle] = useState('');
+  const [activeStory, setActiveStory] = useState(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+
+  const toggleFaq = (index) => {
+    setOpenFaqIndex(openFaqIndex === index ? null : index);
+  };
+
   return (
-    <div className={`flex flex-col ${reversed ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-8 md:gap-16 py-12 md:py-20`}>
-      <div className="flex-1 space-y-6">
-        <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center border border-brand-500/20 mb-6">
-          <Icon size={24} className="text-brand-500" />
-        </div>
-        <h3 className="text-2xl md:text-3xl font-bold text-white leading-tight">{title}</h3>
-        <p className="text-base md:text-lg text-white/60 leading-relaxed">{description}</p>
-        <button className="btn-outline flex items-center gap-2 group">
-          Learn more <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-        </button>
-      </div>
-      <div className="flex-1 w-full relative">
-        <div className="h-[200px] md:h-[300px] w-full rounded-xl bg-[#111111] border border-white/5 flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-          <Icon size={80} className="text-white/5" />
-        </div>
-      </div>
-    </div>
-  );
-}
+    <div className="bg-[#050505] min-h-screen text-white font-brand selection:bg-brand-500/30 overflow-x-hidden mesh-gradient">
+     
 
-function ComparisonTable() {
-  const rows = [
-    { feature: 'Platform Fee', tipstack: '0%', buymeacoffee: '5%', kofi: '0%*', patreon: '5-12%' },
-    { feature: 'Instant Payout', tipstack: '✓ Near Instant', buymeacoffee: '2-5 days', kofi: '2-5 days', patreon: '1-5 days' },
-    { feature: 'Global Recipients', tipstack: '✓ Instant', buymeacoffee: 'Waitlist', kofi: 'PayPal only', patreon: 'Bank dependent' },
-    { feature: 'Own Your Identity', tipstack: '✓ On-chain SNS', buymeacoffee: '✗ Centralized', kofi: '✗ Centralized', patreon: '✗ Centralized' },
-    { feature: 'Yield on Tips', tipstack: '✓ Kamino DeFi', buymeacoffee: '✗', kofi: '✗', patreon: '✗' },
-  ];
 
-  return (
-    <div className="overflow-x-auto w-full home-card p-4 sm:p-6">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-white/5">
-            <th className="text-left py-4 px-4 text-white/40 font-medium uppercase tracking-wider text-[10px]">Feature</th>
-            <th className="text-center py-4 px-4 text-brand-500 font-bold">Tip Stack</th>
-            <th className="text-center py-4 px-4 text-white/40 font-medium">Ko-fi</th>
-            <th className="text-center py-4 px-4 text-white/40 font-medium">BMC</th>
-            <th className="text-center py-4 px-4 text-white/40 font-medium hidden md:table-cell">Patreon</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.feature} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-              <td className="py-4 px-4 text-white/80 font-medium">{row.feature}</td>
-              <td className="py-4 px-4 text-center text-brand-500 font-semibold">{row.tipstack}</td>
-              <td className="py-4 px-4 text-center text-white/40">{row.kofi}</td>
-              <td className="py-4 px-4 text-center text-white/40">{row.buymeacoffee}</td>
-              <td className="py-4 px-4 text-center text-white/40 hidden md:table-cell">{row.patreon}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-export default function LandingPage({ onGetStarted }) {
-  return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] text-white">
-      {/* Hero Section */}
-      <section className="relative pt-32 md:pt-48 pb-24 px-4 flex flex-col items-center text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(159,53,232,0.08)_0%,transparent_50%)] z-0" />
-
-        <div className="relative z-10 max-w-[800px] mx-auto w-full">
+      {/* --- 1. HERO SECTION (REPOSITIONED FOR CONVERSION) --- */}
+      <header className="relative pt-32 md:pt-48 pb-16 px-4 flex flex-col justify-center min-h-[75vh]">
+        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center w-full text-center relative z-20">
           
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-500/10 border border-brand-500/20 rounded-full animate-fade-in mb-8">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+            </span>
+            <span className="text-xs font-bold text-brand-500">The fastest way to get paid globally</span>
+          </div>
 
-          <h1 className="animate-slide-up text-4xl sm:text-5xl md:text-7xl font-black font-brand tracking-tighter leading-[1.1] mb-8">
-            Fund your passion. <br />
-            <span className="text-brand-500">Make it on-chain.</span>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.1] text-white animate-slide-up mb-6">
+            Get paid instantly.<br />
+            <span className="text-gradient">From anyone. Anywhere.</span>
           </h1>
 
-          <p className="animate-slide-up text-white/60 text-base md:text-lg max-w-2xl mx-auto mb-12 leading-relaxed" style={{ animationDelay: '0.1s' }}>
-            Accept tips, sell memberships, and grow your audience with zero platform fees. Instantly cash out anywhere in the world.
+          <p className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed font-medium animate-slide-up mb-10" style={{ animationDelay: '0.1s' }}>
+            Accept tips via card, bank, or crypto — and receive money instantly in your wallet or local currency. No holds, no middlemen.
           </p>
 
-          <div className="animate-slide-up bg-[#111111] border border-white/10 rounded-xl p-1.5 max-w-lg mx-auto flex flex-col sm:flex-row items-center gap-2 shadow-2xl mb-8" style={{ animationDelay: '0.2s' }}>
-            <div className="flex items-center flex-1 w-full pl-3 gap-1">
-              <input type="text" placeholder="yourname" className="bg-transparent outline-none w-full min-w-0 border-none text-white focus:ring-0 placeholder:text-white/30 py-2 sm:py-3 text-base sm:text-lg" />
-              <span className="text-brand-500 font-medium whitespace-nowrap text-sm sm:text-base pr-1">.tipstack.sol</span>
-            </div>
-            <button onClick={onGetStarted} className="btn-primary w-full sm:w-auto !px-6 !py-3 sm:!py-2.5 flex-shrink-0 whitespace-nowrap text-base">
-              Claim Link
-            </button>
-          </div>
-          <p className="animate-fade-in text-white/40 text-sm" style={{ animationDelay: '0.3s' }}>Takes less than 10 seconds to get started.</p>
-        </div>
-      </section>
-
-      {/* Creators Grid */}
-      <section id="creators" className="relative z-10 py-20 border-y border-white/5 bg-[#0c0c0c] px-4">
-        <div className="max-w-[1200px] mx-auto">
-          <p className="text-center text-white/40 font-medium uppercase tracking-[0.2em] text-[10px] mb-12">Join thousands of creators on Tip Stack</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { name: 'Mobot Defi', handle: '@mobot.tipstack.sol', color: 'bg-emerald-500' },
-              { name: 'DeFi Analyst', handle: '@defi.tipstack.sol', color: 'bg-blue-500' },
-              { name: 'Music Producer', handle: '@beats.tipstack.sol', color: 'bg-purple-500' },
-              { name: 'Web3 Dev', handle: '@dev.tipstack.sol', color: 'bg-orange-500' }
-            ].map((c, i) => (
-              <div key={i} className="home-card p-6 text-center group cursor-pointer hover:border-brand-500/20 transition-all">
-                <div className={`w-12 h-12 mx-auto rounded-full ${c.color}/20 flex items-center justify-center mb-4 border border-${c.color}/30`}>
-                  <ImageIcon size={20} className={c.color.replace('bg-', 'text-')} />
-                </div>
-                <h4 className="font-semibold text-white">{c.name}</h4>
-                <p className="text-xs text-brand-500 mt-1">{c.handle}</p>
+          {/* INPUT CTA (CRITICAL CHANGE) */}
+          <div className="flex flex-col sm:flex-row items-center justify-center w-full max-w-xl gap-3 animate-slide-up mx-auto mb-12" style={{ animationDelay: '0.2s' }}>
+            <div className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl p-1.5 flex items-center group focus-within:border-brand-500/50 transition-all shadow-2xl">
+              <div className="flex-1 flex items-center pl-4 gap-1">
+                <span className="text-white/40 font-bold">tipstack.sol/</span>
+                <input 
+                  type="text" 
+                  placeholder="yourname"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  className="bg-transparent border-none outline-none text-white font-bold text-lg placeholder:text-white/20 w-full min-w-0"
+                />
               </div>
-            ))}
+              <button 
+                onClick={() => onGetStarted(handle)}
+                className="h-full px-6 md:px-8 bg-brand-500 hover:bg-brand-400 text-black font-black uppercase text-sm rounded-xl transition-all active:scale-95 whitespace-nowrap flex items-center gap-2"
+              >
+                Claim Link <ArrowRight size={16} />
+              </button>
+            </div>
           </div>
+
+          {/* SUPPORTING TRUST STRIP */}
+          <div className="flex flex-col items-center animate-slide-up opacity-60" style={{ animationDelay: '0.3s' }}>
+            <p className="text-sm font-bold text-white/60 mb-4">Works seamlessly with</p>
+            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-12 text-sm font-bold tracking-wider text-white/40">
+              <span className="flex items-center gap-2"><CreditCard size={18} /> CARDS & BANKS</span>
+              <span className="flex items-center gap-2"><img src="https://jup.ag/favicon.ico" className="w-4 h-4 grayscale" alt="Jupiter" /> JUPITER</span>
+              <span className="flex items-center gap-2"><Globe size={18} /> FOSSAPAY</span>
+            </div>
+          </div>
+          
         </div>
-      </section>
+      </header>
 
-      {/* Feature Blocks */}
-      <section id="features" className="relative z-10 py-24 px-4">
-        <div className="max-w-[1000px] mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-3xl md:text-4xl font-black font-brand text-white mb-6">Everything you need, <span className="text-brand-500">none of the fees.</span></h2>
-          </div>
-
-          <div className="space-y-8 md:space-y-16">
-            <FeatureBlock
-              icon={Globe}
-              title="Your On-chain Identity"
-              description="Claim your SNS domain (yourname.tipstack.sol) and build a permanent tipping page that's truly yours."
-            />
-            <FeatureBlock
-              icon={Coins}
-              reversed
-              title="Zero Platform Fees"
-              description="Keep 100% of your earnings. By using smart contracts, your supporters' tips go directly to your wallet."
-            />
-            <FeatureBlock
-              icon={TrendingUp}
-              title="Yield on Your Terms"
-              description="Optionally put your tips to work. Idle funds can automatically earn yield through Kamino DeFi vaults."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Section */}
-      <section id="compare" className="relative z-10 py-24 px-4 bg-[#0c0c0c] border-t border-white/5">
-        <div className="max-w-[900px] mx-auto">
+       {/* --- 3. HOW IT WORKS (CRITICAL ADDITION) --- */}
+      <section id="how-it-works" className="py-32 px-4 relative">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">Unmatched value</h2>
-            <p className="text-white/40 text-base max-w-md mx-auto">The best alternative to traditional platforms is built on Solana.</p>
+            <h2 className="text-3xl md:text-5xl font-black mb-4">How Tip Stack Works</h2>
+            <p className="text-white/50 text-lg">Start monetizing your audience in under a minute.</p>
           </div>
-          <ComparisonTable />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Connecting line for desktop */}
+            <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-[2px] bg-gradient-to-r from-brand-500/0 via-brand-500/20 to-brand-500/0 -z-10"></div>
+
+            <div className="glass-card p-8 text-center flex flex-col items-center relative group">
+              <div className="w-12 h-12 bg-[#050505] border-2 border-brand-500/50 rounded-full flex items-center justify-center font-black text-xl text-brand-500 mb-6 shadow-[0_0_20px_rgba(159, 53, 232,0.2)]">1</div>
+              <h3 className="text-2xl font-bold mb-3">Create your link</h3>
+              <p className="text-white/50 text-sm leading-relaxed">No wallet setup needed to start. Claim your handle and personalize your tipping page in seconds.</p>
+            </div>
+
+            <div className="glass-card p-8 text-center flex flex-col items-center relative">
+              <div className="w-12 h-12 bg-[#050505] border-2 border-brand-500/50 rounded-full flex items-center justify-center font-black text-xl text-brand-500 mb-6 shadow-[0_0_20px_rgba(159, 53, 232,0.2)]">2</div>
+              <h3 className="text-2xl font-bold mb-3">Share anywhere</h3>
+              <p className="text-white/50 text-sm leading-relaxed">Drop your link in your X bio, YouTube description, Twitch panels, or personal website.</p>
+            </div>
+
+            <div className="glass-card p-8 text-center flex flex-col items-center relative">
+              <div className="w-12 h-12 bg-[#050505] border-2 border-brand-500/50 rounded-full flex items-center justify-center font-black text-xl text-brand-500 mb-6 shadow-[0_0_20px_rgba(159, 53, 232,0.2)]">3</div>
+              <h3 className="text-2xl font-bold mb-3">Get paid instantly</h3>
+              <p className="text-white/50 text-sm leading-relaxed">Fans pay via card, bank, or crypto. Funds settle instantly to your wallet or off-ramp to local fiat.</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="relative z-10 py-32 px-4 text-center">
-        <div className="relative max-w-2xl mx-auto">
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">Ready to start?</h2>
-          <p className="text-white/60 text-lg mb-12 max-w-md mx-auto">Join the new creator economy. No fees, no middlemen, just you and your supporters.</p>
-          <button onClick={onGetStarted} className="btn-primary !px-10 !py-4 text-lg">
-            Claim Your Page
-          </button>
+      {/* --- STORY SECTION --- */}
+      <section className="py-24 px-6 relative border-t border-white/5">
+        <h2 className="text-3xl md:text-5xl font-black text-center mb-6 text-white tracking-tighter">
+          What happens when you <br />
+          <span className="text-white/40 italic font-medium">own your revenue? 🤔</span>
+        </h2>
+        
+        <div className="max-w-3xl mx-auto flex flex-col items-center space-y-6">
+          {stories.map((story, index) => (
+            <div key={story.id} className="w-full flex flex-col items-center text-center relative">
+              <button 
+                onClick={() => setActiveStory(activeStory === index ? null : index)}
+                className={`text-2xl md:text-4xl font-bold transition-all duration-300 ${
+                  activeStory === index ? 'text-brand-500 scale-105' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                {story.question}
+              </button>
+              
+              <div 
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  activeStory === index ? 'max-h-40 opacity-100 mt-6' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <p className="text-white/60 text-lg max-w-2xl px-4 font-medium leading-relaxed">
+                  {story.answer}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 py-12 px-4 bg-[#080808]">
-        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-2">
-            <img src="/logo.svg" className="h-14" alt="Tip Stack" />
+
+      {/* --- 5. DIFFERENTIATION (COMPARISON TABLE) --- */}
+      <section className="py-32 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-black mb-4">Why creators are switching</h2>
+            <p className="text-white/50 text-lg">No middlemen. No delays. No limits.</p>
           </div>
-          <p className="text-white/40 text-sm">© 2026 Tip Stack. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="/terms" className="text-white/40 hover:text-brand-500 transition-colors text-sm">Terms</a>
-            <a href="/privacy" className="text-white/40 hover:text-brand-500 transition-colors text-sm">Privacy</a>
-            <a href="x.com/useTip Stack" className="text-white/40 hover:text-brand-500 transition-colors">
-              <TwitterIcon />
-            </a>
-            <a href="https://github.com/marhshallpresson/tip-lnk" className="text-white/40 hover:text-brand-500 transition-colors">
-              <GithubIcon />
-            </a>
+
+          <div className="glass-card !p-0 border-white/10 shadow-2xl overflow-hidden">
+            <div className="grid grid-cols-3 bg-white/5 p-6 border-b border-white/10">
+              <div className="font-bold text-white/50 text-sm uppercase tracking-wider">Feature</div>
+              <div className="font-black text-brand-500 text-lg text-center">Tip Stack</div>
+              <div className="font-bold text-white/40 text-sm text-center">Traditional Platforms</div>
+            </div>
+            
+            <div className="grid grid-cols-3 p-6 border-b border-white/5 items-center">
+              <div className="font-bold">Fees</div>
+              <div className="font-black text-brand-500 text-center text-xl">1%</div>
+              <div className="text-white/40 text-center font-medium">10% – 30%</div>
+            </div>
+
+            <div className="grid grid-cols-3 p-6 border-b border-white/5 items-center">
+              <div className="font-bold">Payout Speed</div>
+              <div className="font-black text-brand-500 text-center text-xl">Instant</div>
+              <div className="text-white/40 text-center font-medium">7 – 30 Days</div>
+            </div>
+
+            <div className="grid grid-cols-3 p-6 border-b border-white/5 items-center">
+              <div className="font-bold">Ownership</div>
+              <div className="font-black text-brand-500 text-center text-xl">Full (Self-Custody)</div>
+              <div className="text-white/40 text-center font-medium">None (Platform Owned)</div>
+            </div>
+
+            <div className="grid grid-cols-3 p-6 items-center bg-white/[0.01]">
+              <div className="font-bold">Global Reach</div>
+              <div className="font-black text-brand-500 text-center flex justify-center items-center gap-2"><CheckCircle2 size={20} /> Yes</div>
+              <div className="text-white/40 text-center font-medium">Limited</div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* --- 8. FAQ (OBJECTION HANDLING) --- */}
+      <section id="faq" className="py-24 px-6 md:px-12 max-w-4xl mx-auto border-t border-white/5">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-black mb-4">Frequently Asked Questions</h2>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((faq, index) => {
+            const isOpen = openFaqIndex === index;
+            return (
+              <div 
+                key={index} 
+                className={`border border-white/10 rounded-2xl overflow-hidden transition-all duration-300 ${isOpen ? 'bg-white/5 border-white/20' : 'bg-[#0a0a0a] hover:bg-[#111]'}`}
+              >
+                <button 
+                  onClick={() => toggleFaq(index)}
+                  className="w-full flex items-center justify-between p-6 text-left"
+                >
+                  <span className={`text-lg font-bold pr-8 ${isOpen ? 'text-brand-500' : 'text-white'}`}>{faq.q}</span>
+                  {isOpen ? (
+                    <X className="w-5 h-5 text-brand-500 flex-shrink-0" />
+                  ) : (
+                    <Plus className="w-5 h-5 text-white/40 flex-shrink-0" />
+                  )}
+                </button>
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <p className="p-6 pt-0 text-white/50 font-medium leading-relaxed">
+                    {faq.a}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* --- 7. CTA SECTION (STRONG CLOSE) --- */}
+      <section className="py-32 px-4 text-center relative overflow-hidden bg-brand-500/5 border-t border-brand-500/20">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/10 blur-[120px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10 space-y-8 max-w-2xl mx-auto">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tight text-white">
+              Start earning in <br /> under 10 seconds.
+            </h2>
+            <p className="text-white/60 text-xl font-medium">
+              No setup. No fees. No waiting.
+            </p>
+            <div className="pt-8">
+              <button 
+                onClick={() => onGetStarted(handle)}
+                className="px-10 py-5 bg-brand-500 hover:bg-brand-400 text-black font-black uppercase text-sm rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_50px_rgba(159, 53, 232,0.3)] flex items-center gap-3 mx-auto"
+              >
+                Create your Tip Link <ArrowRight size={18} />
+              </button>
+            </div>
+        </div>
+      </section>
+
+      {/* --- FOOTER --- */}
+      <footer className="py-20 px-8 border-t border-white/5 bg-[#050505] relative z-20">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
+            <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <img src="/logo.svg" className="h-14" alt="Tip Stack" />
+                </div>
+                <p className="text-white/20 text-xs font-bold uppercase tracking-[0.3em] max-w-xs leading-loose">
+                    Creator Reward Platform<br /> for Creator to Earn without limits.
+                </p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-16">
+                <div className="space-y-4">
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Protocol</p>
+                    <ul className="space-y-2">
+                        <li><a href="https://docs.tipstack.fun" className="text-sm font-bold text-white/60 hover:text-brand-500 transition-colors">Documentation</a></li>
+                    <li><a href="/terms" className="text-sm font-bold text-white/60 hover:text-brand-500 transition-colors">Terms & Conditons</a></li>
+                    <li><a href="/privacy" className="text-sm font-bold text-white/60 hover:text-brand-500 transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div className="space-y-4">
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Connect</p>
+                    <ul className="space-y-2">
+                        <li><a href="https://x.com/usetiplink" className="text-sm font-bold text-white/60 hover:text-brand-500 transition-colors">X / Twitter</a></li>
+                        <li><a href="https://discord.gg/tipstack" className="text-sm font-bold text-white/60 hover:text-brand-500 transition-colors">Discord</a></li>
+                        <li><a href="https://github.com/marshallpresson/tip-lnk" className="text-sm font-bold text-white/60 hover:text-brand-500 transition-colors">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div className="max-w-6xl mx-auto mt-20 pt-8 border-t border-white/5 flex justify-between items-center">
+            
+            <div className="flex flex-wrap justify-center gap-6 text-[10px] font-black text-white/30 uppercase tracking-widest">
+                <span className="flex items-center gap-2"><Globe size={12}/> Powered by Solana</span>
+            </div>
+            <p className="text-[9px] font-black text-white/10 uppercase tracking-widest">© 2026 Built for the Frontier.</p>
         </div>
       </footer>
     </div>
   );
 }
-
-function TwitterIcon() { return <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" /></svg>; }
-
-
-
-
-function GithubIcon() { return <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" /></svg>; }

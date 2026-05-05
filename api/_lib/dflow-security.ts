@@ -206,7 +206,7 @@ export function getSlippageLimitForToken(
 
   // Check for common stablecoins
   const knownStables = [
-    'EPjFWaLb3ocQw2QvV9FWFUBjVbRHq6PWzV6EQB5zLvR1', // USDC
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
     'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenErt', // USDT
     'MangoCzJ36AjZyKwVj3VnYU4GTonjfVEnJmvvWaxLac', // USDN
     '3nML6bK38pB7byRN4JBbvDNS7y4sRBRMhD6Ht8A4KXo1', // agEUR

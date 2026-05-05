@@ -4,9 +4,13 @@ import { verifyPassword } from "../../_lib/password.js"
 import { createSession, getUserRoles } from "../../_lib/session.js"
 import { logError, serializeError } from "../../_lib/logger.js"
 import { normalizeEmail, patchResponse } from "./_utils.js"
+import { rateLimit } from "../../_ratelimit.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // SECURITY PATCH: Enforce global rate limiting
+  if (!(await rateLimit(req, res))) return;
 
   patchResponse(res)
 
@@ -33,6 +37,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await db('user').where({ id: user.id }).update({ lastLoginAt: new Date() })
     const session = await createSession(req as any, res as any, user.id)
     const roles = await getUserRoles(user.id)
+
+    // STRATEGIC ROADMAP: Conversion Tracking
+    import('../../_lib/torque.js').then(({ emitTorqueEvent }) => {
+        emitTorqueEvent({
+            event_type: 'user_login',
+            metadata: {
+                user_id: user.id,
+                source: 'backend'
+            }
+        });
+    });
 
     res.status(200).json({
       success: true,

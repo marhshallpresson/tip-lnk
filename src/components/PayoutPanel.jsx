@@ -24,26 +24,52 @@ export default function PayoutPanel() {
   const [rampStep, setRampStep] = useState('amount');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [otpTimeLeft, setOtpTimeLeft] = useState(300); // Phase 2: OTP timer (5 minutes)
   const [selectedBank, setSelectedBank] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [resolvedName, setResolvedName] = useState('');
   const [rateInfo, setRateInfo] = useState(null);
+  const [creatorBalance, setCreatorBalance] = useState(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
       setLoading(true);
+      try {
+        // Phase 2: Check balance first before showing withdrawal
+        const balRes = await api.get('/payouts/balance');
+        if (balRes.ok && balRes.data?.balance !== undefined) {
+          setCreatorBalance(balRes.data.balance);
+          
+          // Only show history if balance > 0
+          if (balRes.data.balance > 0) {
+            const res = await api.get('/payouts/history');
+            if (res.ok && res.data?.history) {
+              setPayoutHistory(res.data.history);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch payout history/balance:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHistory();
+    
+    // Phase 2: Poll for real-time payout history updates every 5 seconds
+    const pollInterval = setInterval(async () => {
       try {
         const res = await api.get('/payouts/history');
         if (res.ok && res.data?.history) {
           setPayoutHistory(res.data.history);
         }
       } catch (err) {
-        console.error('Failed to fetch payout history', err);
-      } finally {
-        setLoading(false);
+        console.error('Payout history poll failed:', err);
       }
-    };
-    fetchHistory();
+    }, 5000);
+    
+    return () => clearInterval(pollInterval);
   }, []);
 
   useEffect(() => {
@@ -58,14 +84,34 @@ export default function PayoutPanel() {
     }
   }, [ngnAmount, getRate]);
 
+  // Phase 2: OTP expiration timer
+  useEffect(() => {
+    if (rampStep !== 'verify') return;
+    
+    const timer = setInterval(() => {
+      setOtpTimeLeft(t => {
+        if (t <= 1) {
+          setError('❌ OTP expired. Request a new code.');
+          setRampStep('amount');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [rampStep]);
+
   const handleStartAuth = async () => {
     if (!email) return;
     setProcessing(true);
     try {
       await initiateAuth(email);
       setRampStep('verify');
+      // Email preserved for subsequent steps
     } catch (err) {
       setError(err.message);
+      // Preserve email for retry
     } finally {
       setProcessing(false);
     }
@@ -101,6 +147,16 @@ export default function PayoutPanel() {
 
   const handleExecuteOfframp = async () => {
     if (!publicKey) return;
+    
+    // Add confirmation step before actual withdrawal
+    const confirmed = window.confirm(
+      `Confirm withdrawal of ${ngnAmount} USDC?\n\nYou will receive approximately ₦${rateInfo?.totalReceived.toLocaleString() || 'N/A'}\n\nThis action cannot be undone.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
     setProcessing(true);
     setError(null);
     try {
@@ -182,6 +238,27 @@ export default function PayoutPanel() {
           <div className="space-y-4">
             {rampStep === 'amount' && (
               <div className="animate-slide-up">
+                {/* Phase 2: Balance validation - show upfront */}
+                {creatorBalance !== null && (
+                  <div className={`mb-4 p-4 rounded-xl border ${
+                    creatorBalance > 0 
+                      ? 'bg-emerald-500/10 border-emerald-500/20' 
+                      : 'bg-red-500/10 border-red-500/20'
+                  }`}>
+                    <p className="text-xs font-semibold text-white/60 mb-1">Available Balance</p>
+                    <p className={`text-2xl font-bold ${
+                      creatorBalance > 0 ? 'text-emerald-400' : 'text-red-400'
+                    }`}>
+                      ${creatorBalance.toFixed(2)} USDC
+                    </p>
+                    {creatorBalance <= 0 && (
+                      <p className="text-[10px] text-red-400 mt-2">
+                        ⚠️ You need at least $1 USDC to withdraw.
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 <div className="bg-surface-800/50 p-5 rounded-2xl border border-surface-700 focus-within:border-accent-orange/50 transition-all">
                   <label className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-3 block">Amount to Withdraw (USDC)</label>
                   <div className="flex items-center gap-3">
@@ -192,6 +269,7 @@ export default function PayoutPanel() {
                       onChange={(e) => setNgnAmount(e.target.value)}
                       className="bg-transparent border-none outline-none text-3xl font-black w-full placeholder:text-surface-700"
                       placeholder="50.00"
+                      disabled={creatorBalance === null || creatorBalance <= 0}
                     />
                   </div>
                 </div>
@@ -215,7 +293,7 @@ export default function PayoutPanel() {
 
                 <button 
                   onClick={() => sessionToken ? setRampStep('bank') : setRampStep('auth')}
-                  disabled={!ngnAmount || Number(ngnAmount) < 1}
+                  disabled={!ngnAmount || Number(ngnAmount) < 1 || creatorBalance === null || creatorBalance <= 0}
                   className="btn-primary w-full mt-6 py-4 rounded-2xl bg-accent-orange text-black font-black uppercase tracking-tighter shadow-lg shadow-accent-orange/10 flex items-center justify-center gap-2"
                 >
                   Continue to Payout <ArrowRight size={18} />
@@ -251,8 +329,14 @@ export default function PayoutPanel() {
 
             {rampStep === 'verify' && (
               <div className="animate-slide-up space-y-4">
-                <div className="flex items-center gap-2 text-accent-orange mb-2">
-                   <ShieldCheck size={16} /> <span className="text-xs font-bold uppercase tracking-widest">Enter OTP</span>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 text-accent-orange">
+                     <ShieldCheck size={16} /> <span className="text-xs font-bold uppercase tracking-widest">Enter OTP</span>
+                  </div>
+                  {/* Phase 2: OTP expiration timer */}
+                  <span className="text-[10px] text-sky-500 font-bold">
+                    Expires in {Math.floor(otpTimeLeft / 60)}:{String(otpTimeLeft % 60).padStart(2, '0')}
+                  </span>
                 </div>
                 <p className="text-xs text-surface-400 leading-relaxed">We've sent a code to <span className="text-white font-bold">{email}</span></p>
                 <div className="bg-surface-800/50 p-4 rounded-2xl border border-surface-700 focus-within:border-accent-orange/30">
@@ -267,7 +351,7 @@ export default function PayoutPanel() {
                 </div>
                 <button 
                   onClick={handleVerifyOTP}
-                  disabled={processing || otp.length < 4}
+                  disabled={processing || otp.length < 4 || otpTimeLeft <= 0}
                   className="btn-primary w-full py-4 rounded-2xl bg-accent-orange text-black font-bold uppercase tracking-widest text-xs"
                 >
                   {processing ? <Loader2 className="animate-spin" size={16} /> : 'Verify & Continue'}

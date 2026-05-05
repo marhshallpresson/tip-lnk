@@ -1,13 +1,24 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import axios from "axios"
+import { getSessionUser } from "../../_lib/session.js"
+
 /**
  * Task 2.2: Standalone Vercel Function for Helius Smart Sender
+ * SECURITY PATCH: Enforced authentication and payload validation.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  // SECURITY: Require an active session
+  const authUser = await getSessionUser(req as any)
+  if (!authUser) {
+    return res.status(401).json({ error: 'Unauthorized: Session required to broadcast transactions' })
+  }
+
   const { transaction } = req.body
-  if (!transaction) return res.status(400).json({ error: 'Transaction required' })
+  if (!transaction || typeof transaction !== 'string' || transaction.length > 5000) {
+    return res.status(400).json({ error: 'Valid transaction base64 required' })
+  }
 
   try {
     const HELIUS_API_KEY = process.env.HELIUS_API_KEY 

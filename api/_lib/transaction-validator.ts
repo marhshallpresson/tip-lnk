@@ -37,7 +37,8 @@ export interface TransactionValidationResult {
 
 /**
  * Simulate a transaction before requesting user signature
- * Validates that the transaction does what we expect
+ * Validates that the transaction does what we expect by checking balance deltas.
+ * SECURITY PATCH: Prevents spoofing where tx content doesn't match API parameters.
  */
 export async function simulateTransaction(
   connection: Connection,
@@ -53,7 +54,7 @@ export async function simulateTransaction(
       sender: signer.toBase58(),
       recipient: recipient.toBase58(),
       amount: expectedTipAmount,
-      fees: 5000, // Default 5000 lamports
+      fees: 5000, 
     },
     actualChanges: [],
     warnings: [],
@@ -61,60 +62,67 @@ export async function simulateTransaction(
   }
 
   try {
-    // Get account states BEFORE transaction
-    const accounts = [
-      { address: signer, label: 'sender' },
-      { address: recipient, label: 'recipient' },
-    ]
+    // 1. Fetch pre-balances
+    const [preSender, preRecipient] = await Promise.all([
+      connection.getBalance(signer, 'confirmed'),
+      connection.getBalance(recipient, 'confirmed')
+    ]);
 
-    const balanceBefore = await Promise.all(
-      accounts.map(async (acc) => ({
-        ...acc,
-        balance: await connection.getBalance(acc.address),
-      }))
-    )
-
-    // Step 1: Simulate the transaction
-    // We use the signer (PublicKey) as the feePayer for simulation
+    // 2. Simulate the transaction with account tracking
     transaction.feePayer = signer;
-    const simulationResult = await connection.simulateTransaction(transaction);
+    const { value: sim } = await connection.simulateTransaction(transaction, {
+      sigVerify: false,
+      accounts: {
+        encoding: 'base64',
+        addresses: [signer.toBase58(), recipient.toBase58()]
+      }
+    });
 
-    if (simulationResult.value.err) {
-      result.errors.push(`Transaction simulation failed: ${JSON.stringify(simulationResult.value.err)}`)
-      result.isValid = false
-      return result
+    if (sim.err) {
+      result.errors.push(`Simulation failed: ${JSON.stringify(sim.err)}`);
+      result.isValid = false;
+      return result;
     }
 
-    result.simulationSuccess = true
+    result.simulationSuccess = true;
 
-    // Step 2: Analyze instruction chain
-    const warnings = validateInstructionChain(
-      transaction.instructions,
-      signer,
-      recipient,
-      expectedTipAmount
-    )
-    result.warnings.push(...warnings)
+    // 3. Extract post-balances from simulation result
+    // result.value.accounts[0] -> signer, [1] -> recipient
+    const postSender = sim.accounts?.[0]?.lamports ?? preSender;
+    const postRecipient = sim.accounts?.[1]?.lamports ?? preRecipient;
 
-    // Step 3: Check for suspicious patterns
+    const senderDelta = preSender - postSender;
+    const recipientDelta = postRecipient - preRecipient;
+
+    // 4. Mathematical Verification
+    // Recipient must receive EXACTLY what was expected
+    if (recipientDelta < expectedTipAmount) {
+      result.errors.push(`Fraud Detected: Recipient balance delta (${recipientDelta}) is less than expected (${expectedTipAmount})`);
+      result.isValid = false;
+    }
+
+    // Sender must not lose more than expected + reasonable fee (e.g. 0.01 SOL buffer for priority fees)
+    const maxExpectedLoss = expectedTipAmount + (0.01 * LAMPORTS_PER_SOL);
+    if (senderDelta > maxExpectedLoss) {
+      result.errors.push(`Security Alert: Sender loss (${senderDelta}) exceeds expected tip + buffer`);
+      result.isValid = false;
+    }
+
+    result.actualChanges.push(
+      { account: 'sender', balanceDelta: -senderDelta, isExpected: senderDelta <= maxExpectedLoss },
+      { account: 'recipient', balanceDelta: recipientDelta, isExpected: recipientDelta >= expectedTipAmount }
+    );
+
+    // 5. Pattern Analysis (Defense in Depth)
     const suspiciousChecks = checkForSuspiciousPatterns(transaction.instructions)
     if (suspiciousChecks.length > 0) {
       result.errors.push(...suspiciousChecks)
       result.isValid = false
     }
 
-    // Step 4: Validate sender has sufficient balance
-    const sender = balanceBefore.find((a) => a.label === 'sender')
-    if (sender && sender.balance < expectedTipAmount + 5000) {
-      result.errors.push(
-        `Insufficient balance: ${sender.balance} lamports, need ${expectedTipAmount + 5000}`
-      )
-      result.isValid = false
-    }
-
-    return result
+    return result;
   } catch (error) {
-    result.errors.push(`Simulation error: ${error instanceof Error ? error.message : String(error)}`)
+    result.errors.push(`Simulation runtime error: ${error instanceof Error ? error.message : String(error)}`)
     result.isValid = false
     return result
   }

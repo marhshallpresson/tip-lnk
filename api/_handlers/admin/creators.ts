@@ -14,8 +14,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const creators = await db('user')
-      .select('id', 'email', 'name', 'walletAddress', 'twitterHandle', 'discordHandle', 'solDomain', 'created_at', 'lastLoginAt')
-      .orderBy('created_at', 'desc')
+      .leftJoin('tips', 'user.id', 'tips.recipient_id')
+      .select(
+        'user.id', 
+        'user.email', 
+        'user.name', 
+        'user.walletAddress', 
+        'user.twitterHandle', 
+        'user.discordHandle', 
+        'user.solDomain', 
+        'user.created_at', 
+        'user.lastLoginAt'
+      )
+      .count('tips.signature as total_tips')
+      .count({
+        suspicious_tips: db.raw("CASE WHEN tips.metadata->>'isSuspicious' = 'true' THEN 1 ELSE NULL END")
+      })
+      .groupBy('user.id')
+      .orderBy('user.created_at', 'desc')
       .limit(100)
 
     res.json({ success: true, creators })

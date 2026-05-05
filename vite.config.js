@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -22,7 +26,8 @@ export default defineConfig({
       'eventemitter3',
       'jayson',
       'react-dom/client',
-      'qrcode'
+      'qrcode.react',
+      'bs58'
     ],
     exclude: [
       '@solana/web3.js', 
@@ -49,7 +54,7 @@ export default defineConfig({
       },
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3'];
-        return serverOnly.some(pkg => id.includes(pkg));
+        return serverOnly.some(pkg => id.includes(pkg)) || id.startsWith('@reown') || id.startsWith('@trezor');
       },
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
@@ -68,6 +73,7 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
+      bs58: path.resolve(__dirname, 'node_modules/bs58/src/cjs/index.cjs'),
     },
   },
 });

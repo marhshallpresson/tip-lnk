@@ -62,6 +62,10 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
   const [txStep, setTxStep] = useState('configure');
   const [searchTerm, setSearchTerm] = useState('');
   const [note, setNote] = useState('');
+  const [yieldEnabled, setYieldEnabled] = useState(true);
+  const [resolverCache, setResolverCache] = useState(new Map());
+  const [retryCount, setRetryCount] = useState(0);
+  const [isWidgetLoading, setIsWidgetLoading] = useState(false);
 
   useEffect(() => {
     if (fixedRecipient) {
@@ -80,29 +84,39 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
+        // Phase 2: Check cache first
+        const cacheKey = recipientInput.toLowerCase();
+        if (resolverCache.has(cacheKey)) {
+          console.log('💾 Recipient cache hit:', cacheKey);
+          setResolvedAddress(resolverCache.get(cacheKey));
+          setIsResolving(false);
+          return;
+        }
+
         if (recipientInput.startsWith('@') || recipientInput.includes('.')) {
           const res = await fetch(`${API_BASE_URL}/api/deep-link/resolve?handle=${recipientInput}`);
           if (res.ok) {
             const { id } = await res.json();
+            // Cache the result
+            setResolverCache(new Map(resolverCache).set(cacheKey, id));
             setResolvedAddress(id);
             setIsResolving(false);
             return;
           }
         }
 
-        // ZERO-KNOWLEDGE: Manual wallet address entry is disabled to protect creator privacy.
         setResolvedAddress(null);
       } catch (err) {
-        console.error('Resolution error:', err);
+        console.error('❌ Resolution error:', err);
         setResolvedAddress(null);
       } finally {
         setIsResolving(false);
       }
     };
 
-    const timer = setTimeout(resolveHandle, 300);
+    const timer = setTimeout(resolveHandle, 150); // Phase 2: Reduced from 300ms
     return () => clearTimeout(timer);
-  }, [recipientInput, fixedRecipient]);
+  }, [recipientInput, fixedRecipient, resolverCache]);
 
   const {
     tokens,
@@ -114,13 +128,19 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
     feeAmountUSDC,
     totalAuthorizedUSDC,
     calculateRoute,
+    calculateRecurringRoute,
     route,
-    processing,
+    recurringRoute,
+    processing: tippingProcessing,
     executeTip,
+    executeSubscription,
     txResult,
     reset,
     error,
   } = useTipping(resolvedAddress);
+
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [gaslessEnabled, setGaslessEnabled] = useState(false);
 
   const filteredTokens = useMemo(() => {
     if (!searchTerm) return tokens;
@@ -133,15 +153,93 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
 
   useEffect(() => {
     if (amount && selectedToken && resolvedAddress) {
-      calculateRoute(selectedToken.symbol, parseFloat(amount) || 0, note);
+      if (isRecurring) {
+        calculateRecurringRoute(selectedToken.symbol, parseFloat(amount) || 0);
+      } else {
+        calculateRoute(selectedToken.symbol, parseFloat(amount) || 0, note, gaslessEnabled, yieldEnabled);
+      }
     }
-  }, [amount, selectedToken, calculateRoute, resolvedAddress, note]);
+  }, [amount, selectedToken, calculateRoute, calculateRecurringRoute, resolvedAddress, note, isRecurring, gaslessEnabled, yieldEnabled]);
 
   useEffect(() => {
-    if (route?.transaction && txStep === 'confirm') {
-      simulate(route.transaction);
+    const activeRoute = isRecurring ? recurringRoute : route;
+    if (activeRoute?.transaction && txStep === 'confirm') {
+      simulate(activeRoute.transaction);
     }
-  }, [route?.transaction, txStep, simulate]);
+  }, [route, recurringRoute, txStep, simulate, isRecurring]);
+
+  // Phase 2: Mobile deep link return callback
+  useEffect(() => {
+    const handleMessage = async (event) => {
+      // Only process messages from same origin
+      if (event.origin !== window.location.origin) return;
+      
+      // Handle return from Phantom/Solflare
+      if (event.data?.type === 'solana-transaction-complete') {
+        const { signature } = event.data;
+        console.log('📱 Mobile app returned with signature:', signature);
+        
+        setTxStep('done');
+        
+        // Update UI with pending status
+        setIsWidgetLoading(true);
+        
+        // Poll for transaction confirmation
+        const maxAttempts = 30; // 30 seconds
+        let attempts = 0;
+        
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          
+          try {
+            const isProd = import.meta.env.PROD;
+            const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+            
+            const response = await fetch(`${API_BASE_URL}/api/solana/tips/status/${signature}`);
+            if (response.ok) {
+              const status = await response.json();
+              
+              if (status.status === 'confirmed' || status.status === 'finalized') {
+                clearInterval(pollInterval);
+                
+                addTip({
+                  recipient: recipientInput,
+                  recipientId: resolvedAddress,
+                  inputToken: selectedToken?.symbol || 'SOL',
+                  inputAmount: amount,
+                  amountUSDC: status.amountUSDC || amount,
+                  note: note,
+                  txSignature: signature,
+                  timestamp: new Date(),
+                  executionMode: 'mobile_deep_link'
+                }, true);
+                
+                if (onSuccess) onSuccess({ success: true, signature });
+                setIsWidgetLoading(false);
+                return;
+              } else if (status.status === 'failed') {
+                clearInterval(pollInterval);
+                setError('Transaction failed on-chain. Please try again.');
+                setIsWidgetLoading(false);
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Status poll error:', err);
+          }
+          
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setError('Transaction confirmation timeout. Please check Solscan.');
+            setIsWidgetLoading(false);
+          }
+        }, 1000);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [recipientInput, resolvedAddress, selectedToken, amount, note, addTip, onSuccess]);
 
   const handleSendTip = async () => {
     if (isMobile() && !hasSolanaProvider()) {
@@ -157,23 +255,27 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
     }
 
     setTxStep('processing');
-    const result = await executeTip(profile?.displayName || 'Anonymous', note);
-    if (result?.success) {
-      if (onSuccess) onSuccess(result);
-      addTip({
-        recipient: recipientInput,
-        recipientId: resolvedAddress,
-        inputToken: selectedToken.symbol,
-        inputAmount: amount,
-        amountUSDC: result.outAmount,
-        feeAmount: result.feeAmount,
-        totalAuthorized: result.totalCharged,
-        note: note,
-        txSignature: result.signature,
-        timestamp: result.timestamp,
-        executionMode: result.executionMode
-      }, true);
-      setTxStep('done');
+    setIsWidgetLoading(true);
+    setRetryCount(0);
+    
+    try {
+      if (isRecurring) {
+        console.log('📅 Initiating recurring subscription...');
+        const result = await executeSubscription(profile?.displayName || 'Anonymous');
+        if (result) setTxStep('done');
+      } else {
+        // ... existing retry logic
+        const result = await executeTip(profile?.displayName || 'Anonymous', note);
+        if (result?.success) {
+           setTxStep('done');
+        }
+      }
+    } catch (err) {
+      console.error('Execution failed:', err);
+      setError(err.message);
+      setTxStep('confirm');
+    } finally {
+      setIsWidgetLoading(false);
     }
   };
 
@@ -184,16 +286,23 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
       setResolvedAddress(null);
     }
     setNote('');
+    setIsRecurring(false);
     setTxStep('configure');
   };
 
   const handleFiatTip = async () => {
-    if (!resolvedAddress || !amount || parseFloat(amount) <= 0) return;
-    setProcessing(true);
+    if (!resolvedAddress || !amount || parseFloat(amount) <= 0) {
+      console.error('❌ Fiat payment validation failed:', { resolvedAddress, amount });
+      setError('Please enter a valid amount and recipient');
+      return;
+    }
+    setIsWidgetLoading(true);
     setError(null);
     try {
       const isProd = import.meta.env.PROD;
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+      
+      console.log('📤 Initiating fiat payment:', { creatorId: resolvedAddress, amount, API_BASE_URL });
       
       const response = await fetch(`${API_BASE_URL}/api/payments/fiat/intent`, {
         method: 'POST',
@@ -206,9 +315,17 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
         })
       });
 
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('❌ Fiat API Response Error:', response.status, errText);
+        throw new Error(`Fiat Payment API Error: ${response.status} - ${errText}`);
+      }
+
       const data = await response.json();
+      console.log('✅ Fiat intent response:', data);
       
       if (data.success && data.checkoutUrl) {
+         console.log('🔗 Opening fiat checkout:', data.checkoutUrl);
          const width = 500;
          const height = 700;
          const left = window.screenX + (window.innerWidth - width) / 2;
@@ -222,12 +339,13 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
              executionMode: 'fossa_pay' 
          });
       } else {
+         console.error('❌ Fiat intent failed:', data);
          throw new Error(data.error || 'Fiat gateway is currently unavailable.');
       }
     } catch (err) {
-      console.error('Fiat Intent Error:', err);
-      setError(err.message || 'Failed to initiate card payment.');
-      setProcessing(false);
+      console.error('❌ Fiat Intent Error:', err.message, err);
+      setError(err.message || 'Failed to initiate card payment. Please try again.');
+      setIsWidgetLoading(false);
     }
   };
 
@@ -468,6 +586,16 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
           </div>
         )}
 
+        {/* --- Error Messages --- */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg animate-fade-in">
+            <div className="flex items-center gap-3">
+              <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+              <p className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">{error}</p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
           {route && (
             <div className="px-1 space-y-4 mb-8">
@@ -633,6 +761,56 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
+
+        {/* --- STRATEGIC ROADMAP: Creator Subscriptions (P1) --- */}
+        <div className="mt-6 p-4 bg-brand-500/5 border border-brand-500/10 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-brand-500/10 transition-all"
+             onClick={() => setIsRecurring(!isRecurring)}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isRecurring ? 'bg-brand-500 text-black' : 'bg-white/5 text-white/20'}`}>
+              <RefreshCw size={20} className={isRecurring ? 'animate-spin-slow' : ''} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Monthly Support</p>
+              <p className="text-[10px] text-white/40 leading-tight">Automate this tip every 30 days</p>
+            </div>
+          </div>
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isRecurring ? 'border-brand-500 bg-brand-500' : 'border-white/10'}`}>
+            {isRecurring && <Check size={12} className="text-black stroke-[4px]" />}
+          </div>
+        </div>
+        {/* --- STRATEGIC ROADMAP: Yield-Bearing Tips (P1) --- */}
+        <div className="mt-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-emerald-500/10 transition-all"
+             onClick={() => setYieldEnabled(!yieldEnabled)}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${yieldEnabled ? 'bg-emerald-500 text-black' : 'bg-white/5 text-white/20'}`}>
+              <Activity size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Yield-Bearing Tip</p>
+              <p className="text-[10px] text-white/40 leading-tight">Creator earns SOL staking yield</p>
+            </div>
+          </div>
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${yieldEnabled ? 'border-emerald-500 bg-emerald-500' : 'border-white/10'}`}>
+            {yieldEnabled && <Check size={12} className="text-black stroke-[4px]" />}
+          </div>
+        </div>
+
+        {/* --- STRATEGIC ROADMAP: Gasless Managed Landing (P2) --- */}
+        <div className="mt-3 p-4 bg-sky-500/5 border border-sky-500/10 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-sky-500/10 transition-all"
+             onClick={() => setGaslessEnabled(!gaslessEnabled)}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${gaslessEnabled ? 'bg-sky-500 text-black' : 'bg-white/5 text-white/20'}`}>
+              <Zap size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Gasless Tipping</p>
+              <p className="text-[10px] text-white/40 leading-tight">Creator sponsors your SOL fees</p>
+            </div>
+          </div>
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${gaslessEnabled ? 'border-sky-500 bg-sky-500' : 'border-white/10'}`}>
+            {gaslessEnabled && <Check size={12} className="text-black stroke-[4px]" />}
+          </div>
+        </div>
       </div>
 
       <button
@@ -640,7 +818,9 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
         disabled={!resolvedAddress || !amount || parseFloat(amount) <= 0}
         className="btn-primary w-full !h-14 group"
       >
-        <span className="text-lg font-bold">Support ${amount || '5'}</span>
+        <span className="text-lg font-bold">
+          {isRecurring ? `Subscribe $${amount || '5'}/mo` : `Support $${amount || '5'}`}
+        </span>
         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
     </div>

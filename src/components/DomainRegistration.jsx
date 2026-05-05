@@ -16,9 +16,20 @@ export default function DomainRegistration({ onComplete, onBack }) {
     setAvailable(null);
 
     try {
-      setAvailable(true);
+      const isProd = import.meta.env.PROD;
+      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
+      
+      const res = await fetch(`${API_BASE_URL}/api/solana/sns-check?domain=${domain.trim().toLowerCase()}&verify=true`);
+      if (res.ok) {
+        const data = await res.json();
+        setAvailable(data.available === true);
+      } else {
+        throw new Error('Check failed');
+      }
     } catch (err) {
-      setAvailable(true);
+      console.error('Check Error:', err);
+      // Fallback or error state
+      setAvailable(false);
     } finally {
       setChecking(false);
     }

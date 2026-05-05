@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../_lib/db.js"
 import { verifySignature } from "../../../src/lib/crypto.js"
+import { emitTorqueEvent } from "../../_lib/torque.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Social Linking
@@ -23,6 +24,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       [column]: handle.replace(/^@/, ''),
       updated_at: new Date()
     }).onConflict('walletAddress').merge()
+
+    // STRATEGIC ROADMAP: Conversion Tracking
+    await emitTorqueEvent({
+        event_type: 'wallet_linked',
+        metadata: {
+            wallet_address: walletAddress,
+            platform,
+            handle,
+            source: 'backend'
+        }
+    });
 
     res.json({ success: true, message: `Successfully linked verified ${platform} handle.` })
   } catch (err) {

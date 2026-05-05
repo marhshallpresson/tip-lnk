@@ -38,6 +38,8 @@ export default function Dashboard() {
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
 
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   useEffect(() => {
     const hasSeenWalkthrough = localStorage.getItem(`walkthrough_seen_${authUser?.id}`);
     const onboardingFinishedJustNow = localStorage.getItem('onboarding_just_finished') === 'true';
@@ -99,6 +101,15 @@ export default function Dashboard() {
           onContinue={() => navigate('/onboarding')}
         />
       )}
+      
+      {isShareModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card max-w-2xl w-full p-8 relative border-white/10 shadow-2xl">
+            <ShareQRPanel onClose={() => setIsShareModalOpen(false)} />
+          </div>
+        </div>
+      )}
+
       <ReferralModal
         isOpen={isReferralOpen}
         onClose={() => setIsReferralOpen(false)}
@@ -113,8 +124,8 @@ export default function Dashboard() {
       {/* --- MOBILE HEADER (Grass Style) --- */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#0c0c0c]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-[60]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center">
-            <Zap size={18} className="text-brand-500" />
+          <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center" onClick={() => setIsShareModalOpen(true)}>
+            <QrCode size={18} className="text-brand-500" />
           </div>
           <span className="font-bold text-lg tracking-tight">Tip Stack</span>
         </div>
@@ -193,7 +204,13 @@ export default function Dashboard() {
               <div className="grass-pill bg-[#111111] !px-5 !py-2.5">
                 <span className="text-sm font-bold tracking-tight">Dashboard</span>
               </div>
-
+              <button 
+                onClick={() => setIsShareModalOpen(true)}
+                className="grass-pill bg-white/5 border-white/5 hover:bg-white/10 flex items-center gap-2"
+              >
+                <QrCode size={14} className="text-brand-500" />
+                <span className="text-xs font-bold tracking-tight text-white/60">RECEIVE</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-3">
@@ -215,8 +232,8 @@ export default function Dashboard() {
           </div>
 
           <Routes>
-            <Route index element={<OverviewTab />} />
-            <Route path="overview" element={<OverviewTab />} />
+            <Route index element={<OverviewTab onReceive={() => setIsShareModalOpen(true)} />} />
+            <Route path="overview" element={<OverviewTab onReceive={() => setIsShareModalOpen(true)} />} />
             <Route path="analytics" element={<CreatorAnalyticsPanel />} />
             <Route path="embed" element={<EmbedGenerator creatorId={authUser?.id} handle={profile.solDomain || profile.displayName || authUser?.id} />} />
             <Route path="history" element={<TransactionHistoryTab />} />
@@ -230,361 +247,209 @@ export default function Dashboard() {
   );
 }
 
-/* ─── Overview Tab (Grass Style Rebuild) ─── */
-export function OverviewTab() {
+/* ─── Overview Tab (Minimalist Dashboard) ─── */
+export function OverviewTab({ onReceive }) {
   const { totalTipsUSDC, tipsReceived, profile, onboardingComplete } = useApp();
   const { user: authUser } = useAuth();
-  const portfolio = useWalletPortfolio();
+  const navigate = useNavigate();
 
-  return (
-    <div className="space-y-8 animate-fade-in pb-20">
-      {/* Welcome Banner (Grass Style) */}
-      <div className="grass-banner">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="max-w-2xl">
-            <h2 className="text-xl font-bold mb-2">Welcome, {profile.displayName || (authUser?.name ? authUser.name.split(' ')[0] : 'Creator')}!</h2>
-            <p className="text-white/40 text-sm leading-relaxed">
-              See your earnings at a glance.
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500">
-              <TrendingUp size={24} />
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Active Status</p>
-              <p className="text-lg font-bold text-brand-500">Node Online</p>
-            </div>
-          </div>
-        </div>
-        {/* Subtle background glow */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 blur-[100px] -mr-32 -mt-32" />
-      </div>
-
-      {/* Main Stats Grid (Grass Style) */}
-      <div className={`grid grid-cols-1 ${onboardingComplete ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} gap-8`}>
-        {/* Earnings Card */}
-        <div className="grass-card flex flex-col justify-between min-h-[220px]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Earnings</h3>
-            <RefreshCw size={18} className="text-white/20 hover:text-white cursor-pointer transition-colors" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8 mt-4">
-            <div className="space-y-1">
-              <p className="grass-stat-label">Total Earnings</p>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-black">
-                  <Zap size={16} />
-                </div>
-                <span className="grass-stat-value">${totalTipsUSDC.toFixed(2)}</span>
-              </div>
-              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest pt-2">Uptime: 0 day, 0 hr, 0 min</p>
-            </div>
-            <div className="space-y-1">
-              <p className="grass-stat-label">Today's Tips</p>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500">
-                  <Gift size={16} />
-                </div>
-                <span className="grass-stat-value">{tipsReceived.length}</span>
-              </div>
-              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest pt-2">Last Tip: Just now</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Card */}
-        {!onboardingComplete && (
-          <div className="grass-card flex flex-col justify-between min-h-[220px]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
-                  <Shield size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm tracking-tight text-white">Onboarding Completion</h4>
-                  <p className="text-[10px] text-orange-500 font-semibold uppercase tracking-wider italic">Action Required</p>
-                </div>
-              </div>
-              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            </div>
-
-            <p className="text-xs text-white/40 leading-relaxed py-4">
-              Complete your profile and link your social handles to increase your earnings potential.
-            </p>
-
-            <button 
-              onClick={() => navigate('/onboarding')}
-              className="w-full py-4 rounded-[18px] bg-brand-500 text-black font-bold uppercase tracking-wider text-xs hover:shadow-[0_0_30px_rgba(159,53,232,0.3)] transition-all active:scale-[0.98]"
-            >
-              Complete Profile
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Large Statistics Area (Grass Style Chart Simulator) */}
-      <div className="grass-card">
-        <div className="flex items-center justify-between mb-10">
-          <h3 className="text-lg font-bold flex items-center gap-3 italic">
-            <TrendingUp size={22} className="text-brand-500" />
-            EARNINGS STATISTICS
-          </h3>
-          <button className="text-[10px] font-bold text-white/40 uppercase tracking-widest hover:text-white flex items-center gap-2">
-            REFRESH <RefreshCw size={12} />
-          </button>
-        </div>
-
-        <div className="h-[300px] w-full flex flex-col justify-end gap-2 relative">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-[10px] font-bold text-white/10 uppercase tracking-[0.3em]">Collecting Analytics Data</p>
-          </div>
-
-          {/* Mock Chart Grid */}
-          <div className="flex items-end justify-between px-2 h-full border-b border-white/5 pb-2">
-            {Array.from({ length: 24 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 w-full group">
-                <div
-                  className="w-1 bg-brand-500/20 group-hover:bg-brand-500 transition-all rounded-full"
-                  style={{ height: `${Math.random() * 100 + 10}%` }}
-                />
-                <span className="text-[8px] font-bold text-white/20 group-hover:text-white/60 transition-colors uppercase">{i + 1}H</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-6 mt-8 pt-6 border-t border-white/5">
-          {[
-            { label: 'Network Points', color: 'bg-sky-500' },
-            { label: 'Tip Velocity', color: 'bg-brand-500' },
-            { label: 'Referral Bonus', color: 'bg-purple-500' },
-            { label: 'Uptime Rank', color: 'bg-emerald-500' },
-            { label: 'Social Edge', color: 'bg-orange-500' }
-          ].map(item => (
-            <div key={item.label} className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${item.color}`} />
-              <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Asset Explorer (Grass Style Integration) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="grass-card">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white/40 mb-8 italic">Asset Portfolio</h3>
-          {portfolio.loading ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-4">
-              <Loader2 size={20} className="animate-spin text-brand-500" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {portfolio.tokens.slice(0, 4).map(token => (
-                <div key={token.mint} className="flex items-center justify-between group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-[14px] bg-[#111111] flex items-center justify-center p-1 border border-white/5">
-                      <img src={token.icon} alt="" className="w-full h-full rounded-[10px] grayscale group-hover:grayscale-0 transition-all" />
-                    </div>
-                    <span className="text-sm font-bold">{token.name}</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold">${token.valueUSD.toFixed(2)}</p>
-                    <p className="text-[10px] text-white/40 font-bold uppercase">{token.balance} {token.symbol}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="grass-card">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white/40 mb-8 italic">Recent Activity</h3>
-          <div className="space-y-4">
-            {tipsReceived.slice(0, 3).map((tip, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-[14px] bg-brand-500/10 flex items-center justify-center text-brand-500">
-                    <ArrowDownLeft size={18} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">{tip.sender}</p>
-                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Inbound Tip</p>
-                  </div>
-                </div>
-                <span className="text-sm font-bold text-brand-500">+${tip.amountUSDC.toFixed(2)}</span>
-              </div>
-            ))}
-            {tipsReceived.length === 0 && <p className="text-center py-6 text-[10px] font-bold text-white/20 uppercase tracking-widest">No recent transactions</p>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Setting Tab ─── */
-export function SettingTab({ onInvite, onOpenSettings }) {
-  const { totalTipsUSDC, profile } = useApp();
-  const portfolio = useWalletPortfolio();
-
-  const accountCards = [
-    {
-      id: 'personal',
-      title: 'Personal details',
-      desc: 'Review and update your personal info',
-      icon: Users,
-      badge: 'Verified',
-      action: onOpenSettings,
-      color: 'text-brand-500'
-    },
-    {
-      id: 'invite',
-      title: 'Invite friends',
-      desc: 'Earn rewards by bringing in your friends',
-      icon: Gift,
-      action: onInvite,
-      color: 'text-accent-yellow'
-    },
-  ];
-
-  return (
-    <div className="space-y-10 animate-fade-in">
-      <section>
-        <h2 className="text-3xl font-black mb-8">Account Information</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {accountCards.map((card) => (
-            <button
-              key={card.id}
-              onClick={card.action}
-              className="flex items-center justify-between p-6 bg-surface-900 border border-surface-800 rounded-2xl hover:bg-surface-950 transition-all text-left group"
-            >
-              <div className="flex gap-4">
-                <div className={`w-10 h-10 rounded-xl bg-surface-800 flex items-center justify-center shrink-0`}>
-                  <card.icon size={20} className={card.color} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-white">{card.title}</h3>
-                    {card.badge && (
-                      <span className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-bold text-white/50">
-                        {card.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-surface-500 mt-0.5">{card.desc}</p>
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-surface-700 group-hover:text-white transition-colors" />
-            </button>
-          ))}
-        </div>
-      </section>
-
-
-      <ShareQRPanel />
-    </div>
-  );
-}
-
-function AssetRow({ name, label, balance, value, icon }) {
-  return (
-    <div className="flex items-center justify-between p-4 rounded-2xl hover:bg-surface-950 transition-all cursor-pointer group">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-800">
-          <img src={icon} alt="" className="w-full h-full object-cover" />
-        </div>
-        <div>
-          <h4 className="font-bold text-white text-sm">{name}</h4>
-          <p className="text-xs text-surface-500">{label}</p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className="font-bold text-white text-sm">{balance} {name}</p>
-        <p className="text-xs text-surface-500">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Transaction History Tab (Solflare Track) ─── */
-export function TransactionHistoryTab() {
-  const { transactions, loading, error, refresh } = useTransactionHistory();
-
-  const typeConfig = {
-    tip_received: { icon: ArrowDownLeft, color: 'text-accent-green', label: 'Tip Received', bg: 'bg-accent-green/10' },
-    tip_sent: { icon: ArrowUpRight, color: 'text-accent-orange', label: 'Tip Sent', bg: 'bg-accent-orange/10' },
-    swap: { icon: Repeat, color: 'text-accent-cyan', label: 'Swap', bg: 'bg-accent-cyan/10' },
-    stake: { icon: TrendingUp, color: 'text-accent-purple', label: 'Stake', bg: 'bg-accent-purple/10' },
-    transfer: { icon: Send, color: 'text-brand-400', label: 'Transfer', bg: 'bg-brand-600/10' },
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`https://tipstack.fun/${profile.solDomain || profile.displayName || authUser?.id}`);
+    // Optional: show a simple toast
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="glass-card p-6 flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Clock size={18} className="text-brand-400" /> Transaction History
-        </h3>
-        <button onClick={refresh} className="btn-secondary !px-3 !py-2 flex items-center gap-1.5 text-xs">
-          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh
+    <div className="space-y-6 animate-fade-in pb-20 max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-xl font-bold">Hello, {profile.displayName || (authUser?.name ? authUser.name.split(' ')[0] : 'Creator')} 👋</h2>
+        <button 
+          onClick={onReceive}
+          className="md:hidden grass-pill bg-brand-500 !text-black font-bold text-xs"
+        >
+          RECEIVE
         </button>
       </div>
 
-      {loading ? (
-        <div className="glass-card p-10 flex items-center justify-center">
-          <Loader2 size={24} className="animate-spin text-surface-500" />
+      {/* Main Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 group cursor-pointer hover:border-brand-500/30 transition-all" onClick={onReceive}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-white/60">Total Earned</p>
+            <QrCode size={16} className="text-brand-500" />
+          </div>
+          <p className="text-3xl font-bold tracking-tight">${totalTipsUSDC.toFixed(2)}</p>
+          <p className="text-xs text-brand-500 mt-2 font-bold uppercase tracking-widest text-[9px]">Click to Receive Tip</p>
         </div>
-      ) : error ? (
-        <div className="glass-card p-6 text-center">
-          <AlertCircle size={24} className="text-accent-red mx-auto mb-2" />
-          <p className="text-accent-red text-sm">{error}</p>
+
+        <div className="bg-[#111111] border border-white/10 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-white/60">Tips Received</p>
+            <Gift size={16} className="text-white/40" />
+          </div>
+          <p className="text-3xl font-bold tracking-tight">{tipsReceived.length}</p>
+          <p className="text-xs text-white/40 mt-2">All time</p>
         </div>
-      ) : transactions.length === 0 ? (
-        <div className="glass-card p-10 text-center">
-          <Clock size={32} className="text-surface-700 mx-auto mb-3" />
-          <p className="text-surface-500">No transactions found.</p>
+      </div>
+
+      {/* Link Sharing */}
+      <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+        <div>
+           <p className="text-sm font-medium text-white/60 mb-1">Your tipping link</p>
+           <p className="text-base font-bold">tipstack.fun/{profile.solDomain || profile.displayName || authUser?.id}</p>
         </div>
+        <button 
+           onClick={handleCopyLink}
+           className="w-full sm:w-auto px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-white/90 transition-colors"
+        >
+           Copy Link
+        </button>
+      </div>
+
+      {/* Recent Tips Summary */}
+      <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 mt-6">
+         <div className="flex items-center justify-between mb-6">
+            <p className="text-sm font-bold">Recent Tips</p>
+            <button onClick={() => navigate('/dashboard/history')} className="text-xs text-white/60 hover:text-white">View All &gt;</button>
+         </div>
+         <div className="space-y-4">
+            {tipsReceived.length === 0 ? (
+               <p className="text-sm text-white/40 text-center py-4">No tips yet. Share your link to get started!</p>
+            ) : (
+               tipsReceived.slice(0,3).map((tip, i) => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                     <p className="text-sm font-medium">{tip.sender || 'Anonymous'}</p>
+                     <p className="text-sm font-bold text-emerald-400">+${tip.amountUSDC.toFixed(2)}</p>
+                  </div>
+               ))
+            )}
+         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Transaction History Tab (Minimalist Ledger) ─── */
+export function TransactionHistoryTab() {
+  const { transactions, loading, error, refresh } = useTransactionHistory();
+  const { tipsReceived } = useApp();
+  const [filter, setFilter] = useState('all');
+
+  return (
+    <div className="space-y-6 animate-fade-in pb-20 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold">Inbox & History</h2>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar">
+         {['all', 'today', 'week', 'month'].map(f => (
+            <button 
+               key={f}
+               onClick={() => setFilter(f)}
+               className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap ${filter === f ? 'bg-white text-black' : 'bg-[#111111] text-white/60 border border-white/10 hover:text-white'}`}
+            >
+               {f}
+            </button>
+         ))}
+      </div>
+
+      {tipsReceived.length === 0 ? (
+         <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+               <Gift size={32} className="text-white/20" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">No tips yet</h3>
+            <p className="text-sm text-white/40 max-w-xs">Share your link and let your fans send a little love your way.</p>
+         </div>
       ) : (
-        <div className="glass-card overflow-hidden">
-          {transactions.map((tx, i) => {
-            const config = typeConfig[tx.type] || typeConfig.transfer;
-            const TxIcon = config.icon;
-            return (
-              <div key={tx.signature} className={`flex items-center justify-between p-4 hover:bg-surface-800/40 transition-colors ${i < transactions.length - 1 ? 'border-b border-surface-800/40' : ''}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-lg ${config.bg} flex items-center justify-center`}>
-                    <TxIcon size={16} className={config.color} />
+         <div className="space-y-4">
+            {tipsReceived.map((tip, i) => (
+               <div key={i} className="bg-[#111111] border border-white/10 rounded-2xl p-6">
+                  <div className="flex justify-between items-start mb-4">
+                     <div>
+                        <p className="text-sm text-white/60 mb-1">{new Date(tip.timestamp).toLocaleDateString()}</p>
+                        <p className="font-bold text-white">{tip.sender || 'Anonymous'}</p>
+                     </div>
+                     <div className="px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20 text-emerald-400 font-bold text-sm">
+                        +${tip.amountUSDC.toFixed(2)}
+                     </div>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{config.label}</p>
-                      {!tx.err ? (
-                        <CheckCircle size={12} className="text-accent-green" />
-                      ) : (
-                        <XCircle size={12} className="text-accent-red" />
-                      )}
-                    </div>
-                    <p className="text-surface-500 text-xs font-mono">{tx.signature.slice(0, 16)}...</p>
+                  {tip.note && (
+                     <div className="bg-white/5 rounded-xl p-4 mb-4">
+                        <p className="text-sm text-white/80 leading-relaxed">"{tip.note}"</p>
+                     </div>
+                  )}
+                  <div className="flex gap-3 mt-4">
+                     <button className="flex-1 py-2.5 bg-brand-500 text-black font-bold text-xs rounded-xl hover:bg-brand-400 transition-colors">
+                        Share on X
+                     </button>
+                     <button className="flex-1 py-2.5 bg-white/5 text-white font-bold text-xs rounded-xl hover:bg-white/10 transition-colors border border-white/10">
+                        Download Image
+                     </button>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-semibold text-sm ${tx.isIncoming ? 'text-accent-green' : 'text-surface-300'}`}>
-                    {tx.isIncoming ? '+' : '-'}{tx.amount} {tx.token}
-                  </p>
-                  <p className="text-surface-600 text-[10px] font-mono mt-0.5 truncate max-w-[80px] ml-auto">
-                    {tx.isIncoming ? 'From: ' : 'To: '}{tx.counterparty}
-                  </p>
-                  <p className="text-surface-600 text-[10px] mt-1">
-                    {new Date(tx.timestamp).toLocaleDateString()} {new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+               </div>
+            ))}
+         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── Setting Tab (Minimalist) ─── */
+export function SettingTab({ onInvite, onOpenSettings }) {
+  const { connected } = useWallet();
+  const { deposit, withdraw, totalValue, depositing, withdrawing } = useKamino(connected);
+  const [isYieldLoading, setIsYieldLoading] = useState(false);
+
+  const toggleYield = async () => {
+    if (isYieldLoading) return;
+    setIsYieldLoading(true);
+    try {
+      if (totalValue > 0) {
+        console.log('Withdrawing from Kamino...');
+        const tx = await withdraw('max');
+        // Sign and send logic would go here
+      } else {
+        console.log('Depositing to Kamino...');
+        const tx = await deposit(10); // Example amount
+        // Sign and send logic would go here
+      }
+    } catch (err) {
+      console.error('Yield toggle failed:', err);
+    } finally {
+      setIsYieldLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in pb-20 max-w-2xl mx-auto">
+      <h2 className="text-xl font-bold mb-8">Settings</h2>
+      
+      <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
+         <button onClick={onOpenSettings} className="w-full flex items-center justify-between p-5 border-b border-white/5 hover:bg-white/5 transition-colors text-left">
+            <span className="font-medium text-sm">Account Details</span>
+            <ChevronRight size={18} className="text-white/40" />
+         </button>
+         <button onClick={onInvite} className="w-full flex items-center justify-between p-5 border-b border-white/5 hover:bg-white/5 transition-colors text-left">
+            <span className="font-medium text-sm">Invite Friends</span>
+            <ChevronRight size={18} className="text-white/40" />
+         </button>
+         <div 
+            onClick={toggleYield}
+            className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors text-left cursor-pointer"
+         >
+            <div>
+               <span className="font-medium text-sm block">Smart Yield (Kamino)</span>
+               <span className="text-xs text-white/40 block mt-1">
+                {depositing || withdrawing || isYieldLoading ? 'Processing transaction...' : 'Auto-earn interest on idle tips'}
+               </span>
+            </div>
+            <div className={`w-10 h-6 rounded-full relative transition-colors ${totalValue > 0 ? 'bg-brand-500' : 'bg-white/10'}`}>
+               <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${totalValue > 0 ? 'right-1' : 'left-1'}`}></div>
+            </div>
+         </div>
+      </div>
     </div>
   );
 }
