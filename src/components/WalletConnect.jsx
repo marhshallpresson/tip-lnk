@@ -119,51 +119,6 @@ Request ID: ${requestId}`;
     }
   }, [loginWithWallet, onConnected, signMessage]);
 
-  useEffect(() => {
-    const handleConnect = async (connectEvent) => {
-      if (connectEvent.publicKey) {
-        const addr = connectEvent.publicKey.toBase58();
-        setLoadingProvider('phantom_link');
-        await performSiwsLogin(addr, 'injected_sdk');
-      }
-    };
-    phantomSdk.on('connect', handleConnect);
-    
-    if (phantomSdk.isConnected && phantomSdk.publicKey && !advancing) {
-        const addr = phantomSdk.publicKey.toBase58();
-        setAdvancing(true);
-        performSiwsLogin(addr, 'injected_sdk');
-    }
-    return () => phantomSdk.off('connect', handleConnect);
-  }, [performSiwsLogin, advancing]);
-
-  useEffect(() => {
-    const isAlreadyLoggedIn = user && user.walletAddress === publicKey?.toBase58();
-    if (connected && publicKey && !advancing && !isAlreadyLoggedIn) {
-      // Auto-trigger SIWS is disabled to prevent "Connection rejected" errors
-      // from overlapping auto-connect handshakes. The user must click "Continue".
-    }
-  }, [connected, publicKey, advancing, user]);
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get('autoConnect') === 'true' && !advancing) {
-      if (isPhantom) {
-        const timer = setTimeout(() => handleSocialSelect('injected'), 500);
-        return () => clearTimeout(timer);
-      } else if (isSolflare) {
-        const solflareWallet = wallets.find(w => w.adapter.name.toLowerCase().includes('solflare'));
-        if (solflareWallet) {
-          select(solflareWallet.adapter.name);
-          const timer = setTimeout(() => {
-             if (!connected) connect().catch(e => console.error(e));
-          }, 500);
-          return () => clearTimeout(timer);
-        }
-      }
-    }
-  }, [isPhantom, isSolflare, advancing, wallets, select, connect, connected]);
-
   const handleSocialSelect = async (provider) => {
     if (!provider) return;
     setLoadingProvider(provider);
@@ -457,7 +412,7 @@ Request ID: ${requestId}`;
       </div>
 
       <button onClick={() => setView('email-login')} className="mt-8 w-full text-[11px] text-white/20 hover:text-brand-400 font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
-        <Mail size={12} /> Use Email / Password
+        <Mail size={12} /> Use Email
       </button>
 
       {authError && <div className="mt-6 text-red-500 text-[10px] bg-red-500/5 p-3 rounded-lg border border-red-500/10 text-center">{authError}</div>}

@@ -54,7 +54,7 @@ export default defineConfig({
       },
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3'];
-        return serverOnly.some(pkg => id.includes(pkg)) || id.startsWith('@reown') || id.startsWith('@trezor');
+        return serverOnly.some(pkg => id.includes(pkg));
       },
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
@@ -65,10 +65,10 @@ export default defineConfig({
             if (id.includes('@solana') || id.includes('@coral-xyz')) {
               return 'vendor-solana';
             }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            if (id.includes('react') || id.includes('scheduler') || id.includes('loose-envify') || id.includes('prop-types') || id.includes('remix-run')) {
               return 'vendor-react';
             }
-            if (id.includes('@phantom') || id.includes('@dynamic') || id.includes('@walletconnect')) {
+            if (id.includes('@phantom') || id.includes('@dynamic') || id.includes('@walletconnect') || id.includes('@reown')) {
               return 'vendor-wallets';
             }
             if (id.includes('@kamino-finance') || id.includes('@jup-ag')) {

@@ -220,7 +220,12 @@ function AuthCallbackHandler() {
   const isPhantomGoogle = platform === 'phantom-google';
 
   useEffect(() => {
-    if (isPhantomGoogle) return;
+    if (isPhantomGoogle) {
+      // Phantom SDK handles the redirect automatically if autoConnect is true.
+      // We just need to wait for the 'connect' event in WalletContext.
+      // But we can show a special message here.
+      return;
+    }
 
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');

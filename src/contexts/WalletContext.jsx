@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useMemo, useEffect, useState, useCallback } from 'react';
 import { ConnectionProvider, WalletProvider, useWallet as useSolanaWallet } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { 
-  PhantomWalletAdapter, 
-  SolflareWalletAdapter 
-} from '@solana/wallet-adapter-wallets';
+
 import { SolanaMobileWalletAdapter, createDefaultAddressSelector, createDefaultAuthorizationResultCache, createDefaultWalletNotFoundHandler } from '@solana-mobile/wallet-adapter-mobile';
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL, VersionedTransaction } from '@solana/web3.js';
+import { phantomSdk } from '../lib/phantom';
+import bs58 from 'bs58';
+import api from '../lib/api';
+
 import { getAccount } from '@solana/spl-token';
 import { QUICKNODE_SOLANA_RPC } from '../config';
 
@@ -21,6 +22,7 @@ function WalletProviderInner({ children }) {
   const [connection] = useState(() => new Connection(QUICKNODE_SOLANA_RPC));
   const [solBalance, setSolBalance] = useState(0);
   const [usdcBalance, setUsdcBalance] = useState(0);
+  const [isLinking, setIsLinking] = useState(false);
 
   const getBalance = useCallback(async () => {
     if (!publicKey) return { sol: 0, usdc: 0 };
@@ -59,6 +61,54 @@ function WalletProviderInner({ children }) {
       getBalance();
     }
   }, [connected, publicKey, getBalance]);
+
+  const performSiwsLogin = useCallback(async (addr, signature, message) => {
+    try {
+      const res = await api.post('/auth/wallet-login', { 
+        walletAddress: addr, 
+        signature, 
+        message 
+      });
+      return res;
+    } catch (err) {
+      console.error('SIWS Error:', err);
+      throw err;
+    }
+  }, []);
+
+  // Global Phantom SDK listeners
+  useEffect(() => {
+    if (!import.meta.env.VITE_PHANTOM_APP_ID) {
+      console.warn('VITE_PHANTOM_APP_ID is missing. Phantom Google login will be disabled.');
+      return;
+    }
+
+    const handleConnect = async (connectEvent) => {
+      if (connectEvent.publicKey && !isLinking) {
+        setIsLinking(true);
+        const addr = connectEvent.publicKey.toBase58();
+        console.log('🛡️ Phantom SDK Connected:', addr);
+        
+        try {
+          // Check if we need to perform SIWS
+          // In the future, this can auto-trigger the SIWS flow if the user isn't logged in
+        } catch (err) {
+          console.error('❌ Phantom SDK Auto-Login Error:', err);
+        } finally {
+          setIsLinking(false);
+        }
+      }
+    };
+
+    phantomSdk.on('connect', handleConnect);
+    
+    // Check if already connected on mount (handles redirect resumption)
+    if (phantomSdk.isConnected && phantomSdk.publicKey) {
+        handleConnect({ publicKey: phantomSdk.publicKey });
+    }
+
+    return () => phantomSdk.off('connect', handleConnect);
+  }, [isLinking]);
 
   // Security-hardened Jupiter swap function
   const executeSwap = useCallback(async (inputMint, outputMint, amount, slippage = 0.5) => {
@@ -131,9 +181,11 @@ function WalletProviderInner({ children }) {
     executeSwap,
     swapSolToUsdc,
     swapUsdcToSol,
+    // SIWS
+    performSiwsLogin
   }), [
     publicKey, connected, signTransaction, signMessage, sendTransaction, disconnect, wallet, connect, select, wallets,
-    solBalance, usdcBalance, getBalance, executeSwap, swapSolToUsdc, swapUsdcToSol
+    solBalance, usdcBalance, getBalance, executeSwap, swapSolToUsdc, swapUsdcToSol, performSiwsLogin
   ]);
 
   return (
@@ -149,8 +201,6 @@ export function SolanaWalletProvider({ children }) {
   const endpoint = QUICKNODE_SOLANA_RPC;
 
   const wallets = useMemo(() => [
-    new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
     new SolanaMobileWalletAdapter({
         addressSelector: createDefaultAddressSelector(),
         appIdentity: {
