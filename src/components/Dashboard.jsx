@@ -10,6 +10,7 @@ import TipWidget from './TipWidget';
 import PayoutPanel from './PayoutPanel';
 import CreatorAnalyticsPanel from './CreatorAnalyticsPanel';
 import ShareQRPanel from './ShareQRPanel';
+import { useKamino } from '../hooks/useKamino';
 import {
   Wallet, Globe, Image as ImageIcon, DollarSign, TrendingUp, Copy, Check, LogOut,
   BarChart3, Gift, ArrowRight, RefreshCw, Zap, Eye, Send, AlertCircle,

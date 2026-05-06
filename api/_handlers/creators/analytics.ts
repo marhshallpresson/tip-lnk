@@ -13,11 +13,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await getSessionUser(req as any)
     if (!user) return res.status(401).json({ error: 'Unauthorized' })
 
-    const days = parseInt(req.query.days as string) || 30
+    const daysParam = parseInt(req.query.days as string, 10)
+    const days = Number.isFinite(daysParam) ? Math.min(Math.max(daysParam, 1), 365) : 30
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+    const cutoffIsoDate = cutoffDate.toISOString().slice(0, 10)
 
     const analytics = await db('analytics_daily')
       .where({ user_id: user.id })
-      .andWhere('date', '>=', db.raw("CURRENT_DATE - INTERVAL '?' DAY", [days]))
+      .andWhere('date', '>=', cutoffIsoDate)
       .orderBy('date', 'asc')
 
     const topSupporters = await db('tips')

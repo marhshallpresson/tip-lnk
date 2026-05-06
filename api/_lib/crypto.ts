@@ -7,7 +7,10 @@ import crypto from 'crypto'
  * Ensures identity verification and data protection within serverless functions.
  */
 
-const ENCRYPTION_KEY = process.env.SESSION_TOKEN_SECRET || 'fallback-secret-for-dev-only-32-chars!!';
+const ENCRYPTION_KEY = process.env.SESSION_TOKEN_SECRET
+if (!ENCRYPTION_KEY) {
+  throw new Error('SESSION_TOKEN_SECRET is required for cryptographic operations.')
+}
 
 /**
  * Verify Solana cryptographic proof (SIWS)

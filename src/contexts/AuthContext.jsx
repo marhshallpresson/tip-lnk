@@ -132,6 +132,41 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const checkEmailStatus = async (email) => {
+    try {
+      const { data, ok } = await api.post('/auth/check', { email });
+      if (ok && data.success) return data;
+      return { success: false, error: data.error || 'Check failed' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const initLoginOtp = async (email) => {
+    try {
+      const { data, ok } = await api.post('/auth/otp/start', { email });
+      if (ok && data.success) return { success: true };
+      return { success: false, error: data.error || 'Failed to send code' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const verifyLoginOtp = async (email, code) => {
+    try {
+      const { data, ok } = await api.post('/auth/otp/verify', { email, code });
+      if (ok && data.success) {
+        api.setAccessToken(data.auth.accessToken);
+        localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
+        setUser(data.user);
+        return { success: true, user: data.user };
+      }
+      return { success: false, error: data.error || 'Verification failed' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -141,6 +176,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     loginWithGoogle,
     loginWithWallet,
+    checkEmailStatus,
+    initLoginOtp,
+    verifyLoginOtp,
     refreshUser: fetchMe,
     showWalletModal,
     setShowWalletModal

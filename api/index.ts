@@ -21,6 +21,9 @@ import { default as authResetPasswordVerify } from './_handlers/auth/reset-passw
 import { default as authTwitterCallback } from './_handlers/auth/twitter/callback.js'
 import { default as authDiscordCallback } from './_handlers/auth/discord/callback.js'
 import { default as authPhantomGoogleCallback } from './_handlers/auth/phantom-google-callback.js'
+import { default as authCheck } from './_handlers/auth/check.js'
+import { default as authOtpStart } from './_handlers/auth/otp-start.js'
+import { default as authOtpVerify } from './_handlers/auth/otp-verify.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
 import { default as solanaProfileGet } from './_handlers/solana/profile/get.js'
@@ -80,6 +83,9 @@ const ROUTES: Record<string, Function> = {
   'auth/twitter/callback': authTwitterCallback,
   'auth/discord/callback': authDiscordCallback,
   'auth/callback/phantom-google': authPhantomGoogleCallback,
+  'auth/check': authCheck,
+  'auth/otp/start': authOtpStart,
+  'auth/otp/verify': authOtpVerify,
 
   'solana/profile': solanaProfile,
   'solana/profile/get': solanaProfileGet,
@@ -94,6 +100,7 @@ const ROUTES: Record<string, Function> = {
   'solana/tips': solanaTipsGet,
   'solana/tips/get': solanaTipsGet,
   'solana/tips/create': solanaTipsCreate,
+  'solana/tips/message': solanaTipsMessage,
   'solana/tips/stream': solanaTipsStream,
   'solana/webhooks/helius': solanaWebhookHelius,
   'solana/jupiter/swap': solanaJupiterSwap,
@@ -110,6 +117,7 @@ const ROUTES: Record<string, Function> = {
   'admin/creators': adminCreators,
   'admin/ledger': adminLedger,
   'admin/migration': adminMigration,
+  'creators/analytics': creatorAnalytics,
 
   'payments/intent': paymentsIntent,
   'payments/fiat/intent': paymentsFiatIntent,

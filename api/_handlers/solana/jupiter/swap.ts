@@ -25,6 +25,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { inputMint, outputMint, amount, userPublicKey, destinationWallet, memo } = req.body
   let slippageBps = req.body.slippageBps || 50
+  const feeBps = req.body.feeBps || 500
+  const TREASURY_WALLET = process.env.VITE_TREASURY_WALLET;
 
   if (!inputMint || !outputMint || !amount || !userPublicKey || !destinationWallet) {
     return res.status(400).json({ error: 'Missing required parameters' })

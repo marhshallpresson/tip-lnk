@@ -36,7 +36,7 @@ function useIsPhantom() {
 export default function WalletConnect({ onConnected }) {
   const { publicKey, connected, connect, select, wallets, signMessage } = useWallet();
   const { setVisible } = useWalletModal();
-  const { login, register, user, loginWithWallet, refreshUser } = useAuth();
+  const { login, register, user, loginWithWallet, refreshUser, checkEmailStatus, initLoginOtp, verifyLoginOtp } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   
@@ -46,6 +46,7 @@ export default function WalletConnect({ onConnected }) {
   );
 
   const [view, setView] = useState('wallets'); 
+  const [loginPhase, setLoginPhase] = useState('email'); // 'email', 'password', 'otp-prompt', 'otp-verify'
   const [advancing, setAdvancing] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
   const [authError, setAuthError] = useState(null);
@@ -142,15 +143,42 @@ Request ID: ${requestId}`;
     
     try {
       if (view === 'email-login') {
-        const result = await login(formData.email, formData.password);
-        if (result.success) {
-          if (!result.user?.walletAddress) {
-             setView('wallets');
-             return;
+        if (loginPhase === 'email') {
+          const status = await checkEmailStatus(formData.email);
+          if (status.success) {
+            if (!status.exists) {
+              setAuthError('No account found with this email. Please register first.');
+            } else if (status.hasPassword) {
+              setLoginPhase('password');
+            } else if (status.isVerified) {
+              setLoginPhase('otp-prompt');
+            } else {
+              setAuthError('Email not verified. Please contact support or sign in with your wallet.');
+            }
+          } else {
+            setAuthError(status.error);
           }
-          onConnected(result.user.walletAddress, true);
-        } else {
-          setAuthError(result.error);
+        } else if (loginPhase === 'password') {
+          const result = await login(formData.email, formData.password);
+          if (result.success) {
+            onConnected(result.user?.walletAddress, true);
+          } else {
+            setAuthError(result.error);
+          }
+        } else if (loginPhase === 'otp-prompt') {
+          const result = await initLoginOtp(formData.email);
+          if (result.success) {
+            setLoginPhase('otp-verify');
+          } else {
+            setAuthError(result.error);
+          }
+        } else if (loginPhase === 'otp-verify') {
+          const result = await verifyLoginOtp(formData.email, formData.code);
+          if (result.success) {
+            onConnected(result.user?.walletAddress, true);
+          } else {
+            setAuthError(result.error);
+          }
         }
       } else if (view === 'email-register') {
         const result = await register(formData.name, formData.email, formData.password);
@@ -323,31 +351,63 @@ Request ID: ${requestId}`;
     return (
         <div className="glass-card p-8 sm:p-10 text-center animate-slide-up">
             <div className="flex items-center justify-between mb-8">
-                <button onClick={() => setView('wallets')} className="p-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-white/40 hover:text-white transition-all"><ChevronLeft size={20} /></button>
-                <h2 className="text-xl font-bold text-white text-center flex-1">Sign In</h2>
+                <button onClick={() => {
+                  if (loginPhase === 'email') setView('wallets');
+                  else setLoginPhase('email');
+                }} className="p-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-white/40 hover:text-white transition-all"><ChevronLeft size={20} /></button>
+                <h2 className="text-xl font-bold text-white text-center flex-1">
+                  {loginPhase === 'email' ? 'Sign In' : loginPhase === 'password' ? 'Enter Password' : 'Verify Identity'}
+                </h2>
                 <div className="w-8"></div>
             </div>
             {authError && <div className="mb-6 p-4 bg-red-500/5 border border-red-500/10 rounded-lg text-red-500 text-xs text-left">{authError}</div>}
+            
             <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
-                <div className="relative mt-1">
-                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
-                    <input type="email" name="email" required value={formData.email} onChange={handleInputChange} className="input-field w-full !pl-12" placeholder="your@email.com" />
-                </div>
-                <div className="relative mt-1">
-                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
-                    <input type={showPassword ? "text" : "password"} name="password" required value={formData.password} onChange={handleInputChange} className="input-field w-full !pl-12 !pr-12" placeholder="••••••••" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors">
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                </div>
-                <div className="flex justify-end">
-                    <button type="button" onClick={() => setView('email-reset')} className="text-[10px] font-semibold text-brand-500 hover:text-brand-400 transition-colors">Forgot Password?</button>
-                </div>
+                {loginPhase === 'email' && (
+                  <div className="relative mt-1">
+                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                      <input type="email" name="email" required value={formData.email} onChange={handleInputChange} className="input-field w-full !pl-12" placeholder="your@email.com" />
+                  </div>
+                )}
+
+                {loginPhase === 'password' && (
+                  <>
+                    <div className="relative mt-1">
+                        <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                        <input type={showPassword ? "text" : "password"} name="password" required value={formData.password} onChange={handleInputChange} className="input-field w-full !pl-12 !pr-12" placeholder="••••••••" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors">
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
+                    <div className="flex justify-end">
+                        <button type="button" onClick={() => setView('email-reset')} className="text-[10px] font-semibold text-brand-500 hover:text-brand-400 transition-colors">Forgot Password?</button>
+                    </div>
+                  </>
+                )}
+
+                {loginPhase === 'otp-prompt' && (
+                  <p className="text-white/40 text-sm mb-4">
+                    Your account is linked to <span className="text-white font-semibold">{formData.email}</span> but has no password. We'll send a 6-digit code to sign you in.
+                  </p>
+                )}
+
+                {loginPhase === 'otp-verify' && (
+                  <div className="flex justify-center py-4">
+                      <input type="text" name="code" maxLength={6} required autoFocus value={formData.code} onChange={handleInputChange} className="w-full max-w-[240px] h-14 bg-[#0f0f0f] border border-white/10 rounded-lg text-center text-2xl tracking-[0.3em] font-bold text-white focus:border-brand-500 transition-all outline-none" placeholder="000000" />
+                  </div>
+                )}
+
                 <button type="submit" disabled={loadingProvider === 'email'} className="btn-primary w-full !mt-6">
-                    {loadingProvider === 'email' ? <Loader2 size={18} className="animate-spin" /> : 'Sign In'}
+                    {loadingProvider === 'email' ? <Loader2 size={18} className="animate-spin mx-auto" /> : 
+                     loginPhase === 'email' ? 'Continue' : 
+                     loginPhase === 'otp-prompt' ? 'Send Code' : 
+                     loginPhase === 'otp-verify' ? 'Sign In' : 'Sign In'}
                 </button>
             </form>
-            <p className="mt-8 text-sm text-white/40">Don't have an account? <button onClick={() => setView('email-register')} className="text-brand-500 font-semibold hover:text-brand-400">Sign Up</button></p>
+            
+            {loginPhase === 'email' && (
+              <p className="mt-8 text-sm text-white/40">Don't have an account? <button onClick={() => setView('email-register')} className="text-brand-500 font-semibold hover:text-brand-400">Sign Up</button></p>
+            )}
         </div>
     );
   }

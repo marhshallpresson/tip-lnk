@@ -9,38 +9,39 @@ import Decimal from "decimal.js";
 
 const MAIN_MARKET = new PublicKey("7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF");
 
+const MINT_MAP: Record<string, string> = {
+  "USDC": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "SOL": "So11111111111111111111111111111111111111112",
+};
+
 export async function getKaminoDepositInstructions(
   connection: Connection,
   userPublicKey: PublicKey,
   amount: string,
   tokenSymbol: string = "USDC"
 ): Promise<TransactionInstruction[]> {
-  const market = await KaminoMarket.load(connection, MAIN_MARKET);
+  const market = await KaminoMarket.load(connection as any, MAIN_MARKET as any, 400);
   if (!market) {
     throw new Error("Failed to load Kamino Market");
   }
 
-  // Build deposit transaction instructions
-  // Note: For a tip, we want the creator (recipient) to be the one whose obligation is funded.
-  // However, the SENDER is the one signing. 
-  // In Kamino, you can deposit into another user's obligation.
+  const mint = MINT_MAP[tokenSymbol] || tokenSymbol;
   
   const kaminoAction = await KaminoAction.buildDepositTxns(
     market,
     amount,
-    tokenSymbol,
-    userPublicKey, // The person signing and providing the funds
-    new VanillaObligation(PROGRAM_ID), // Standard obligation
-    0,
-    true, // Include ATA init
-    undefined,
-    undefined,
-    "confirmed"
+    mint as any,
+    userPublicKey as any,
+    new VanillaObligation(PROGRAM_ID),
+    true, // useV2Ixs
+    undefined, // scopeRefreshConfig
+    0, // extraComputeBudget
+    true, // includeAtaIxs
   );
 
   return [
-    ...kaminoAction.setupIxs,
-    ...kaminoAction.lendingIxs,
-    ...kaminoAction.cleanupIxs,
-  ];
+    ...(kaminoAction.setupIxs as any),
+    ...(kaminoAction.lendingIxs as any),
+    ...(kaminoAction.cleanupIxs as any),
+  ] as TransactionInstruction[];
 }

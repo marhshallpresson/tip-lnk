@@ -2,10 +2,10 @@ import { SignJWT, jwtVerify } from 'jose'
 
 const JWT_SECRET = process.env.SESSION_TOKEN_SECRET || process.env.SESSION_COOKIE_SECRET || process.env.JWT_SECRET
 if (!JWT_SECRET) {
-  console.error('❌ Critical: JWT_SECRET is not configured in environment variables.')
+  throw new Error('SESSION_TOKEN_SECRET, SESSION_COOKIE_SECRET, or JWT_SECRET must be configured.')
 }
 
-const secret = new TextEncoder().encode(JWT_SECRET || 'fallback-secret-for-initialization-only')
+const secret = new TextEncoder().encode(JWT_SECRET)
 const ISSUER = 'https://tip-lnk.vercel.app'
 const AUDIENCE = 'tipstack-app'
 

@@ -7,19 +7,28 @@ const isProd = import.meta.env.PROD;
 const API_BASE_URL = (isProd
   ? window.location.origin
   : (import.meta.env.VITE_API_BASE_URL)) + '/api';
+const AUTH_TOKEN_KEY = 'tipstack_auth_token';
+const LEGACY_TOKEN_KEY = 'tipstack_access_token';
 
 class ApiClient {
   constructor() {
     this.csrfToken = null;
-    this.accessToken = localStorage.getItem('tipstack_access_token');
+    const token = localStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY);
+    this.accessToken = token || null;
+    if (token) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
+    }
   }
 
   setAccessToken(token) {
     this.accessToken = token;
     if (token) {
-      localStorage.setItem('tipstack_access_token', token);
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
     } else {
-      localStorage.removeItem('tipstack_access_token');
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
     }
   }
 

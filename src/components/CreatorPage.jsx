@@ -24,7 +24,6 @@ import {
 export default function CreatorPage() {
   const { username } = useParams();
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('about');
 
   useEffect(() => {
@@ -46,16 +45,7 @@ export default function CreatorPage() {
   const supporterCount = useMemo(() => new Set(tipsReceived.map(t => t.sender)).size, [tipsReceived]);
   const totalVolume = useMemo(() => tipsReceived.reduce((sum, t) => sum + (t.amountUSDC || 0), 0), [tipsReceived]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-surface-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 size={40} className="text-brand-500 animate-spin" />
-          <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Loading Identity...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   if (!profile) {
     return (

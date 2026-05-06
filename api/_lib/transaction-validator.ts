@@ -5,6 +5,7 @@ import {
   PublicKey,
   SystemProgram,
   LAMPORTS_PER_SOL,
+  VersionedTransaction,
 } from '@solana/web3.js'
 
 /**
@@ -70,7 +71,8 @@ export async function simulateTransaction(
 
     // 2. Simulate the transaction with account tracking
     transaction.feePayer = signer;
-    const { value: sim } = await connection.simulateTransaction(transaction, {
+    const versionedTx = new VersionedTransaction(transaction.compileMessage());
+    const { value: sim } = await connection.simulateTransaction(versionedTx, {
       sigVerify: false,
       accounts: {
         encoding: 'base64',
