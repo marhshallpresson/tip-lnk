@@ -471,8 +471,8 @@ Request ID: ${requestId}`;
         )}
       </div>
 
-      <button onClick={() => setView('email-login')} className="mt-8 w-full text-[11px] text-white/20 hover:text-brand-400 font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
-        <Mail size={12} /> Use Email
+      <button onClick={() => setView('email-login')} className="w-full h-14 rounded-xl bg-brand-500 text-black hover:bg-brand-400 transition-all font-bold flex items-center justify-center gap-3 mt-4">
+        {loadingProvider === 'email' ? <Loader2 size={20} className="animate-spin text-black" /> : <><Mail size={20} /> Continue with Email</>}
       </button>
 
       {authError && <div className="mt-6 text-red-500 text-[10px] bg-red-500/5 p-3 rounded-lg border border-red-500/10 text-center">{authError}</div>}
