@@ -88,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           memo,
           platformFee
         },
-        webhookUrl: 'https://tip-lnk.vercel.app/api/payments/fiat/webhook'
+        webhookUrl: `${process.env.APP_URL || 'https://tipstack.fun'}/api/payments/fiat/webhook`
       }, {
         headers: { 'Authorization': `Bearer ${FOSSA_API_KEY}` }
       })
