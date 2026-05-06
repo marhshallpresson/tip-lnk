@@ -15,12 +15,16 @@ export default defineConfig({
     topLevelAwait(),
     nodePolyfills({
       include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder', 'process', 'events'],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
     }),
   ],
   define: {
     'global': 'globalThis',
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-    'Buffer': ['buffer', 'Buffer'],
   },
   optimizeDeps: {
     include: [
