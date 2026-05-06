@@ -64,31 +64,15 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Group Solana and its fundamental crypto/math dependencies together
-            // to prevent circularity between the solana chunk and core deps.
-            if (
-              id.includes('@solana') || 
-              id.includes('@coral-xyz') || 
-              id.includes('bn.js') || 
-              id.includes('bs58') || 
-              id.includes('tweetnacl') || 
-              id.includes('buffer') ||
-              id.includes('crypto-browserify') ||
-              id.includes('stream-browserify') ||
-              id.includes('events') ||
-              id.includes('util')
-            ) {
-              return 'vendor-solana';
-            }
-            if (id.includes('react') || id.includes('scheduler') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@phantom') || id.includes('@dynamic') || id.includes('@walletconnect') || id.includes('@reown')) {
-              return 'vendor-wallets';
-            }
+            // High-level protocol libraries that are large but mostly independent
             if (id.includes('@kamino-finance') || id.includes('@jup-ag') || id.includes('@orca-so')) {
               return 'vendor-defi';
             }
+            // Identity and Wallet providers
+            if (id.includes('@dynamic-labs') || id.includes('@walletconnect') || id.includes('@reown') || id.includes('@trezor') || id.includes('@ledgerhq')) {
+              return 'vendor-auth';
+            }
+            // Keep core libraries (Solana web3, React, Crypto) together to avoid circular resolution issues
             return 'vendor';
           }
         },
