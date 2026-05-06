@@ -1,21 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
 import { getPhantomDeepLink, getSolanaPayUri, hasSolanaProvider, isMobile } from '../utils/deepLinks';
-import {
-  ArrowRight,
-  Check,
+import { 
+  ShieldCheck, 
+  Zap, 
+  Lock, 
+  Loader2, 
+  CreditCard, 
+  Wallet,
+  CheckCircle2,
   ChevronDown,
-  CreditCard,
-  ExternalLink,
-  Loader2,
-  Repeat,
-  Wallet
+  ArrowRight
 } from 'lucide-react';
 
-export default function TipWidget({ fixedRecipient = null, onSuccess }) {
+const PRESET_AMOUNTS = [1, 5, 10, 25, 50];
+
+export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'dark', accent = '#00D265' }) {
   const { publicKey } = useWallet();
   const { profile: viewerProfile, addTip } = useApp();
   const { setShowWalletModal } = useAuth();
@@ -23,61 +26,39 @@ export default function TipWidget({ fixedRecipient = null, onSuccess }) {
   const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
   const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
   const [isResolving, setIsResolving] = useState(false);
+  const [amount, setAmount] = useState('5');
   const [note, setNote] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'crypto'
   const [showTokenMenu, setShowTokenMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [quoteLoading, setQuoteLoading] = useState(false);
   const [fiatQuote, setFiatQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [widgetError, setWidgetError] = useState('');
-  const [showOnboardingNudge, setShowOnboardingNudge] = useState(false);
 
   const {
     tokens,
     tokensLoading,
     selectedToken,
     setSelectedToken,
-    amount,
-    setAmount,
-    tipAmountUSDC,
-    feeAmountUSDC,
-    totalAuthorizedUSDC,
     calculateRoute,
-    calculateRecurringRoute,
     route,
-    recurringRoute,
     processing,
     executeTip,
-    executeSubscription,
     txResult,
     setTxResult,
     reset,
-    error
+    error: tippingError
   } = useTipping(resolvedAddress);
 
-  useEffect(() => {
-    if (!amount) setAmount('7');
-  }, [amount, setAmount]);
-
-  useEffect(() => {
-    const hasCompletedTip = localStorage.getItem('tipstack_first_tip_complete') === '1';
-    setShowOnboardingNudge(!hasCompletedTip);
-  }, []);
-
+  // Sync recipient for public widget
   useEffect(() => {
     if (fixedRecipient) {
       setResolvedAddress(fixedRecipient.address);
       setRecipientInput(fixedRecipient.username || '');
       return;
     }
-
     const resolveHandle = async () => {
-      if (!recipientInput) {
-        setResolvedAddress(null);
-        return;
-      }
-
+      if (!recipientInput) { setResolvedAddress(null); return; }
       setIsResolving(true);
       try {
         const isProd = import.meta.env.PROD;
@@ -87,20 +68,14 @@ export default function TipWidget({ fixedRecipient = null, onSuccess }) {
         if (res.ok) {
           const data = await res.json();
           setResolvedAddress(data?.id || null);
-        } else {
-          setResolvedAddress(null);
         }
-      } catch {
-        setResolvedAddress(null);
-      } finally {
-        setIsResolving(false);
-      }
+      } catch { setResolvedAddress(null); } finally { setIsResolving(false); }
     };
-
-    const timeout = setTimeout(resolveHandle, 180);
+    const timeout = setTimeout(resolveHandle, 200);
     return () => clearTimeout(timeout);
   }, [recipientInput, fixedRecipient]);
 
+  // Sync route calculation for crypto
   useEffect(() => {
     if (paymentMethod !== 'crypto') return;
     const parsed = Number(amount);
@@ -108,13 +83,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess }) {
     calculateRoute(selectedToken.symbol, parsed, note);
   }, [paymentMethod, amount, selectedToken, resolvedAddress, note, calculateRoute]);
 
-  useEffect(() => {
-    if (paymentMethod !== 'crypto' || !isRecurring) return;
-    const parsed = Number(amount);
-    if (!resolvedAddress || !selectedToken?.symbol || !Number.isFinite(parsed) || parsed <= 0) return;
-    calculateRecurringRoute(selectedToken.symbol, parsed, 'monthly', 12);
-  }, [paymentMethod, isRecurring, amount, selectedToken, resolvedAddress, calculateRecurringRoute]);
-
+  // Sync fiat quote for card
   useEffect(() => {
     const fetchRate = async () => {
       const parsed = Number(amount);
@@ -122,404 +91,293 @@ export default function TipWidget({ fixedRecipient = null, onSuccess }) {
         setFiatQuote(null);
         return;
       }
-
       setQuoteLoading(true);
       try {
         const isProd = import.meta.env.PROD;
         const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
         const res = await fetch(`${base}/api/payments/fiat/rate?amount=${parsed}`);
         const data = await res.json();
-        if (res.ok && data?.success) {
-          setFiatQuote(data);
-        } else {
-          setFiatQuote(null);
-        }
-      } catch {
-        setFiatQuote(null);
-      } finally {
-        setQuoteLoading(false);
-      }
+        if (res.ok && data?.success) setFiatQuote(data);
+        else setFiatQuote(null);
+      } catch { setFiatQuote(null); } finally { setQuoteLoading(false); }
     };
-
-    fetchRate();
+    const timeout = setTimeout(fetchRate, 500);
+    return () => clearTimeout(timeout);
   }, [amount, paymentMethod]);
+
+  const handlePay = async () => {
+    setWidgetError('');
+    if (!resolvedAddress || !amount || Number(amount) <= 0) {
+      setWidgetError('Please enter a valid amount and ensure recipient is resolved.');
+      return;
+    }
+
+    if (paymentMethod === 'crypto') {
+        if (!publicKey) {
+            setShowWalletModal(true);
+            return;
+        }
+        try {
+            // Enhanced Crypto Flow: Handle mobile deep linking and desktop execution
+            if (isMobile() && !hasSolanaProvider()) {
+                const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken?.mint || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+                window.location.href = uri;
+                setTimeout(() => { 
+                    const deepLink = getPhantomDeepLink(window.location.href);
+                    if (deepLink) window.location.href = deepLink;
+                }, 1000);
+                return;
+            }
+            
+            const result = await executeTip(viewerProfile?.displayName || 'Anonymous', note);
+            if (result?.success) {
+                addTip({
+                    recipientId: resolvedAddress,
+                    recipient: recipientInput,
+                    inputToken: selectedToken?.symbol || 'SOL',
+                    inputAmount: amount,
+                    amountUSDC: result.outAmount,
+                    note,
+                    txSignature: result.signature,
+                    timestamp: new Date()
+                }, true);
+                onSuccess?.(result);
+            }
+        } catch (err) { 
+            console.error('Crypto execution fault:', err);
+            setWidgetError(err?.message || 'Crypto payment failed. Please try again.'); 
+        }
+    } else {
+        // Enhanced Fiat Flow: Intent creation + monitoring
+        try {
+            const isProd = import.meta.env.PROD;
+            const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+            const response = await fetch(`${base}/api/payments/fiat/intent`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'X-Requested-With': 'TipStackWidget'
+                },
+                body: JSON.stringify({
+                    creatorId: resolvedAddress,
+                    amount: Number(amount),
+                    senderName: viewerProfile?.displayName || 'Anonymous',
+                    memo: note
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data?.checkoutUrl) {
+                throw new Error(data?.error || 'Failed to initialize card payment session.');
+            }
+
+            const checkoutPopup = window.open(data.checkoutUrl, 'tipstack_pay', 'width=520,height=760,status=no,location=no');
+            
+            // Local state to show processing while popup is open
+            setTxResult({ status: 'pending', signature: data.intentId, outAmount: Number(amount) });
+            
+            // Poll for status
+            const pollStatus = setInterval(async () => {
+                if (checkoutPopup && checkoutPopup.closed) {
+                    clearInterval(pollStatus);
+                }
+                try {
+                    const sRes = await fetch(`${base}/api/payments/fiat/status?intentId=${data.intentId}`);
+                    const sData = await sRes.json();
+                    if (sData?.success && sData.status === 'completed') {
+                        clearInterval(pollStatus);
+                        setTxResult({ status: 'confirmed', signature: data.intentId, outAmount: Number(amount) });
+                        addTip({
+                            recipientId: resolvedAddress,
+                            recipient: recipientInput,
+                            inputToken: 'FIAT_USD',
+                            inputAmount: amount,
+                            amountUSDC: Number(amount),
+                            note,
+                            txSignature: data.intentId,
+                            timestamp: new Date()
+                        }, true);
+                        onSuccess?.({ success: true, method: 'fiat' });
+                    }
+                } catch (e) { /* ignore poll errors */ }
+            }, 3000);
+
+        } catch (err) { 
+            console.error('Fiat execution fault:', err);
+            setWidgetError(err?.message || 'Card payment initialization failed.'); 
+        }
+    }
+  };
 
   const filteredTokens = useMemo(() => {
     if (!searchTerm) return tokens;
     const term = searchTerm.toLowerCase();
-    return tokens.filter((token) =>
-      token.symbol.toLowerCase().includes(term) ||
-      (token.name || '').toLowerCase().includes(term)
-    );
+    return tokens.filter((t) => t.symbol.toLowerCase().includes(term) || (t.name || '').toLowerCase().includes(term));
   }, [tokens, searchTerm]);
 
-  const handleCryptoPay = async () => {
-    setWidgetError('');
+  const isPresetActive = (val) => Number(amount) === val;
 
-    if (!resolvedAddress || !amount || Number(amount) <= 0) {
-      setWidgetError('Enter a valid amount and recipient.');
-      return;
-    }
-
-    if (!publicKey) {
-      setShowWalletModal(true);
-      return;
-    }
-
-    try {
-      if (isRecurring) {
-        const recurring = await executeSubscription(viewerProfile?.displayName || 'Anonymous');
-        if (recurring) {
-          onSuccess?.({ success: true, recurring: true });
-        }
-        return;
-      }
-
-      if (isMobile() && !hasSolanaProvider()) {
-        const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken.mint);
-        window.location.href = uri;
-        setTimeout(() => {
-          window.location.href = getPhantomDeepLink(window.location.href);
-        }, 1200);
-        return;
-      }
-
-      const result = await executeTip(viewerProfile?.displayName || 'Anonymous', note);
-      if (result?.success) {
-        addTip(
-          {
-            recipientId: resolvedAddress,
-            recipient: recipientInput,
-            inputToken: selectedToken.symbol,
-            inputAmount: amount,
-            amountUSDC: result.outAmount,
-            note,
-            txSignature: result.signature,
-            timestamp: new Date()
-          },
-          true
-        );
-        localStorage.setItem('tipstack_first_tip_complete', '1');
-        setShowOnboardingNudge(false);
-        onSuccess?.(result);
-      }
-    } catch (err) {
-      setWidgetError(err?.message || 'Crypto payment failed.');
-    }
-  };
-
-  const handleFiatPay = async () => {
-    setWidgetError('');
-    if (!resolvedAddress || !amount || Number(amount) <= 0) {
-      setWidgetError('Enter a valid amount and recipient.');
-      return;
-    }
-
-    try {
-      const isProd = import.meta.env.PROD;
-      const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
-      const response = await fetch(`${base}/api/payments/fiat/intent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creatorId: resolvedAddress,
-          amount: Number(amount),
-          senderName: viewerProfile?.displayName || 'Anonymous',
-          memo: note
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data?.checkoutUrl) {
-        throw new Error(data?.error || 'Failed to initialize card/bank payment.');
-      }
-
-      const popup = window.open(data.checkoutUrl, '_blank', 'width=520,height=760');
-      setTxResult({
-        status: 'pending',
-        signature: data.intentId,
-        outAmount: Number(amount),
-        executionMode: 'fossa_pay'
-      });
-      startFiatStatusMonitor(data.intentId, popup);
-    } catch (err) {
-      setWidgetError(err?.message || 'Card/bank payment failed.');
-    }
-  };
-
-  const startFiatStatusMonitor = (intentId, popupWindow) => {
-    const isProd = import.meta.env.PROD;
-    const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
-    let attempts = 0;
-    const maxAttempts = 120;
-    const pollEveryMs = 3000;
-
-    const interval = setInterval(async () => {
-      attempts += 1;
-      try {
-        const res = await fetch(`${base}/api/payments/fiat/status?intentId=${encodeURIComponent(intentId)}`);
-        const data = await res.json();
-        if (res.ok && data?.success) {
-          if (data.status === 'completed') {
-            clearInterval(interval);
-            setTxResult((prev) => ({ ...prev, status: 'confirmed' }));
-            addTip(
-              {
-                recipientId: resolvedAddress,
-                recipient: recipientInput,
-                inputToken: 'FIAT_USD',
-                inputAmount: Number(amount),
-                amountUSDC: Number(amount),
-                note,
-                txSignature: intentId,
-                timestamp: new Date()
-              },
-              true
-            );
-            localStorage.setItem('tipstack_first_tip_complete', '1');
-            setShowOnboardingNudge(false);
-            onSuccess?.({ success: true, signature: intentId, method: 'fiat' });
-            return;
-          }
-          if (data.status === 'failed') {
-            clearInterval(interval);
-            setWidgetError('Fiat payment failed. Please retry.');
-            return;
-          }
-        }
-      } catch {}
-
-      const popupClosed = popupWindow && popupWindow.closed;
-      if ((popupClosed && attempts > 6) || attempts >= maxAttempts) {
-        clearInterval(interval);
-      }
-    }, pollEveryMs);
-  };
-
-  const handleReset = () => {
-    reset();
-    setWidgetError('');
-    setNote('');
-    setIsRecurring(false);
-    setPaymentMethod('card');
-    if (!fixedRecipient) {
-      setRecipientInput('');
-      setResolvedAddress(null);
-    }
-  };
-
-  if (txResult) {
-    const isPending = txResult.status === 'pending';
-    return (
-      <div className="glass-card p-6 max-w-lg mx-auto text-center">
-        <div className={`w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-4 ${isPending ? 'bg-brand-500/15' : 'bg-emerald-500/15'}`}>
-          {isPending ? <Loader2 className="animate-spin text-brand-500" size={22} /> : <Check className="text-emerald-500" size={22} />}
-        </div>
-        <h3 className="text-xl font-bold text-white mb-2">{isPending ? 'Payment Pending' : 'Payment Confirmed'}</h3>
-        <p className="text-xs text-white/50 mb-6">
-          {isPending ? 'Complete checkout to finalize payment.' : 'Your support was sent successfully.'}
-        </p>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-left mb-4">
-          <div className="flex items-center justify-between text-xs mb-2">
-            <span className="text-white/50">Amount</span>
-            <span className="text-white font-semibold">${Number(txResult.outAmount || amount).toFixed(2)}</span>
+  if (txResult?.status === 'confirmed') {
+      return (
+          <div className="bg-[#121214] border border-white/5 rounded-[28px] p-8 text-center animate-scale-in max-w-[360px] mx-auto shadow-2xl">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+                  <CheckCircle2 size={32} className="text-emerald-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Sent Successfully!</h3>
+              <p className="text-white/40 text-sm mb-6">Your support of ${Number(amount).toFixed(2)} was delivered instantly.</p>
+              <button onClick={() => { reset(); setAmount('5'); setNote(''); }} className="btn-primary w-full">Send Another</button>
           </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-white/50">Reference</span>
-            <span className="text-white/70 font-mono">{String(txResult.signature || '').slice(0, 16)}...</span>
-          </div>
-        </div>
-        {!isPending && (
-          <a
-            href={`https://solscan.io/tx/${txResult.signature}${import.meta.env.VITE_SOLANA_NETWORK === 'devnet' ? '?cluster=devnet' : ''}`}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-secondary w-full !py-2 text-xs flex items-center justify-center gap-2 mb-3"
-          >
-            View on Solscan <ExternalLink size={12} />
-          </a>
-        )}
-        <button onClick={handleReset} className="btn-primary w-full !h-12">
-          Send another tip
-        </button>
-      </div>
-    );
+      );
   }
 
   return (
-    <div className="glass-card p-6 max-w-lg mx-auto">
-      {!fixedRecipient && (
-        <div className="mb-4">
-          <label className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2 block">Recipient</label>
-          <input
-            type="text"
-            value={recipientInput}
-            onChange={(event) => setRecipientInput(event.target.value)}
-            placeholder="username or wallet"
-            className="input-field w-full"
-          />
-          {isResolving && <p className="text-[10px] text-white/40 mt-2">Resolving recipient...</p>}
-        </div>
-      )}
-
-      <div className="rounded-xl border border-white/10 p-5 bg-[#080816]">
-        <p className="text-2xl font-bold text-white mb-1">${Number(amount || 0).toFixed(0)}</p>
-        <p className="text-[11px] text-white/45 mb-4">Starter Plan • one-time payment</p>
-
-        <label className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2 block">Pay with</label>
-        <div className="grid grid-cols-2 gap-2 rounded-xl p-1 bg-black/30 border border-white/10 mb-4">
-          <button
-            className={`h-10 rounded-lg text-sm font-semibold transition-all ${paymentMethod === 'card' ? 'bg-brand-600 text-white' : 'text-white/55 hover:text-white'}`}
-            onClick={() => setPaymentMethod('card')}
-          >
-            <span className="inline-flex items-center gap-2 justify-center">
-              <CreditCard size={14} /> Card
-            </span>
-          </button>
-          <button
-            className={`h-10 rounded-lg text-sm font-semibold transition-all ${paymentMethod === 'crypto' ? 'bg-brand-600 text-white' : 'text-white/55 hover:text-white'}`}
-            onClick={() => setPaymentMethod('crypto')}
-          >
-            <span className="inline-flex items-center gap-2 justify-center">
-              <Wallet size={14} /> Crypto
-            </span>
-          </button>
-        </div>
-
-        {paymentMethod === 'crypto' && (
-          <div className="space-y-3">
-            <button
-              onClick={() => setShowTokenMenu((v) => !v)}
-              className="w-full h-11 rounded-lg border border-white/10 bg-black/20 px-3 flex items-center justify-between text-sm"
-            >
-              <span className="text-white">{selectedToken?.symbol || 'Select currency'}</span>
-              <ChevronDown size={14} className="text-white/40" />
-            </button>
-            {showTokenMenu && (
-              <div className="rounded-lg border border-white/10 bg-black/40 p-2 max-h-52 overflow-y-auto">
-                <input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search token"
-                  className="input-field w-full !h-9 mb-2 text-sm"
-                />
-                <div className="space-y-1">
-                  {tokensLoading && <p className="text-[11px] text-white/45 px-2 py-1">Loading Jupiter tokens...</p>}
-                  {!tokensLoading && filteredTokens.slice(0, 40).map((token) => (
-                    <button
-                      key={token.mint}
-                      onClick={() => {
-                        setSelectedToken(token);
-                        setShowTokenMenu(false);
-                      }}
-                      className="w-full text-left px-2 py-2 rounded-md hover:bg-white/5 flex items-center justify-between"
-                    >
-                      <span className="text-sm text-white">{token.symbol}</span>
-                      <span className="text-[10px] text-white/40">{token.balance ? token.balance.toFixed(2) : ''}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+    <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-5 w-full max-w-[380px] mx-auto shadow-2xl relative overflow-hidden font-sans">
+      
+      {/* Header Info */}
+      <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20 overflow-hidden">
+             {fixedRecipient?.avatarUrl ? (
+                 <img src={fixedRecipient.avatarUrl} alt="" className="w-full h-full object-cover" />
+             ) : (
+                 <div className="w-full h-full flex items-center justify-center text-xl font-black text-brand-500 bg-brand-500/5">
+                    {recipientInput[0]?.toUpperCase() || 'T'}
+                 </div>
+             )}
           </div>
-        )}
-
-        {paymentMethod === 'card' && (
-          <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-            {quoteLoading ? (
-              <p className="text-[11px] text-white/45">Fetching USD/NGN rate...</p>
-            ) : fiatQuote ? (
-              <div className="space-y-1 text-xs">
-                <p className="text-white/70">₦{Number(fiatQuote.rate).toLocaleString()} per USDC</p>
-                <p className="text-brand-400 font-semibold">You pay ${Number(amount || 0).toFixed(2)} • ~₦{Number(fiatQuote.amountNgn).toLocaleString()}</p>
-                {fiatQuote.isFallback && (
-                  <p className="text-[10px] text-amber-400">Using fallback rate feed.</p>
-                )}
-                <p className="text-[10px] text-white/40">
-                  Quote valid until {new Date(fiatQuote.expiresAt).toLocaleTimeString()}
-                  {fiatQuote.stale ? ' (stale)' : ''}
-                </p>
-              </div>
-            ) : (
-              <p className="text-[11px] text-white/45">Local exchange quote unavailable right now.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-4 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Repeat size={14} className="text-white/60" />
           <div>
-            <p className="text-xs text-white font-semibold">Monthly support</p>
-            <p className="text-[10px] text-white/40">Automate this tip every 30 days</p>
+              <div className="flex items-center gap-1.5">
+                  <h3 className="font-bold text-white text-base">@{recipientInput || 'creator'}</h3>
+                  <ShieldCheck size={14} className="text-brand-500" fill="currentColor" stroke="none" />
+              </div>
           </div>
-        </div>
-        <button
-          onClick={() => setIsRecurring((v) => !v)}
-          className={`w-11 h-6 rounded-full transition-colors relative ${isRecurring ? 'bg-brand-500' : 'bg-white/15'}`}
-        >
-          <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isRecurring ? 'translate-x-5' : ''}`} />
-        </button>
       </div>
 
-      <div className="mt-4">
-        <label className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2 block">Message (optional)</label>
-        <textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder="Add a note"
-          className="input-field w-full !h-20 resize-none"
-        />
+      <div className="h-px bg-white/5 mb-6" />
+
+      {/* Amount Presets */}
+      <div className="grid grid-cols-5 gap-2 mb-4">
+          {PRESET_AMOUNTS.map(val => (
+              <button
+                key={val}
+                onClick={() => setAmount(val.toString())}
+                className={`h-12 rounded-xl font-bold text-sm transition-all border ${
+                    isPresetActive(val) 
+                    ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-[1.05]' 
+                    : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                  ${val}
+              </button>
+          ))}
       </div>
 
-      {paymentMethod === 'crypto' && route && (
-        <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-1 text-xs">
-          <div className="flex justify-between"><span className="text-white/50">Tip</span><span className="text-white">${Number(tipAmountUSDC).toFixed(2)}</span></div>
-          <div className="flex justify-between"><span className="text-white/50">Fee</span><span className="text-white/80">${Number(feeAmountUSDC).toFixed(2)}</span></div>
-          <div className="flex justify-between pt-1 border-t border-white/10"><span className="text-white font-semibold">Total</span><span className="text-brand-400 font-semibold">${Number(totalAuthorizedUSDC).toFixed(2)}</span></div>
-        </div>
-      )}
+      {/* Custom Amount & Note Section */}
+      <div className="space-y-4 mb-6">
+          <div className="relative group">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 font-bold">$</span>
+              <input 
+                type="number" 
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl pl-8 pr-4 text-white font-bold focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
+                placeholder="Other amount"
+              />
+              {paymentMethod === 'card' && fiatQuote && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-brand-500 bg-brand-500/10 px-2 py-1 rounded-lg border border-brand-500/20">
+                      ~₦{Number(fiatQuote.amountNgn).toLocaleString()}
+                  </div>
+              )}
+          </div>
 
-      {(widgetError || error) && (
-        <p className="mt-3 text-xs text-red-400">{widgetError || error}</p>
-      )}
+          <div className="relative group">
+              <input 
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Add a private note..."
+                className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl px-4 text-sm text-white/70 placeholder:text-white/20 focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500/50 bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
+                  <Lock size={10} /> Encrypted
+              </div>
+          </div>
+      </div>
 
-      {showOnboardingNudge && (
-        <p className="mt-3 text-[11px] text-white/55">
-          First time here: choose Card for fastest checkout, or Crypto for direct wallet payment.
-        </p>
-      )}
+      {/* Payment Selection & Token Picker (Crypto Only) */}
+      <div className="space-y-4 mb-6">
+          <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
+              <button 
+                onClick={() => setPaymentMethod('card')}
+                className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+              >
+                  <CreditCard size={12} /> Card (NGN)
+              </button>
+              <button 
+                onClick={() => setPaymentMethod('crypto')}
+                className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'crypto' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+              >
+                  <Wallet size={12} /> Crypto (SOL)
+              </button>
+          </div>
 
-      <button
-        onClick={paymentMethod === 'card' ? handleFiatPay : handleCryptoPay}
-        disabled={
-          !resolvedAddress ||
-          !amount ||
-          Number(amount) <= 0 ||
-          processing ||
-          (paymentMethod === 'crypto' && (isRecurring ? !recurringRoute : !route))
-        }
-        className="btn-primary w-full !h-14 mt-5 disabled:opacity-50"
+          {paymentMethod === 'crypto' && (
+              <div className="relative">
+                  <button
+                    onClick={() => setShowTokenMenu(!showTokenMenu)}
+                    className="w-full h-11 rounded-xl border border-white/5 bg-white/5 px-4 flex items-center justify-between text-xs font-bold text-white/60 hover:bg-white/[0.07] transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                        {selectedToken?.symbol || 'Select Asset'}
+                        {selectedToken?.balance !== undefined && <span className="text-[10px] text-white/20 font-normal">Bal: {selectedToken.balance.toFixed(2)}</span>}
+                    </span>
+                    <ChevronDown size={14} className={`transition-transform ${showTokenMenu ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showTokenMenu && (
+                    <div className="absolute top-full left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-48 overflow-y-auto">
+                        <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="w-full bg-white/5 border-none rounded-lg px-3 py-2 text-xs text-white mb-2 outline-none" />
+                        {tokensLoading ? <Loader2 size={16} className="animate-spin mx-auto my-4 text-white/20" /> : filteredTokens.slice(0, 50).map(t => (
+                            <button key={t.mint} onClick={() => { setSelectedToken(t); setShowTokenMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between group">
+                                <span className="text-xs font-bold text-white/70 group-hover:text-white">{t.symbol}</span>
+                                <span className="text-[10px] text-white/20">{t.balance?.toFixed(2)}</span>
+                            </button>
+                        ))}
+                    </div>
+                  )}
+              </div>
+          )}
+      </div>
+
+      {/* Main Action Button */}
+      <button 
+        onClick={handlePay}
+        disabled={processing || quoteLoading || !amount || Number(amount) <= 0 || !resolvedAddress}
+        className="w-full h-16 rounded-[22px] bg-gradient-to-r from-[#FFB800] to-[#FF9500] text-black font-black text-lg shadow-[0_8px_30px_rgba(255,184,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none"
       >
-        {processing ? (
-          <Loader2 size={18} className="animate-spin" />
-        ) : (
-          <>
-            {paymentMethod === 'card' ? (
-              <>
-                <CreditCard size={16} /> Pay with Card
-              </>
-            ) : (
-              <>
-                {publicKey ? <Wallet size={16} /> : <Wallet size={16} />}
-                {publicKey ? (isRecurring ? 'Start Monthly Support' : 'Pay with Crypto') : 'Connect Wallet'}
-              </>
-            )}
-            <ArrowRight size={16} />
-          </>
-        )}
+          {processing || quoteLoading ? (
+              <Loader2 size={24} className="animate-spin" />
+          ) : (
+              <>Send ${Number(amount || 0).toFixed(2)} <ArrowRight size={20} /></>
+          )}
       </button>
+
+      {(widgetError || tippingError) && (
+          <div className="text-center text-red-500 text-[10px] mt-4 font-bold bg-red-500/5 p-2 rounded-lg border border-red-500/10">
+            {widgetError || tippingError}
+          </div>
+      )}
+
+      {/* Footer Credentials */}
+      <div className="flex items-center justify-center gap-6 mt-6">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/20">
+              <ShieldCheck size={12} className="text-emerald-500/50" /> Private
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/20">
+              <Zap size={12} className="text-brand-500/50" /> Instant
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/20">
+              <CheckCircle2 size={12} className="text-brand-500/50" /> 0% fees
+          </div>
+      </div>
     </div>
   );
 }

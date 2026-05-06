@@ -163,6 +163,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'auth/callback/phantom-google',
     'payouts/webhook', 
     'payments/fiat/webhook',
+    'payments/fiat/intent',
+    'payments/intent',
     'solana/webhooks/helius', 
     'solana/profile/update', 
     'quicknode/rpc/solana',
