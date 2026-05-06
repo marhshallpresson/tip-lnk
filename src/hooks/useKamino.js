@@ -26,11 +26,18 @@ export function useKamino(walletConnected) {
     const fetchMarket = async () => {
       try {
         if (connection) {
-          const loadedMarket = await KaminoMarket.load(connection, MAIN_MARKET);
+          // Ensure connection methods are correctly bound to avoid prototype issues with some SDKs
+          // Some older Anchor/Kamino versions might expect standard v1 behavior but fail on proxied objects
+          const robustConnection = Object.create(connection);
+          robustConnection.getAccountInfo = connection.getAccountInfo.bind(connection);
+          robustConnection.getMultipleAccountsInfo = connection.getMultipleAccountsInfo.bind(connection);
+          robustConnection.getLatestBlockhash = connection.getLatestBlockhash.bind(connection);
+
+          const loadedMarket = await KaminoMarket.load(robustConnection, MAIN_MARKET);
           if (active) setMarket(loadedMarket);
         }
       } catch (err) {
-        console.error("Failed to load Kamino Market", err);
+        console.error("Failed to load Kamino Market:", err.message);
       }
     };
     fetchMarket();

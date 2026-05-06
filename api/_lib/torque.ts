@@ -28,7 +28,7 @@ export interface TorqueEvent {
   };
 }
 
-const TORQUE_API_URL = process.env.TORQUE_API_URL || 'http://localhost:3000/api/events';
+const TORQUE_API_URL = process.env.TORQUE_API_URL || 'https://api.torquemarketing.xyz/api/events';
 const TORQUE_API_KEY = process.env.TORQUE_API_KEY;
 
 /**

@@ -122,6 +122,11 @@ Request ID: ${requestId}`;
 
   const handleSocialSelect = async (provider) => {
     if (!provider) return;
+    if (provider === 'google') {
+      loginWithGoogle();
+      return;
+    }
+    
     setLoadingProvider(provider);
     setAuthError(null);
 

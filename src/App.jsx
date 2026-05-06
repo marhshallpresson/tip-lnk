@@ -221,15 +221,44 @@ function AuthCallbackHandler() {
 
   useEffect(() => {
     if (isPhantomGoogle) {
-      // Phantom SDK handles the redirect automatically if autoConnect is true.
-      // We just need to wait for the 'connect' event in WalletContext.
-      // But we can show a special message here.
       return;
     }
 
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const errorParam = params.get('error');
+
+    // Handle generic /auth/callback from backend (official Google OAuth)
+    if (!platform && code) {
+       const finalize = async () => {
+          try {
+            const res = await api.post('/auth/exchange', { code });
+            if (res.ok && res.data.success) {
+               if (window.opener) {
+                 window.opener.postMessage({ 
+                   type: 'AUTH_SUCCESS', 
+                   accessToken: res.data.auth.accessToken,
+                   user: res.data.user
+                 }, window.location.origin);
+                 setTimeout(() => window.close(), 500);
+               } else {
+                 // Fallback for non-popup
+                 window.location.href = '/dashboard';
+               }
+            } else {
+               throw new Error(res.data.error || 'Exchange failed');
+            }
+          } catch (err) {
+            setError(err.message);
+            setStatus('error');
+            if (window.opener) {
+               window.opener.postMessage({ type: 'AUTH_ERROR', error: err.message }, window.location.origin);
+            }
+          }
+       };
+       finalize();
+       return;
+    }
 
     if (errorParam) {
       const errorMsg = params.get('error_description') || 'Authorization denied.';
@@ -301,7 +330,7 @@ function AuthCallbackHandler() {
         }
       };
       exchangeCode();
-    } else if (!code && !errorParam) {
+    } else if (!code && !errorParam && platform) {
       setError('No authorization code received.');
       setStatus('error');
       if (window.opener) {
