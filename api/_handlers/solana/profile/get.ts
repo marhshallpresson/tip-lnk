@@ -12,6 +12,12 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
     })
   : null;
 
+const resolveBooleanSetting = (columnValue: any, legacyValue: any, fallback = false) => {
+  if (columnValue === true || columnValue === false) return columnValue
+  if (legacyValue === true || legacyValue === false) return legacyValue
+  return fallback
+}
+
 /**
  * PHASE 2: SCALABLE BACKEND
  * Cached Profile Fetching with Redis
@@ -116,7 +122,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ success: false, error: 'User profile not found' })
     }
 
-    const rawData = JSON.parse(user.profileData || '{}')
+    let rawData: any = {}
+    try {
+      rawData = JSON.parse(user.profileData || '{}')
+    } catch {
+      rawData = {}
+    }
     
     const profile = rawData.profile ? { ...rawData.profile } : { ...rawData }
     
@@ -127,6 +138,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.discordHandle = user.discordHandle
     profile.solDomain = user.solDomain
     profile.onboardingComplete = Boolean(user.onboardingComplete)
+    profile.auto_convert_usdc = resolveBooleanSetting(user.auto_convert_usdc, rawData.auto_convert_usdc, true)
+    profile.yield_enabled = resolveBooleanSetting(user.yield_enabled, rawData.yield_enabled, false)
+    profile.gasless_enabled = resolveBooleanSetting(user.gasless_enabled, rawData.gasless_enabled, false)
 
     const displayName = profile.displayName || user.name || 'Solana Creator'
     const identifier = user.solDomain || user.twitterHandle || user.id

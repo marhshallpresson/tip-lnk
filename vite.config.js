@@ -95,6 +95,7 @@ export default defineConfig({
       stream: 'stream-browserify',
       string_decoder: 'string_decoder',
       bs58: path.resolve(__dirname, 'node_modules/bs58/src/cjs/index.cjs'),
+      '@kamino-finance/farms-sdk/dist/@codegen/farms/programId': path.resolve(__dirname, 'src/shims/kamino-farms-programId.js'),
     },
   },
 });

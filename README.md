@@ -206,7 +206,14 @@ SUPABASE_KEY=your_supabase_key
 JWT_SECRET=your_jwt_secret
 SOLANA_RPC_URL=your_solana_rpc_url
 HELIUS_API_KEY=your_helius_api_key
-JUPITER_API_URL=https://quote-api.jup.ag
+JUPITER_API_KEY=your_jupiter_ultra_api_key
+FOSSA_API_KEY=your_fossapay_secret_key
+FOSSA_WEBHOOK_SECRET=your_fossapay_webhook_secret
+FOSSA_BASE_URL=https://api.fossapay.com
+MONEIRATE_API_URL=https://your-moneirate-endpoint
+MONEIRATE_API_KEY=your_moneirate_key
+UPSTASH_REDIS_REST_URL=your_upstash_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
 ```
 
 ### Smart Contracts

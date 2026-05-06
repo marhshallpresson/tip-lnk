@@ -40,3 +40,19 @@ If I were building the Developer Platform, here’s how I’d make it so devs in
 
 ---
 *This report was compiled through real-world stress-testing during the integration of Jupiter APIs into the Tip Stack product.*
+
+---
+
+## 6. Payment Rails Vetting (Mainnet Readiness)
+
+**Scope covered in this phase (May 6, 2026):**
+- Creator-controlled routing flags enforced server-side (`yield_enabled`, `gasless_enabled`).
+- Fiat intent↔webhook reconciliation with destination-wallet verification.
+- Dual idempotency on fiat webhook (`reference` + provider tx hash).
+- Fiat quote service with fallback tracking + freshness metadata (`fetchedAt`, `expiresAt`, `stale`).
+- Client-side polling bridge for fiat checkout completion (no full page reload).
+
+**Remaining pre-mainnet checks (external):**
+- FossaPay production callback contract test with real bank/card channels.
+- MoneiRate provider SLA and rate drift alert thresholds.
+- Security dry-run on webhook replay/reordering from provider sandbox.

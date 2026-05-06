@@ -1,102 +1,135 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useWallet, useConnection } from '../contexts/WalletContext';
 import { VersionedTransaction, PublicKey } from '@solana/web3.js';
-import { isValidAddress, toLamports, fromLamports } from '../utils/security';
+import { toLamports, fromLamports } from '../utils/security';
 
-const TREASURY_WALLET = import.meta.env.VITE_TREASURY_WALLET ;
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const SOL_MINT = 'So11111111111111111111111111111111111111112';
+const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const PRIORITY_SYMBOLS = ['USDC', 'USDT', 'SOL', 'JUP', 'BONK'];
 
-import { getTipstackProgram, getSendTokenAccounts } from '../lib/anchor';
+const DEFAULT_TOKENS = [
+  { symbol: 'USDC', name: 'USD Coin', mint: USDC_MINT, decimals: 6, logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png', balance: 0 },
+  { symbol: 'SOL', name: 'Solana', mint: SOL_MINT, decimals: 9, logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png', balance: 0 },
+];
+
+const normalizeToken = (token) => {
+  const mint = token.address || token.mint;
+  const decimals = Number(token.decimals);
+  const validDecimals = Number.isFinite(decimals) ? Math.min(Math.max(decimals, 0), 12) : 0;
+  return {
+    symbol: token.symbol,
+    name: token.name || token.symbol,
+    mint,
+    decimals: validDecimals,
+    logoURI: token.logoURI || '',
+    balance: 0,
+  };
+};
 
 /**
- * Professional Tipping Engine (Sender-Pays Fee Standard)
- * Implements real-time routing with a dynamic near-zero platform fee added to the sender.
- * Elite Upgrade: Anchor On-chain Integration & DFlow Elite Routing.
+ * Tipping engine with Jupiter token discovery.
+ * Defaults to USDC while allowing dynamic token selection from Jupiter strict list.
  */
 export function useTipping(creatorAddress) {
   const { publicKey, signTransaction, sendTransaction, wallet } = useWallet();
   const { connection } = useConnection();
 
-  const DEFAULT_TOKENS = [
-    { symbol: 'USDC', name: 'USD Coin', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6, logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png' },
-    { symbol: 'SOL', name: 'Solana', mint: 'So11111111111111111111111111111111111111112', decimals: 9, logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png' },
-    { symbol: 'BONK', name: 'Bonk', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5, logoURI: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I' },
-  ];
-
   const [tokens, setTokens] = useState(DEFAULT_TOKENS);
   const [selectedToken, setSelectedToken] = useState(DEFAULT_TOKENS[0]);
+  const [tokensLoading, setTokensLoading] = useState(false);
 
   useEffect(() => {
-    const detectBalances = async () => {
-        if (!publicKey || !connection) return;
-        try {
-            let jupTokens = [];
-            try {
-              const res = await fetch('https://tokens.jup.ag/tokens?tags=strict');
-              jupTokens = await res.json();
-            } catch (err) {
-              console.warn('Failed to fetch Jupiter strict list, falling back to defaults', err);
-              jupTokens = DEFAULT_TOKENS;
-            }
+    let active = true;
 
-            const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-                programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
-            });
+    const fetchSupportedTokens = async () => {
+      setTokensLoading(true);
+      try {
+        const response = await fetch('https://tokens.jup.ag/tokens?tags=strict');
+        const rawTokens = await response.json();
+        const normalized = Array.isArray(rawTokens) ? rawTokens.map(normalizeToken) : [];
 
-            const balances = {};
-            tokenAccounts.value.forEach(acc => {
-                const info = acc.account.data.parsed.info;
-                if (info.tokenAmount.uiAmount > 0) {
-                  balances[info.mint] = info.tokenAmount.uiAmount;
-                }
-            });
-
-            const solBalance = await connection.getBalance(publicKey);
-            balances['So11111111111111111111111111111111111111112'] = solBalance / 1e9;
-
-            const dynamicTokens = [];
-            
-            if (balances['So11111111111111111111111111111111111111112'] > 0) {
-              const solData = jupTokens.find(t => t.address === 'So11111111111111111111111111111111111111112') || DEFAULT_TOKENS[1];
-              dynamicTokens.push({
-                symbol: solData.symbol,
-                name: solData.name,
-                mint: 'So11111111111111111111111111111111111111112',
-                decimals: solData.decimals,
-                logoURI: solData.logoURI,
-                balance: balances['So11111111111111111111111111111111111111112']
-              });
-            }
-
-            Object.entries(balances).forEach(([mint, balance]) => {
-               if (mint === 'So11111111111111111111111111111111111111112') return;
-               const tokenData = jupTokens.find(t => t.address === mint);
-               if (tokenData) {
-                  dynamicTokens.push({
-                    symbol: tokenData.symbol,
-                    name: tokenData.name,
-                    mint: mint,
-                    decimals: tokenData.decimals,
-                    logoURI: tokenData.logoURI,
-                    balance: balance
-                  });
-               }
-            });
-
-            dynamicTokens.sort((a, b) => (b.balance || 0) - (a.balance || 0));
-
-            const finalTokens = dynamicTokens.length > 0 ? dynamicTokens : DEFAULT_TOKENS;
-
-            setTokens(finalTokens);
-            setSelectedToken(finalTokens[0]);
-            
-        } catch (e) {
-            console.warn('Balance detection failed:', e);
-            setTokens(DEFAULT_TOKENS);
-            setSelectedToken(DEFAULT_TOKENS[0]);
+        const bySymbol = new Map();
+        for (const token of normalized) {
+          if (!token.symbol || !token.mint) continue;
+          try {
+            new PublicKey(token.mint);
+          } catch {
+            continue;
+          }
+          if (!bySymbol.has(token.symbol)) bySymbol.set(token.symbol, token);
         }
+
+        const priority = PRIORITY_SYMBOLS
+          .map((symbol) => bySymbol.get(symbol))
+          .filter(Boolean);
+
+        const remaining = [...bySymbol.values()]
+          .filter((token) => !PRIORITY_SYMBOLS.includes(token.symbol))
+          .slice(0, 36);
+
+        const finalTokens = [...priority, ...remaining];
+        const resolvedTokens = finalTokens.length ? finalTokens : DEFAULT_TOKENS;
+        const preferredDefault = resolvedTokens.find((t) => t.symbol === 'USDC') || resolvedTokens[0];
+
+        if (!active) return;
+        setTokens(resolvedTokens);
+        setSelectedToken((current) => {
+          const stillAvailable = resolvedTokens.find((t) => t.symbol === current?.symbol);
+          return stillAvailable || preferredDefault;
+        });
+      } catch (err) {
+        console.warn('Failed to fetch Jupiter strict list, falling back to defaults', err);
+        if (!active) return;
+        setTokens(DEFAULT_TOKENS);
+        setSelectedToken(DEFAULT_TOKENS[0]);
+      } finally {
+        if (active) setTokensLoading(false);
+      }
     };
-    detectBalances();
-  }, [publicKey, connection]);
+
+    fetchSupportedTokens();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadBalances = async () => {
+      if (!publicKey || !connection || tokens.length === 0) return;
+      try {
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+          programId: new PublicKey(TOKEN_PROGRAM_ID)
+        });
+
+        const balances = {};
+        for (const account of tokenAccounts.value) {
+          const info = account.account.data.parsed.info;
+          const uiAmount = Number(info?.tokenAmount?.uiAmount || 0);
+          if (uiAmount > 0) balances[info.mint] = uiAmount;
+        }
+
+        const solBalance = await connection.getBalance(publicKey);
+        balances[SOL_MINT] = solBalance / 1e9;
+
+        if (!active) return;
+        setTokens((prev) => prev.map((token) => ({
+          ...token,
+          balance: balances[token.mint] || 0
+        })));
+      } catch (err) {
+        console.warn('Balance detection failed:', err);
+      }
+    };
+
+    loadBalances();
+    return () => {
+      active = false;
+    };
+  }, [publicKey, connection, tokens.length]);
 
   const [amount, setAmount] = useState('');
   const [tipAmountUSDC, setTipAmountUSDC] = useState('0');
@@ -106,20 +139,6 @@ export function useTipping(creatorAddress) {
   const [route, setRoute] = useState(null);
   const [txResult, setTxResult] = useState(null);
   const [error, setError] = useState(null);
-
-  const fetchPrice = useCallback(async (symbol) => {
-    try {
-      const token = tokens.find(t => t.symbol === symbol);
-      if (!token) return 1;
-
-      const response = await fetch(`https://price.jup.ag/v6/price?ids=${token.mint}`);
-      const data = await response.json();
-      return data.data[token.mint]?.price || 1;
-    } catch (err) {
-      console.error('Price API Failure:', err);
-      return 1;
-    }
-  }, [tokens]);
 
   const [recurringRoute, setRecurringRoute] = useState(null);
 
@@ -134,6 +153,9 @@ export function useTipping(creatorAddress) {
       try {
         const token = tokens.find((t) => t.symbol === tokenSymbol);
         if (!token) throw new Error(`Token ${tokenSymbol} not found`);
+        if (!Number.isFinite(token.decimals) || token.decimals < 0 || token.decimals > 12) {
+          throw new Error(`Token ${tokenSymbol} has unsupported decimals`);
+        }
 
         const isProd = import.meta.env.PROD;
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
@@ -171,7 +193,7 @@ export function useTipping(creatorAddress) {
   );
 
   const calculateRoute = useCallback(
-    async (tokenSymbol, tokenAmount, note = '', gasless = false, yieldTip = false) => {
+    async (tokenSymbol, tokenAmount, note = '') => {
       if (!tokenAmount || isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) {
         setRoute(null);
         setTipAmountUSDC('0');
@@ -181,7 +203,7 @@ export function useTipping(creatorAddress) {
         return;
       }
 
-      console.log('📊 Starting route calculation...', { tokenSymbol, tokenAmount, creatorAddress, gasless, yieldTip });
+      console.log('📊 Starting route calculation...', { tokenSymbol, tokenAmount, creatorAddress });
       setError(null);
 
       try {
@@ -207,9 +229,7 @@ export function useTipping(creatorAddress) {
           amount: tokenAmount.toString(),
           paymentMethod: 'external_wallet',
           sourceWalletAddress: publicKey?.toBase58() || '',
-          memo: note,
-          gasless, // STRATEGIC ROADMAP: Gasless Ultra (P2)
-          yield: yieldTip // STRATEGIC ROADMAP: Yield-Bearing Tips (P1)
+          memo: note
         };
 
         console.log('📤 Sending payment intent payload:', payload);
@@ -276,7 +296,7 @@ export function useTipping(creatorAddress) {
 
   const executeTip = useCallback(
     async (senderName, note = '') => {
-      if (!route || !publicKey || !signTransaction || !connection || !wallet) {
+      if (!route || !publicKey || !connection || !wallet) {
         setError('Missing transaction data or wallet connection.');
         return;
       }
@@ -376,7 +396,7 @@ export function useTipping(creatorAddress) {
         setProcessing(false);
       }
     },
-    [route, publicKey, signTransaction, creatorAddress, connection, wallet, selectedToken, amount]
+    [route, publicKey, signTransaction, creatorAddress, connection, wallet]
   );
 
   const executeSubscription = useCallback(
@@ -439,6 +459,7 @@ export function useTipping(creatorAddress) {
 
   return {
     tokens,
+    tokensLoading,
     selectedToken,
     setSelectedToken,
     amount,

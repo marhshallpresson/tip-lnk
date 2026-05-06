@@ -60,6 +60,8 @@ import { default as creatorAnalytics } from './_handlers/creators/analytics.js'
 import { default as paymentsIntent } from './_handlers/payments/intent.js'
 import { default as paymentsFiatIntent } from './_handlers/payments/fiat/intent.js'
 import { default as paymentsFiatWebhook } from './_handlers/payments/fiat/webhook.js'
+import { default as paymentsFiatRate } from './_handlers/payments/fiat/rate.js'
+import { default as paymentsFiatStatus } from './_handlers/payments/fiat/status.js'
 
 import { default as sdkInit } from './_handlers/sdk/init.js'
 import { default as sdkTip } from './_handlers/sdk/tip.js'
@@ -122,6 +124,8 @@ const ROUTES: Record<string, Function> = {
   'payments/intent': paymentsIntent,
   'payments/fiat/intent': paymentsFiatIntent,
   'payments/fiat/webhook': paymentsFiatWebhook,
+  'payments/fiat/rate': paymentsFiatRate,
+  'payments/fiat/status': paymentsFiatStatus,
 
   'sdk/init': sdkInit,
   'sdk/tip': sdkTip,

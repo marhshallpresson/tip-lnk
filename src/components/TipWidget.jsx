@@ -1,75 +1,74 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useWallet, useConnection } from '../contexts/WalletContext';
+import { useEffect, useMemo, useState } from 'react';
+import { useWallet } from '../contexts/WalletContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
-import { useSecurityGuardian } from '../hooks/useSecurityGuardian';
-import { useTransactionSimulation } from '../hooks/useTransactionSimulation';
-import { getPhantomDeepLink, getSolflareDeepLink, isMobile, hasSolanaProvider } from '../utils/deepLinks';
-import { SNSWarning } from './SNSWarning';
+import { getPhantomDeepLink, getSolanaPayUri, hasSolanaProvider, isMobile } from '../utils/deepLinks';
 import {
-  Gift,
-  ArrowDown,
-  Loader2,
+  ArrowRight,
   Check,
   ChevronDown,
-  Send,
-  Info,
-  RefreshCw,
-  Eye,
-  Activity,
-  Layers,
-  ShieldCheck,
-  AlertCircle,
-  ExternalLink,
-  Search,
-  User,
-  FileText,
-  Zap,
-  ArrowRight,
   CreditCard,
-  ShieldAlert
+  ExternalLink,
+  Loader2,
+  Repeat,
+  Wallet
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 
-/**
- * Solana Pay URI Generator
- */
-const getSolanaPayUri = (recipient, amount, mint) => {
-  const url = new URL(`solana:${recipient}`);
-  url.searchParams.append('amount', amount);
-  url.searchParams.append('spl-token', mint);
-  url.searchParams.append('label', 'Tip Stack');
-  url.searchParams.append('message', 'Direct Creator Tip');
-  return url.toString();
-};
-
-/**
- * Advanced Creator-to-Creator Tipping Widget
- * Features: Mobile Deep Linking, Transaction Simulation, Sender-Pays 5% Fee.
- */
-export default function TipWidget({ fixedRecipient = null, theme = 'dark', accent = '#00D265', onSuccess }) {
+export default function TipWidget({ fixedRecipient = null, onSuccess }) {
   const { publicKey } = useWallet();
-  const { addTip, profile } = useApp();
+  const { profile: viewerProfile, addTip } = useApp();
   const { setShowWalletModal } = useAuth();
-  const { connection } = useConnection();
-  const { assessRecipient } = useSecurityGuardian();
-  const { simulate, simulating, simulation, error: simError } = useTransactionSimulation();
 
-  const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || profile.displayName || '');
+  const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
   const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
   const [isResolving, setIsResolving] = useState(false);
-  const [txStep, setTxStep] = useState('configure');
-  const [searchTerm, setSearchTerm] = useState('');
   const [note, setNote] = useState('');
-  const [yieldEnabled, setYieldEnabled] = useState(true);
-  const [resolverCache, setResolverCache] = useState(new Map());
-  const [retryCount, setRetryCount] = useState(0);
-  const [isWidgetLoading, setIsWidgetLoading] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [showTokenMenu, setShowTokenMenu] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [fiatQuote, setFiatQuote] = useState(null);
+  const [widgetError, setWidgetError] = useState('');
+  const [showOnboardingNudge, setShowOnboardingNudge] = useState(false);
+
+  const {
+    tokens,
+    tokensLoading,
+    selectedToken,
+    setSelectedToken,
+    amount,
+    setAmount,
+    tipAmountUSDC,
+    feeAmountUSDC,
+    totalAuthorizedUSDC,
+    calculateRoute,
+    calculateRecurringRoute,
+    route,
+    recurringRoute,
+    processing,
+    executeTip,
+    executeSubscription,
+    txResult,
+    setTxResult,
+    reset,
+    error
+  } = useTipping(resolvedAddress);
+
+  useEffect(() => {
+    if (!amount) setAmount('7');
+  }, [amount, setAmount]);
+
+  useEffect(() => {
+    const hasCompletedTip = localStorage.getItem('tipstack_first_tip_complete') === '1';
+    setShowOnboardingNudge(!hasCompletedTip);
+  }, []);
 
   useEffect(() => {
     if (fixedRecipient) {
       setResolvedAddress(fixedRecipient.address);
+      setRecipientInput(fixedRecipient.username || '');
       return;
     }
 
@@ -82,783 +81,445 @@ export default function TipWidget({ fixedRecipient = null, theme = 'dark', accen
       setIsResolving(true);
       try {
         const isProd = import.meta.env.PROD;
-        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-
-        // Phase 2: Check cache first
-        const cacheKey = recipientInput.toLowerCase();
-        if (resolverCache.has(cacheKey)) {
-          console.log('💾 Recipient cache hit:', cacheKey);
-          setResolvedAddress(resolverCache.get(cacheKey));
-          setIsResolving(false);
-          return;
+        const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+        const handle = recipientInput.startsWith('@') ? recipientInput : `@${recipientInput}`;
+        const res = await fetch(`${base}/api/deep-link/resolve?handle=${encodeURIComponent(handle)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setResolvedAddress(data?.id || null);
+        } else {
+          setResolvedAddress(null);
         }
-
-        if (recipientInput.startsWith('@') || recipientInput.includes('.')) {
-          const res = await fetch(`${API_BASE_URL}/api/deep-link/resolve?handle=${recipientInput}`);
-          if (res.ok) {
-            const { id } = await res.json();
-            // Cache the result
-            setResolverCache(new Map(resolverCache).set(cacheKey, id));
-            setResolvedAddress(id);
-            setIsResolving(false);
-            return;
-          }
-        }
-
-        setResolvedAddress(null);
-      } catch (err) {
-        console.error('❌ Resolution error:', err);
+      } catch {
         setResolvedAddress(null);
       } finally {
         setIsResolving(false);
       }
     };
 
-    const timer = setTimeout(resolveHandle, 150); // Phase 2: Reduced from 300ms
-    return () => clearTimeout(timer);
-  }, [recipientInput, fixedRecipient, resolverCache]);
+    const timeout = setTimeout(resolveHandle, 180);
+    return () => clearTimeout(timeout);
+  }, [recipientInput, fixedRecipient]);
 
-  const {
-    tokens,
-    selectedToken,
-    setSelectedToken,
-    amount,
-    setAmount,
-    tipAmountUSDC,
-    feeAmountUSDC,
-    totalAuthorizedUSDC,
-    calculateRoute,
-    calculateRecurringRoute,
-    route,
-    recurringRoute,
-    processing: tippingProcessing,
-    executeTip,
-    executeSubscription,
-    txResult,
-    reset,
-    error,
-  } = useTipping(resolvedAddress);
+  useEffect(() => {
+    if (paymentMethod !== 'crypto') return;
+    const parsed = Number(amount);
+    if (!resolvedAddress || !selectedToken?.symbol || !Number.isFinite(parsed) || parsed <= 0) return;
+    calculateRoute(selectedToken.symbol, parsed, note);
+  }, [paymentMethod, amount, selectedToken, resolvedAddress, note, calculateRoute]);
 
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [gaslessEnabled, setGaslessEnabled] = useState(false);
+  useEffect(() => {
+    if (paymentMethod !== 'crypto' || !isRecurring) return;
+    const parsed = Number(amount);
+    if (!resolvedAddress || !selectedToken?.symbol || !Number.isFinite(parsed) || parsed <= 0) return;
+    calculateRecurringRoute(selectedToken.symbol, parsed, 'monthly', 12);
+  }, [paymentMethod, isRecurring, amount, selectedToken, resolvedAddress, calculateRecurringRoute]);
+
+  useEffect(() => {
+    const fetchRate = async () => {
+      const parsed = Number(amount);
+      if (paymentMethod !== 'card' || !Number.isFinite(parsed) || parsed <= 0) {
+        setFiatQuote(null);
+        return;
+      }
+
+      setQuoteLoading(true);
+      try {
+        const isProd = import.meta.env.PROD;
+        const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+        const res = await fetch(`${base}/api/payments/fiat/rate?amount=${parsed}`);
+        const data = await res.json();
+        if (res.ok && data?.success) {
+          setFiatQuote(data);
+        } else {
+          setFiatQuote(null);
+        }
+      } catch {
+        setFiatQuote(null);
+      } finally {
+        setQuoteLoading(false);
+      }
+    };
+
+    fetchRate();
+  }, [amount, paymentMethod]);
 
   const filteredTokens = useMemo(() => {
     if (!searchTerm) return tokens;
     const term = searchTerm.toLowerCase();
-    return tokens.filter(t =>
-      t.symbol.toLowerCase().includes(term) ||
-      (t.name && t.name.toLowerCase().includes(term))
+    return tokens.filter((token) =>
+      token.symbol.toLowerCase().includes(term) ||
+      (token.name || '').toLowerCase().includes(term)
     );
   }, [tokens, searchTerm]);
 
-  useEffect(() => {
-    if (amount && selectedToken && resolvedAddress) {
-      if (isRecurring) {
-        calculateRecurringRoute(selectedToken.symbol, parseFloat(amount) || 0);
-      } else {
-        calculateRoute(selectedToken.symbol, parseFloat(amount) || 0, note, gaslessEnabled, yieldEnabled);
-      }
-    }
-  }, [amount, selectedToken, calculateRoute, calculateRecurringRoute, resolvedAddress, note, isRecurring, gaslessEnabled, yieldEnabled]);
+  const handleCryptoPay = async () => {
+    setWidgetError('');
 
-  useEffect(() => {
-    const activeRoute = isRecurring ? recurringRoute : route;
-    if (activeRoute?.transaction && txStep === 'confirm') {
-      simulate(activeRoute.transaction);
-    }
-  }, [route, recurringRoute, txStep, simulate, isRecurring]);
-
-  // Phase 2: Mobile deep link return callback
-  useEffect(() => {
-    const handleMessage = async (event) => {
-      // Only process messages from same origin
-      if (event.origin !== window.location.origin) return;
-      
-      // Handle return from Phantom/Solflare
-      if (event.data?.type === 'solana-transaction-complete') {
-        const { signature } = event.data;
-        console.log('📱 Mobile app returned with signature:', signature);
-        
-        setTxStep('done');
-        
-        // Update UI with pending status
-        setIsWidgetLoading(true);
-        
-        // Poll for transaction confirmation
-        const maxAttempts = 30; // 30 seconds
-        let attempts = 0;
-        
-        const pollInterval = setInterval(async () => {
-          attempts++;
-          
-          try {
-            const isProd = import.meta.env.PROD;
-            const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-            
-            const response = await fetch(`${API_BASE_URL}/api/solana/tips/status/${signature}`);
-            if (response.ok) {
-              const status = await response.json();
-              
-              if (status.status === 'confirmed' || status.status === 'finalized') {
-                clearInterval(pollInterval);
-                
-                addTip({
-                  recipient: recipientInput,
-                  recipientId: resolvedAddress,
-                  inputToken: selectedToken?.symbol || 'SOL',
-                  inputAmount: amount,
-                  amountUSDC: status.amountUSDC || amount,
-                  note: note,
-                  txSignature: signature,
-                  timestamp: new Date(),
-                  executionMode: 'mobile_deep_link'
-                }, true);
-                
-                if (onSuccess) onSuccess({ success: true, signature });
-                setIsWidgetLoading(false);
-                return;
-              } else if (status.status === 'failed') {
-                clearInterval(pollInterval);
-                setError('Transaction failed on-chain. Please try again.');
-                setIsWidgetLoading(false);
-                return;
-              }
-            }
-          } catch (err) {
-            console.error('Status poll error:', err);
-          }
-          
-          if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            setError('Transaction confirmation timeout. Please check Solscan.');
-            setIsWidgetLoading(false);
-          }
-        }, 1000);
-      }
-    };
-    
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [recipientInput, resolvedAddress, selectedToken, amount, note, addTip, onSuccess]);
-
-  const handleSendTip = async () => {
-    if (isMobile() && !hasSolanaProvider()) {
-        setTxStep('processing');
-        const solanaUri = getSolanaPayUri(resolvedAddress, amount, selectedToken.mint);
-        window.location.href = solanaUri;
-        
-        setTimeout(() => {
-             const deepLink = getPhantomDeepLink(window.location.href);
-             window.location.href = deepLink;
-        }, 2500);
-        return;
-    }
-
-    setTxStep('processing');
-    setIsWidgetLoading(true);
-    setRetryCount(0);
-    
-    try {
-      if (isRecurring) {
-        console.log('📅 Initiating recurring subscription...');
-        const result = await executeSubscription(profile?.displayName || 'Anonymous');
-        if (result) setTxStep('done');
-      } else {
-        // ... existing retry logic
-        const result = await executeTip(profile?.displayName || 'Anonymous', note);
-        if (result?.success) {
-           setTxStep('done');
-        }
-      }
-    } catch (err) {
-      console.error('Execution failed:', err);
-      setError(err.message);
-      setTxStep('confirm');
-    } finally {
-      setIsWidgetLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    reset();
-    if (!fixedRecipient) {
-      setRecipientInput('');
-      setResolvedAddress(null);
-    }
-    setNote('');
-    setIsRecurring(false);
-    setTxStep('configure');
-  };
-
-  const handleFiatTip = async () => {
-    if (!resolvedAddress || !amount || parseFloat(amount) <= 0) {
-      console.error('❌ Fiat payment validation failed:', { resolvedAddress, amount });
-      setError('Please enter a valid amount and recipient');
+    if (!resolvedAddress || !amount || Number(amount) <= 0) {
+      setWidgetError('Enter a valid amount and recipient.');
       return;
     }
-    setIsWidgetLoading(true);
-    setError(null);
+
+    if (!publicKey) {
+      setShowWalletModal(true);
+      return;
+    }
+
+    try {
+      if (isRecurring) {
+        const recurring = await executeSubscription(viewerProfile?.displayName || 'Anonymous');
+        if (recurring) {
+          onSuccess?.({ success: true, recurring: true });
+        }
+        return;
+      }
+
+      if (isMobile() && !hasSolanaProvider()) {
+        const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken.mint);
+        window.location.href = uri;
+        setTimeout(() => {
+          window.location.href = getPhantomDeepLink(window.location.href);
+        }, 1200);
+        return;
+      }
+
+      const result = await executeTip(viewerProfile?.displayName || 'Anonymous', note);
+      if (result?.success) {
+        addTip(
+          {
+            recipientId: resolvedAddress,
+            recipient: recipientInput,
+            inputToken: selectedToken.symbol,
+            inputAmount: amount,
+            amountUSDC: result.outAmount,
+            note,
+            txSignature: result.signature,
+            timestamp: new Date()
+          },
+          true
+        );
+        localStorage.setItem('tipstack_first_tip_complete', '1');
+        setShowOnboardingNudge(false);
+        onSuccess?.(result);
+      }
+    } catch (err) {
+      setWidgetError(err?.message || 'Crypto payment failed.');
+    }
+  };
+
+  const handleFiatPay = async () => {
+    setWidgetError('');
+    if (!resolvedAddress || !amount || Number(amount) <= 0) {
+      setWidgetError('Enter a valid amount and recipient.');
+      return;
+    }
+
     try {
       const isProd = import.meta.env.PROD;
-      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-      
-      console.log('📤 Initiating fiat payment:', { creatorId: resolvedAddress, amount, API_BASE_URL });
-      
-      const response = await fetch(`${API_BASE_URL}/api/payments/fiat/intent`, {
+      const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+      const response = await fetch(`${base}/api/payments/fiat/intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           creatorId: resolvedAddress,
-          amount: parseFloat(amount),
-          senderName: profile?.displayName || 'Anonymous',
+          amount: Number(amount),
+          senderName: viewerProfile?.displayName || 'Anonymous',
           memo: note
         })
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('❌ Fiat API Response Error:', response.status, errText);
-        throw new Error(`Fiat Payment API Error: ${response.status} - ${errText}`);
+      const data = await response.json();
+      if (!response.ok || !data?.checkoutUrl) {
+        throw new Error(data?.error || 'Failed to initialize card/bank payment.');
       }
 
-      const data = await response.json();
-      console.log('✅ Fiat intent response:', data);
-      
-      if (data.success && data.checkoutUrl) {
-         console.log('🔗 Opening fiat checkout:', data.checkoutUrl);
-         const width = 500;
-         const height = 700;
-         const left = window.screenX + (window.innerWidth - width) / 2;
-         const top = window.screenY + (window.innerHeight - height) / 2;
-         window.open(data.checkoutUrl, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
-         
-         setTxResult({ 
-             status: 'pending', 
-             signature: data.intentId, 
-             outAmount: amount, 
-             executionMode: 'fossa_pay' 
-         });
-      } else {
-         console.error('❌ Fiat intent failed:', data);
-         throw new Error(data.error || 'Fiat gateway is currently unavailable.');
-      }
+      const popup = window.open(data.checkoutUrl, '_blank', 'width=520,height=760');
+      setTxResult({
+        status: 'pending',
+        signature: data.intentId,
+        outAmount: Number(amount),
+        executionMode: 'fossa_pay'
+      });
+      startFiatStatusMonitor(data.intentId, popup);
     } catch (err) {
-      console.error('❌ Fiat Intent Error:', err.message, err);
-      setError(err.message || 'Failed to initiate card payment. Please try again.');
-      setIsWidgetLoading(false);
+      setWidgetError(err?.message || 'Card/bank payment failed.');
+    }
+  };
+
+  const startFiatStatusMonitor = (intentId, popupWindow) => {
+    const isProd = import.meta.env.PROD;
+    const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+    let attempts = 0;
+    const maxAttempts = 120;
+    const pollEveryMs = 3000;
+
+    const interval = setInterval(async () => {
+      attempts += 1;
+      try {
+        const res = await fetch(`${base}/api/payments/fiat/status?intentId=${encodeURIComponent(intentId)}`);
+        const data = await res.json();
+        if (res.ok && data?.success) {
+          if (data.status === 'completed') {
+            clearInterval(interval);
+            setTxResult((prev) => ({ ...prev, status: 'confirmed' }));
+            addTip(
+              {
+                recipientId: resolvedAddress,
+                recipient: recipientInput,
+                inputToken: 'FIAT_USD',
+                inputAmount: Number(amount),
+                amountUSDC: Number(amount),
+                note,
+                txSignature: intentId,
+                timestamp: new Date()
+              },
+              true
+            );
+            localStorage.setItem('tipstack_first_tip_complete', '1');
+            setShowOnboardingNudge(false);
+            onSuccess?.({ success: true, signature: intentId, method: 'fiat' });
+            return;
+          }
+          if (data.status === 'failed') {
+            clearInterval(interval);
+            setWidgetError('Fiat payment failed. Please retry.');
+            return;
+          }
+        }
+      } catch {}
+
+      const popupClosed = popupWindow && popupWindow.closed;
+      if ((popupClosed && attempts > 6) || attempts >= maxAttempts) {
+        clearInterval(interval);
+      }
+    }, pollEveryMs);
+  };
+
+  const handleReset = () => {
+    reset();
+    setWidgetError('');
+    setNote('');
+    setIsRecurring(false);
+    setPaymentMethod('card');
+    if (!fixedRecipient) {
+      setRecipientInput('');
+      setResolvedAddress(null);
     }
   };
 
   if (txResult) {
     const isPending = txResult.status === 'pending';
     return (
-      <div className="glass-card p-8 max-w-lg mx-auto text-center animate-scale-in">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-6 ${isPending ? 'bg-brand-500/10' : 'bg-emerald-500/10'}`}>
-          {isPending ? <Loader2 size={24} className="text-brand-500 animate-spin" /> : <Check size={24} className="text-emerald-500" />}
+      <div className="glass-card p-6 max-w-lg mx-auto text-center">
+        <div className={`w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-4 ${isPending ? 'bg-brand-500/15' : 'bg-emerald-500/15'}`}>
+          {isPending ? <Loader2 className="animate-spin text-brand-500" size={22} /> : <Check className="text-emerald-500" size={22} />}
         </div>
-        <h3 className="text-2xl font-bold mb-2">{isPending ? 'Payment Pending...' : 'Payment Confirmed'}</h3>
-        <p className="text-white/40 mb-8 text-sm">
-          {isPending ? `Confirming ${amount} ${selectedToken.symbol} on-chain...` : `Successfully sent ${amount} ${selectedToken.symbol} to ${recipientInput}`}
+        <h3 className="text-xl font-bold text-white mb-2">{isPending ? 'Payment Pending' : 'Payment Confirmed'}</h3>
+        <p className="text-xs text-white/50 mb-6">
+          {isPending ? 'Complete checkout to finalize payment.' : 'Your support was sent successfully.'}
         </p>
-
-        <div className="bg-white/[0.02] rounded-xl p-5 mb-8 text-left border border-white/5">
-          <p className="text-[10px] text-white/40 uppercase font-semibold mb-4 tracking-wider">Transaction Details</p>
-          <div className="space-y-3">
-            <div className="flex justify-between text-xs">
-              <span className="text-white/40">Status</span>
-              {isPending ? (
-                <span className="text-brand-500 font-semibold uppercase text-[10px] animate-pulse">Confirming...</span>
-              ) : (
-                <span className="text-emerald-500 font-semibold uppercase text-[10px]">Confirmed</span>
-              )}
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-white/40">Signature</span>
-              <span className="font-mono text-white/60">{txResult.signature.slice(0, 16)}...</span>
-            </div>
-            <div className="flex justify-between text-sm pt-4 border-t border-white/5 mt-4">
-              <span className="text-white font-medium">Total Paid</span>
-              <span className="font-bold text-brand-500">${Number(txResult.outAmount).toFixed(2)}</span>
-            </div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-left mb-4">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className="text-white/50">Amount</span>
+            <span className="text-white font-semibold">${Number(txResult.outAmount || amount).toFixed(2)}</span>
           </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/50">Reference</span>
+            <span className="text-white/70 font-mono">{String(txResult.signature || '').slice(0, 16)}...</span>
+          </div>
+        </div>
+        {!isPending && (
           <a
             href={`https://solscan.io/tx/${txResult.signature}${import.meta.env.VITE_SOLANA_NETWORK === 'devnet' ? '?cluster=devnet' : ''}`}
             target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary w-full text-xs !py-2 flex items-center justify-center gap-2 mt-6"
+            rel="noreferrer"
+            className="btn-secondary w-full !py-2 text-xs flex items-center justify-center gap-2 mb-3"
           >
             View on Solscan <ExternalLink size={12} />
           </a>
-        </div>
-
-        {!isPending && (
-          <button onClick={handleReset} className="btn-primary w-full">
-            <RefreshCw size={16} />
-            Send another tip
-          </button>
         )}
-      </div>
-    );
-  }
-
-  if (txStep === 'select-currency') {
-    return (
-      <div className="glass-card p-6 min-h-[500px] flex flex-col animate-scale-in">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-lg font-bold">Select Asset</h3>
-          <button onClick={() => setTxStep('confirm')} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <AlertCircle size={20} className="rotate-45 text-white/40" />
-          </button>
-        </div>
-        <div className="relative mb-6">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
-          <input
-            type="text"
-            autoFocus
-            className="input-field w-full pl-12 pr-4"
-            placeholder="Search assets..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar">
-          {!searchTerm && (
-            <div>
-              <h4 className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-4">Popular</h4>
-              <div className="space-y-1">
-                {tokens.slice(0, 4).map(token => (
-                  <TokenListItem
-                    key={token.symbol}
-                    token={token}
-                    isSelected={selectedToken.symbol === token.symbol}
-                    onClick={() => { setSelectedToken(token); setTxStep('confirm'); }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          <div>
-            <h4 className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-4">
-              {searchTerm ? 'Search Results' : `All Assets (${tokens.length})`}
-            </h4>
-            <div className="space-y-1">
-              {filteredTokens.map(token => (
-                <TokenListItem
-                  key={token.symbol}
-                  token={token}
-                  isSelected={selectedToken.symbol === token.symbol}
-                  onClick={() => { setSelectedToken(token); setTxStep('confirm'); }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (txStep === 'confirm') {
-    return (
-      <div className="glass-card p-8 animate-scale-in max-w-lg mx-auto relative overflow-hidden">
-        <div className="flex items-center justify-between mb-8">
-          <button onClick={() => setTxStep('configure')} className="text-white/40 hover:text-white transition-colors flex items-center gap-1.5 font-medium text-xs">
-            <ChevronDown size={16} className="rotate-90" /> Back
-          </button>
-          <h3 className="text-lg font-bold">Confirm Tip</h3>
-          <div className="w-10" />
-        </div>
-
-        {/* --- QR Handover (Desktop Only) --- */}
-        {!isMobile() && (
-          <div className="hidden md:flex flex-col items-center mb-8 p-6 bg-white/[0.03] rounded-2xl border border-white/5">
-            <div className="bg-white p-2 rounded-xl mb-3 shadow-2xl shadow-brand-500/10">
-              <QRCodeSVG 
-                value={window.location.href} 
-                size={140} 
-                fgColor="#000000"
-                imageSettings={{
-                    src: "/favicon.svg",
-                    height: 24,
-                    width: 24,
-                    excavate: true,
-                }}
-              />
-            </div>
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest text-center">
-              Scan with Phantom or Solflare
-            </p>
-          </div>
-        )}
-
-        {/* --- Jupiter Execution Metrics --- */}
-        {route && (
-          <div className="mb-6 p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3">
-             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/40">
-                <div className="flex items-center gap-1.5">
-                    <Zap size={12} className="text-brand-500" />
-                    Optimal Route Found
-                </div>
-                <span className="text-brand-500">Jupiter Aggregator</span>
-             </div>
-             <div className="flex items-center justify-between text-xs">
-                <span className="text-white/60">Execution Speed</span>
-                <span className="text-white font-medium">{route.estimatedTime}</span>
-             </div>
-             <div className="flex items-center justify-between text-xs">
-                <span className="text-white/60">MEV Protection</span>
-                <span className="text-emerald-500 font-bold italic uppercase text-[9px]">Fortified</span>
-             </div>
-             <div className="flex items-center justify-between text-xs">
-                <span className="text-white/60">Slippage Guard</span>
-                <span className="text-sky-500 font-bold italic uppercase text-[9px]">Active (1.5% Cap)</span>
-             </div>
-          </div>
-        )}
-
-        {/* --- ZERO-TRUST SECURITY BADGE --- */}
-        <div className="mb-6 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
-            <ShieldCheck size={18} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Verified Secure</p>
-            <p className="text-[9px] text-white/40 leading-none">End-to-end encryption • Non-custodial</p>
-          </div>
-          <div className="ml-auto flex gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />
-          </div>
-        </div>
-
-        <div className="bg-white/[0.02] border border-white/5 rounded-xl p-6 mb-8">
-          <div className="flex justify-between items-start mb-1">
-            <h4 className="text-sm font-medium text-white/40">Amount</h4>
-            <span className="text-2xl font-bold tracking-tight">${parseFloat(amount).toFixed(2)}</span>
-          </div>
-          <p className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-8">Direct Transfer</p>
-
-          <label className="text-[10px] font-semibold text-white/20 uppercase tracking-wider mb-3 block">Pay with</label>
-          <button
-            onClick={() => setTxStep('select-currency')}
-            className="w-full h-14 bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-xl px-4 flex items-center justify-between transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold text-[10px] border border-brand-500/10 overflow-hidden">
-                {selectedToken.logoURI ? (
-                   <img src={selectedToken.logoURI} alt="" className="w-full h-full object-cover" />
-                ) : (
-                   selectedToken.symbol[0]
-                )}
-              </div>
-              <div className="text-left">
-                <span className="text-sm font-semibold block leading-none text-white">{selectedToken.symbol}</span>
-                <span className="text-[9px] font-medium text-white/20 uppercase tracking-tight">Solana</span>
-              </div>
-            </div>
-            <ChevronDown size={14} className="text-white/20 group-hover:text-white/40 transition-colors" />
-          </button>
-        </div>
-
-        {simulating && (
-          <div className="mb-6 p-4 bg-brand-500/5 border border-brand-500/10 rounded-lg flex items-center gap-3">
-            <Loader2 size={16} className="animate-spin text-brand-500" />
-            <span className="text-[10px] font-semibold text-brand-500 uppercase tracking-wider">Simulating...</span>
-          </div>
-        )}
-
-        {simulation && !simError && (
-          <div className="mb-6 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-lg animate-fade-in">
-            <div className="flex items-center gap-2 mb-2">
-              <ShieldCheck size={14} className="text-emerald-500" />
-              <span className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider">Simulation Success</span>
-            </div>
-            <div className="flex justify-between text-[10px] font-medium text-white/40">
-              <span>Expected Balance Change</span>
-              <span className="text-white">-{parseFloat(totalAuthorizedUSDC).toFixed(2)} USDC</span>
-            </div>
-          </div>
-        )}
-
-        {/* --- SNS Impersonation Safety (Task 3.3) --- */}
-        {recipientInput.includes('.sol') && (
-          <div className="mb-6 animate-fade-in">
-            <SNSWarning snsName={recipientInput} />
-          </div>
-        )}
-
-        {/* --- Error Messages --- */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg animate-fade-in">
-            <div className="flex items-center gap-3">
-              <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
-              <p className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">{error}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          {route && (
-            <div className="px-1 space-y-4 mb-8">
-              <div className="pt-4 border-t border-white/5 space-y-3">
-                <div className="flex justify-between text-xs">
-                  <span className="text-white/40">Base Tip</span>
-                  <span className="text-white font-medium">${parseFloat(tipAmountUSDC).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-white/40">Platform Fee (5%)</span>
-                  <span className="text-sky-500 font-medium">+${parseFloat(feeAmountUSDC).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-lg pt-4 border-t border-white/10 mt-2">
-                  <span className="text-white font-bold">Total</span>
-                  <span className="text-brand-500 font-bold tracking-tight">${parseFloat(totalAuthorizedUSDC).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isMobile() && !hasSolanaProvider() ? (
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => window.location.href = getSolanaPayUri(resolvedAddress, amount, selectedToken.mint)}
-                className="btn-primary w-full !h-14 bg-brand-500 !text-black border-none shadow-brand-500/20"
-              >
-                <Zap size={20} fill="currentColor" />
-                Instant Pay with Wallet
-              </button>
-
-              <div className="relative py-1">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-                <div className="relative flex justify-center text-[8px] uppercase font-black tracking-widest"><span className="bg-[#111111] px-4 text-white/10">Or open app browser</span></div>
-              </div>
-
-              <button
-                onClick={() => window.location.href = getPhantomDeepLink(window.location.href)}
-                className="btn-primary w-full !h-12 bg-[#AB9FF2] hover:bg-[#9081E6] !text-white border-none shadow-none"
-              >
-                <img src="https://phantom.app/favicon.ico" alt="Phantom" className="w-5 h-5 rounded-full" />
-                Open in Phantom
-              </button>
-              <button
-                onClick={() => window.location.href = getSolflareDeepLink(window.location.href)}
-                className="btn-primary w-full !h-12 bg-[#E78E3A] hover:bg-[#D67C28] !text-white border-none shadow-none"
-              >
-                <img src="https://solflare.com/favicon.ico" alt="Solflare" className="w-5 h-5 rounded-full" />
-                Open in Solflare
-              </button>
-              <button
-                onClick={() => window.location.href = getJupiterDeepLink(window.location.href)}
-                className="btn-primary w-full !h-12 bg-[#1b1c1d] hover:bg-[#2a2b2c] !text-[#24e8af] border border-[#24e8af]/20 shadow-none"
-              >
-                <img src="https://jup.ag/favicon.ico" alt="Jupiter" className="w-5 h-5 rounded-full" />
-                Open in Jupiter
-              </button>
-              <button
-                onClick={() => window.location.href = getBackpackDeepLink(window.location.href)}
-                className="btn-primary w-full !h-12 bg-[#E33E3F] hover:bg-[#C23233] !text-white border-none shadow-none"
-              >
-                <img src="https://backpack.app/favicon.ico" alt="Backpack" className="w-5 h-5 rounded-full" />
-                Open in Backpack
-              </button>
-            </div>
-          ) : !publicKey ? (
-            <div className="flex justify-center w-full mt-4 border-t border-white/10 pt-6">
-              <button 
-                onClick={() => setShowWalletModal(true)}
-                className="btn-primary w-full !h-12"
-              >
-                <Zap size={18} /> Connect Wallet to Pay
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleSendTip}
-              disabled={processing || !route || simulating}
-              className="btn-primary w-full !h-14 text-lg disabled:opacity-50"
-            >
-              {processing ? <Loader2 size={24} className="animate-spin" /> : <CreditCard size={20} />}
-              Confirm & Pay
-            </button>
-          )}
-
-          {/* --- FOSSA PAY INTEGRATION --- */}
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-            <div className="relative flex justify-center text-[9px] uppercase font-black tracking-widest"><span className="bg-[#111111] px-4 text-white/20">OR</span></div>
-          </div>
-          <button
-            onClick={handleFiatTip}
-            disabled={processing || !resolvedAddress}
-            className="w-full h-14 bg-white hover:bg-white/90 text-black rounded-xl font-bold flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
-          >
-            <CreditCard size={20} />
-            Pay with Card or Bank
-          </button>
-
-          <p className="text-center text-[10px] font-semibold text-white/20 uppercase tracking-wider mt-6">
-              0% direct transfer fees • Instant creator payout
-          </p>
-        </div>
+        <button onClick={handleReset} className="btn-primary w-full !h-12">
+          Send another tip
+        </button>
       </div>
     );
   }
 
   return (
-    <div id="tip-widget" className="glass-card p-6 sm:p-10 max-w-lg mx-auto relative transition-all duration-300">
-      <div className="text-center mb-10">
-        <h3 className="text-2xl font-bold mb-2 flex items-center justify-center gap-3">
-          <Zap size={24} className="text-brand-500" />
-          {fixedRecipient ? `Tip ${fixedRecipient.username}` : 'Send Tip'}
-        </h3>
-        <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">Direct on-chain support</p>
-      </div>
-
+    <div className="glass-card p-6 max-w-lg mx-auto">
       {!fixedRecipient && (
-        <div className="mb-8">
-          <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-3 block">Recipient</label>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
-              {isResolving ? <Loader2 size={18} className="animate-spin text-brand-500" /> : <Search size={18} />}
-            </div>
-            <input
-              type="text"
-              className="input-field w-full pl-12 pr-4"
-              placeholder="Username or address"
-              value={recipientInput}
-              onChange={(e) => setRecipientInput(e.target.value)}
-            />
-          </div>
+        <div className="mb-4">
+          <label className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2 block">Recipient</label>
+          <input
+            type="text"
+            value={recipientInput}
+            onChange={(event) => setRecipientInput(event.target.value)}
+            placeholder="username or wallet"
+            className="input-field w-full"
+          />
+          {isResolving && <p className="text-[10px] text-white/40 mt-2">Resolving recipient...</p>}
         </div>
       )}
 
-      <div className="bg-white/[0.02] border border-white/5 rounded-xl p-6 sm:p-8 mb-8">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <span className="text-3xl sm:text-4xl font-bold text-white/20">$</span>
-          <input
-            type="number"
-            className="w-24 sm:w-32 bg-transparent text-4xl sm:text-5xl font-bold outline-none placeholder-white/5 caret-brand-500 text-center"
-            placeholder="5"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
+      <div className="rounded-xl border border-white/10 p-5 bg-[#080816]">
+        <p className="text-2xl font-bold text-white mb-1">${Number(amount || 0).toFixed(0)}</p>
+        <p className="text-[11px] text-white/45 mb-4">Starter Plan • one-time payment</p>
+
+        <label className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2 block">Pay with</label>
+        <div className="grid grid-cols-2 gap-2 rounded-xl p-1 bg-black/30 border border-white/10 mb-4">
+          <button
+            className={`h-10 rounded-lg text-sm font-semibold transition-all ${paymentMethod === 'card' ? 'bg-brand-600 text-white' : 'text-white/55 hover:text-white'}`}
+            onClick={() => setPaymentMethod('card')}
+          >
+            <span className="inline-flex items-center gap-2 justify-center">
+              <CreditCard size={14} /> Card
+            </span>
+          </button>
+          <button
+            className={`h-10 rounded-lg text-sm font-semibold transition-all ${paymentMethod === 'crypto' ? 'bg-brand-600 text-white' : 'text-white/55 hover:text-white'}`}
+            onClick={() => setPaymentMethod('crypto')}
+          >
+            <span className="inline-flex items-center gap-2 justify-center">
+              <Wallet size={14} /> Crypto
+            </span>
+          </button>
         </div>
-        <div className="flex gap-2 mb-8">
-          {[1, 5, 10, 20].map((val) => (
+
+        {paymentMethod === 'crypto' && (
+          <div className="space-y-3">
             <button
-              key={val}
-              onClick={() => setAmount(val.toString())}
-              className={`flex-1 py-3 rounded-lg border text-sm font-semibold transition-all ${amount === val.toString()
-                  ? 'bg-brand-500 border-brand-500 text-black'
-                  : 'bg-white/5 border-white/5 text-white/40 hover:border-white/10 hover:text-white'
-                }`}
+              onClick={() => setShowTokenMenu((v) => !v)}
+              className="w-full h-11 rounded-lg border border-white/10 bg-black/20 px-3 flex items-center justify-between text-sm"
             >
-              {val}
+              <span className="text-white">{selectedToken?.symbol || 'Select currency'}</span>
+              <ChevronDown size={14} className="text-white/40" />
             </button>
-          ))}
-        </div>
-        <textarea
-          className="input-field w-full !h-24 py-3 px-4 resize-none text-sm"
-          placeholder="Include a message... (optional)"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-
-        {/* --- STRATEGIC ROADMAP: Creator Subscriptions (P1) --- */}
-        <div className="mt-6 p-4 bg-brand-500/5 border border-brand-500/10 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-brand-500/10 transition-all"
-             onClick={() => setIsRecurring(!isRecurring)}>
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isRecurring ? 'bg-brand-500 text-black' : 'bg-white/5 text-white/20'}`}>
-              <RefreshCw size={20} className={isRecurring ? 'animate-spin-slow' : ''} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white leading-tight">Monthly Support</p>
-              <p className="text-[10px] text-white/40 leading-tight">Automate this tip every 30 days</p>
-            </div>
-          </div>
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isRecurring ? 'border-brand-500 bg-brand-500' : 'border-white/10'}`}>
-            {isRecurring && <Check size={12} className="text-black stroke-[4px]" />}
-          </div>
-        </div>
-        {/* --- STRATEGIC ROADMAP: Yield-Bearing Tips (P1) --- */}
-        <div className="mt-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-emerald-500/10 transition-all"
-             onClick={() => setYieldEnabled(!yieldEnabled)}>
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${yieldEnabled ? 'bg-emerald-500 text-black' : 'bg-white/5 text-white/20'}`}>
-              <Activity size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white leading-tight">Yield-Bearing Tip</p>
-              <p className="text-[10px] text-white/40 leading-tight">Creator earns SOL staking yield</p>
-            </div>
-          </div>
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${yieldEnabled ? 'border-emerald-500 bg-emerald-500' : 'border-white/10'}`}>
-            {yieldEnabled && <Check size={12} className="text-black stroke-[4px]" />}
-          </div>
-        </div>
-
-        {/* --- STRATEGIC ROADMAP: Gasless Managed Landing (P2) --- */}
-        <div className="mt-3 p-4 bg-sky-500/5 border border-sky-500/10 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-sky-500/10 transition-all"
-             onClick={() => setGaslessEnabled(!gaslessEnabled)}>
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${gaslessEnabled ? 'bg-sky-500 text-black' : 'bg-white/5 text-white/20'}`}>
-              <Zap size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white leading-tight">Gasless Tipping</p>
-              <p className="text-[10px] text-white/40 leading-tight">Creator sponsors your SOL fees</p>
-            </div>
-          </div>
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${gaslessEnabled ? 'border-sky-500 bg-sky-500' : 'border-white/10'}`}>
-            {gaslessEnabled && <Check size={12} className="text-black stroke-[4px]" />}
-          </div>
-        </div>
-      </div>
-
-      <button
-        onClick={() => setTxStep('confirm')}
-        disabled={!resolvedAddress || !amount || parseFloat(amount) <= 0}
-        className="btn-primary w-full !h-14 group"
-      >
-        <span className="text-lg font-bold">
-          {isRecurring ? `Subscribe $${amount || '5'}/mo` : `Support $${amount || '5'}`}
-        </span>
-        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-      </button>
-    </div>
-  );
-}
-
-function TokenListItem({ token, isSelected, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center justify-between p-3.5 rounded-lg border transition-all ${isSelected
-          ? 'bg-brand-500/5 border-brand-500/50'
-          : 'bg-[#161616] border-white/5 hover:border-white/10 hover:bg-[#1a1a1a]'
-        }`}
-    >
-      <div className="flex items-center gap-4">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] border overflow-hidden ${isSelected ? 'bg-brand-500 text-black border-brand-500 font-bold' : 'bg-white/5 text-white/40 border-white/5 font-bold'
-          }`}>
-          {token.logoURI ? (
-             <img src={token.logoURI} alt="" className="w-full h-full object-cover" />
-          ) : (
-             token.symbol[0]
-          )}
-        </div>
-        <div className="text-left">
-          <span className="font-semibold text-sm block leading-none text-white">{token.symbol}</span>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[10px] font-medium text-white/20 uppercase tracking-tight">{token.name}</span>
-            {token.balance > 0 && (
-              <span className="text-[9px] px-1.5 py-0.5 bg-brand-500/10 text-brand-500 rounded font-bold">{token.balance.toFixed(2)}</span>
+            {showTokenMenu && (
+              <div className="rounded-lg border border-white/10 bg-black/40 p-2 max-h-52 overflow-y-auto">
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search token"
+                  className="input-field w-full !h-9 mb-2 text-sm"
+                />
+                <div className="space-y-1">
+                  {tokensLoading && <p className="text-[11px] text-white/45 px-2 py-1">Loading Jupiter tokens...</p>}
+                  {!tokensLoading && filteredTokens.slice(0, 40).map((token) => (
+                    <button
+                      key={token.mint}
+                      onClick={() => {
+                        setSelectedToken(token);
+                        setShowTokenMenu(false);
+                      }}
+                      className="w-full text-left px-2 py-2 rounded-md hover:bg-white/5 flex items-center justify-between"
+                    >
+                      <span className="text-sm text-white">{token.symbol}</span>
+                      <span className="text-[10px] text-white/40">{token.balance ? token.balance.toFixed(2) : ''}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
+        )}
+
+        {paymentMethod === 'card' && (
+          <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+            {quoteLoading ? (
+              <p className="text-[11px] text-white/45">Fetching USD/NGN rate...</p>
+            ) : fiatQuote ? (
+              <div className="space-y-1 text-xs">
+                <p className="text-white/70">₦{Number(fiatQuote.rate).toLocaleString()} per USDC</p>
+                <p className="text-brand-400 font-semibold">You pay ${Number(amount || 0).toFixed(2)} • ~₦{Number(fiatQuote.amountNgn).toLocaleString()}</p>
+                {fiatQuote.isFallback && (
+                  <p className="text-[10px] text-amber-400">Using fallback rate feed.</p>
+                )}
+                <p className="text-[10px] text-white/40">
+                  Quote valid until {new Date(fiatQuote.expiresAt).toLocaleTimeString()}
+                  {fiatQuote.stale ? ' (stale)' : ''}
+                </p>
+              </div>
+            ) : (
+              <p className="text-[11px] text-white/45">Local exchange quote unavailable right now.</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Repeat size={14} className="text-white/60" />
+          <div>
+            <p className="text-xs text-white font-semibold">Monthly support</p>
+            <p className="text-[10px] text-white/40">Automate this tip every 30 days</p>
+          </div>
         </div>
+        <button
+          onClick={() => setIsRecurring((v) => !v)}
+          className={`w-11 h-6 rounded-full transition-colors relative ${isRecurring ? 'bg-brand-500' : 'bg-white/15'}`}
+        >
+          <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isRecurring ? 'translate-x-5' : ''}`} />
+        </button>
       </div>
-      <div className="flex items-center gap-2">
-        {isSelected && <Check size={16} className="text-brand-500" />}
-        <span className="badge">SOLANA</span>
+
+      <div className="mt-4">
+        <label className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2 block">Message (optional)</label>
+        <textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Add a note"
+          className="input-field w-full !h-20 resize-none"
+        />
       </div>
-    </button>
+
+      {paymentMethod === 'crypto' && route && (
+        <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-1 text-xs">
+          <div className="flex justify-between"><span className="text-white/50">Tip</span><span className="text-white">${Number(tipAmountUSDC).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span className="text-white/50">Fee</span><span className="text-white/80">${Number(feeAmountUSDC).toFixed(2)}</span></div>
+          <div className="flex justify-between pt-1 border-t border-white/10"><span className="text-white font-semibold">Total</span><span className="text-brand-400 font-semibold">${Number(totalAuthorizedUSDC).toFixed(2)}</span></div>
+        </div>
+      )}
+
+      {(widgetError || error) && (
+        <p className="mt-3 text-xs text-red-400">{widgetError || error}</p>
+      )}
+
+      {showOnboardingNudge && (
+        <p className="mt-3 text-[11px] text-white/55">
+          First time here: choose Card for fastest checkout, or Crypto for direct wallet payment.
+        </p>
+      )}
+
+      <button
+        onClick={paymentMethod === 'card' ? handleFiatPay : handleCryptoPay}
+        disabled={
+          !resolvedAddress ||
+          !amount ||
+          Number(amount) <= 0 ||
+          processing ||
+          (paymentMethod === 'crypto' && (isRecurring ? !recurringRoute : !route))
+        }
+        className="btn-primary w-full !h-14 mt-5 disabled:opacity-50"
+      >
+        {processing ? (
+          <Loader2 size={18} className="animate-spin" />
+        ) : (
+          <>
+            {paymentMethod === 'card' ? (
+              <>
+                <CreditCard size={16} /> Pay with Card
+              </>
+            ) : (
+              <>
+                {publicKey ? <Wallet size={16} /> : <Wallet size={16} />}
+                {publicKey ? (isRecurring ? 'Start Monthly Support' : 'Pay with Crypto') : 'Connect Wallet'}
+              </>
+            )}
+            <ArrowRight size={16} />
+          </>
+        )}
+      </button>
+    </div>
   );
 }

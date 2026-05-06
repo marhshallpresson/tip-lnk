@@ -115,6 +115,8 @@ export async function initSchema() {
         table.string('walletAddressHash').unique().index();
         table.string('solDomain').unique();
         table.boolean('auto_convert_usdc').defaultTo(true);
+        table.boolean('yield_enabled').defaultTo(false);
+        table.boolean('gasless_enabled').defaultTo(false);
         table.boolean('onboardingComplete').defaultTo(false);
         table.integer('followers_count').defaultTo(0);
         table.integer('following_count').defaultTo(0);
@@ -141,6 +143,22 @@ export async function initSchema() {
                 table.boolean('onboardingComplete').defaultTo(false);
             });
             console.log('🛡️ Migration: Added onboardingComplete column to user table.');
+        }
+
+        const hasYieldEnabled = await db.schema.hasColumn('user', 'yield_enabled');
+        if (!hasYieldEnabled) {
+            await db.schema.table('user', (table) => {
+                table.boolean('yield_enabled').defaultTo(false);
+            });
+            console.log('🛡️ Migration: Added yield_enabled column to user table.');
+        }
+
+        const hasGaslessEnabled = await db.schema.hasColumn('user', 'gasless_enabled');
+        if (!hasGaslessEnabled) {
+            await db.schema.table('user', (table) => {
+                table.boolean('gasless_enabled').defaultTo(false);
+            });
+            console.log('🛡️ Migration: Added gasless_enabled column to user table.');
         }
 
         const hasEncryptedWallet = await db.schema.hasColumn('user', 'encryptedWalletAddress');
@@ -310,6 +328,44 @@ export async function initSchema() {
       });
     }
 
+    if (!(await db.schema.hasTable('fiat_payment_intents'))) {
+      await db.schema.createTable('fiat_payment_intents', (table) => {
+        table.string('intent_id').primary();
+        table.string('creator_id').references('id').inTable('user').onDelete('SET NULL');
+        table.string('destination_wallet').notNullable().index();
+        table.decimal('amount_usd', 20, 8).notNullable();
+        table.string('status').defaultTo('requires_action').index();
+        table.string('provider').defaultTo('fossapay');
+        table.string('provider_session_id');
+        table.string('sender_name');
+        table.text('memo');
+        table.text('metadata_json');
+        table.dateTime('completed_at');
+        table.timestamps(true, true);
+      });
+      console.log('🛡️ initSchema: Created fiat_payment_intents table.');
+    }
+
+    if (!(await db.schema.hasTable('fiat_webhook_events'))) {
+      await db.schema.createTable('fiat_webhook_events', (table) => {
+        table.uuid('id').primary();
+        if (db.client.config.client === 'pg') {
+          table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()')).alter();
+        }
+        table.string('reference').notNullable().unique().index();
+        table.string('tx_hash').unique().index();
+        table.string('destination_wallet').index();
+        table.string('status').index();
+        table.string('event_type');
+        table.string('payload_digest').unique().index();
+        table.text('payload_json');
+        table.string('processing_state').defaultTo('received').index();
+        table.text('error_message');
+        table.timestamps(true, true);
+      });
+      console.log('🛡️ initSchema: Created fiat_webhook_events table.');
+    }
+
     if (!(await db.schema.hasTable('oauth_clients'))) {
       await db.schema.createTable('oauth_clients', (table) => {
         table.string('id').primary();
@@ -334,7 +390,7 @@ export async function initSchema() {
       });
     }
 
-    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts', 'oauth_clients', 'oauth_tokens', 'analytics_daily'];
+    const tables = ['user', 'tips', 'indexer_state', 'roles', 'session', 'user_roles', 'email_verification_token', 'password_reset_token', 'payouts', 'fiat_payment_intents', 'fiat_webhook_events', 'oauth_clients', 'oauth_tokens', 'analytics_daily'];
     for (const table of tables) {
         try {
             await db.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY;`);

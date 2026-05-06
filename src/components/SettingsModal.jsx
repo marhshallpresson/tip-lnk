@@ -264,6 +264,36 @@ export default function SettingsModal({ isOpen, onClose }) {
                   </button>
                 </div>
 
+                <div className="p-4 bg-surface-900/40 border border-surface-800/60 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-white text-sm">Yield-Bearing Tips</h4>
+                    <p className="text-xs text-surface-500 mt-1 leading-relaxed">
+                      When enabled, incoming tips can settle to yield-bearing assets instead of plain USDC.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => updateProfile({ yield_enabled: profile.yield_enabled === true ? false : true })}
+                    className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${profile.yield_enabled === true ? 'bg-emerald-500' : 'bg-surface-700'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform ${profile.yield_enabled === true ? 'translate-x-5' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+
+                <div className="p-4 bg-surface-900/40 border border-surface-800/60 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-white text-sm">Gasless Tipping</h4>
+                    <p className="text-xs text-surface-500 mt-1 leading-relaxed">
+                      Sponsor network execution so supporters can complete payments without holding extra SOL for fees.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => updateProfile({ gasless_enabled: profile.gasless_enabled === true ? false : true })}
+                    className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${profile.gasless_enabled === true ? 'bg-sky-500' : 'bg-surface-700'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform ${profile.gasless_enabled === true ? 'translate-x-5' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+
                 <button 
                   onClick={handleSave}
                   disabled={isSaving}

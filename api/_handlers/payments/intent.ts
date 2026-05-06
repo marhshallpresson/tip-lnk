@@ -1,12 +1,17 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../_lib/db.js"
-import { rpcManager } from "../../_lib/rpc.js"
 import { PublicKey } from "@solana/web3.js"
 import axios from "axios"
 import { randomUUID } from "crypto"
 
 import { decrypt } from "../../_lib/crypto.js"
 import { rateLimit } from "../../_ratelimit.js"
+
+const resolveBooleanSetting = (columnValue: any, legacyValue: any, fallback = false) => {
+  if (columnValue === true || columnValue === false) return columnValue;
+  if (legacyValue === true || legacyValue === false) return legacyValue;
+  return fallback;
+}
 
 /**
  * PHASE 2: Unified Intent Engine
@@ -24,14 +29,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       creatorId, 
       amount, 
       inputTokenMint, 
-      paymentMethod = 'external_wallet', 
-      sourceWalletAddress,
-      yield: yieldEnabled = false,
-      memo = '' 
+      sourceWalletAddress
     } = req.body
 
     if (!creatorId || !amount) {
       return res.status(400).json({ error: 'Creator ID and amount required' })
+    }
+
+    const normalizedAmount = Number(amount)
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number' })
     }
 
     // Resolve creator: ID, Handle, or Domain (Zero-Knowledge reference)
@@ -91,21 +98,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
     const JITOSOL_MINT = 'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn'
-    
-    let outputMint = JITOSOL_MINT // Default to Yield if requested
-    
-    if (!yieldEnabled) {
-      if (creator.auto_convert_usdc !== false) {
-         outputMint = USDC_MINT
-      } else {
-         outputMint = inputTokenMint
+
+    let profileData: any = {}
+    if (creator.profileData) {
+      try {
+        profileData = JSON.parse(creator.profileData)
+      } catch {
+        profileData = {}
       }
+    }
+    const creatorYieldEnabled = resolveBooleanSetting(creator.yield_enabled, profileData.yield_enabled, false)
+    const creatorGaslessEnabled = resolveBooleanSetting(creator.gasless_enabled, profileData.gasless_enabled, false)
+    const creatorAutoConvertUsdc = resolveBooleanSetting(creator.auto_convert_usdc, profileData.auto_convert_usdc, true)
+
+    let outputMint = JITOSOL_MINT
+    if (!creatorYieldEnabled) {
+      outputMint = creatorAutoConvertUsdc !== false ? USDC_MINT : inputTokenMint
     }
 
     const isDirect = inputTokenMint === outputMint
     
     let order = null;
-    let executionMode = 'sync';
 
     try {
       // PHASE 3: Jupiter Ultra Swap (Unified API)
@@ -116,14 +129,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new Error('JUPITER_API_KEY is missing in environment')
       }
 
-      const isGasless = req.body.gasless === true && creator.gasless_enabled === true;
+      const isGasless = creatorGaslessEnabled === true;
 
       console.log(`🚀 Jupiter Ultra: Fetching order for ${amount} ${inputTokenMint} -> ${outputMint} (Gasless: ${isGasless})`)
 
       const orderParams = new URLSearchParams({
         inputMint: inputTokenMint,
         outputMint: outputMint,
-        amount: amount.toString(),
+        amount: normalizedAmount.toString(),
         userPublicKey: sourceWalletAddress,
         slippageBps: '50',
         // Managed landing is required for gasless abstraction
@@ -149,7 +162,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         executionMode: isGasless ? 'async' : 'sync', // Gasless usually requires async landing
         lastValidBlockHeight: order.lastValidBlockHeight,
         provider: 'jupiter-ultra',
-        isGasless
+        isGasless,
+        settings: {
+          yieldEnabled: creatorYieldEnabled,
+          gaslessEnabled: creatorGaslessEnabled,
+          autoConvertUsdc: creatorAutoConvertUsdc !== false
+        }
       })
 
     } catch (ultraErr: any) {
@@ -160,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const platformFeeBps = isDirect ? 0 : 500
       const feeBpsParam = platformFeeBps > 0 ? `&platformFeeBps=${platformFeeBps}` : ''
       
-      const quoteUrl = `${JUP_V6_API}/quote?inputMint=${inputTokenMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50${feeBpsParam}`
+      const quoteUrl = `${JUP_V6_API}/quote?inputMint=${inputTokenMint}&outputMint=${outputMint}&amount=${normalizedAmount}&slippageBps=50${feeBpsParam}`
       
       const quoteResponse = await axios.get(quoteUrl)
       const quote = quoteResponse.data
@@ -195,7 +213,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         transaction: swapTransaction,
         executionMode: 'sync',
-        provider: 'jupiter-v6'
+        provider: 'jupiter-v6',
+        settings: {
+          yieldEnabled: creatorYieldEnabled,
+          gaslessEnabled: creatorGaslessEnabled,
+          autoConvertUsdc: creatorAutoConvertUsdc !== false
+        }
       })
     }
 
