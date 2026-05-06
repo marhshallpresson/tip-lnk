@@ -206,9 +206,10 @@ export async function initSchema() {
 
     if (!(await db.schema.hasTable('transactions_raw'))) {
       await db.schema.createTable('transactions_raw', (table) => {
-        table.uuid('id').primary();
         if (db.client.config.client === 'pg') {
-          table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()')).alter();
+          table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        } else {
+          table.uuid('id').primary();
         }
         table.string('signature').unique().notNullable();
         table.text('payload').notNullable();
@@ -314,9 +315,10 @@ export async function initSchema() {
     if (!(await db.schema.hasTable('payouts'))) {
       console.log('🛡️ initSchema: Creating payouts table...');
       await db.schema.createTable('payouts', (table) => {
-        table.uuid('id').primary();
         if (db.client.config.client === 'pg') {
-           table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()')).alter();
+           table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        } else {
+           table.uuid('id').primary();
         }
         table.string('pajcash_reference').unique().notNullable();
         table.string('status').notNullable();
@@ -348,9 +350,10 @@ export async function initSchema() {
 
     if (!(await db.schema.hasTable('fiat_webhook_events'))) {
       await db.schema.createTable('fiat_webhook_events', (table) => {
-        table.uuid('id').primary();
         if (db.client.config.client === 'pg') {
-          table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()')).alter();
+          table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        } else {
+          table.uuid('id').primary();
         }
         table.string('reference').notNullable().unique().index();
         table.string('tx_hash').unique().index();
