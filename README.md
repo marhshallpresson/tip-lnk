@@ -195,7 +195,7 @@ Integrate Tip Stack into your platform in seconds:
 ```
 VITE_DYNAMIC_ENVIRONMENT_ID=your_dynamic_env_id
 VITE_QUICKNODE_SOLANA_RPC=your_quicknode_rpc_url
-VITE_API_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://localhost:3000
 ```
 
 ### Backend API (.env)

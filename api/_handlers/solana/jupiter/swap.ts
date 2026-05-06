@@ -36,7 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // SECURITY: Validate and enforce slippage bounds
     const outputTokenAddr = new PublicKey(outputMint)
     const maxAllowedSlippagePercent = getSlippageLimitForToken(outputTokenAddr)
-    const maxAllowedSlippageBps = Math.round(maxAllowedSlippagePercent * 100)
+    const GLOBAL_MAX_SLIPPAGE_BPS = 1500; // 15% CIRCUIT BREAKER
+    const maxAllowedSlippageBps = Math.min(Math.round(maxAllowedSlippagePercent * 100), GLOBAL_MAX_SLIPPAGE_BPS)
 
     if (slippageBps > maxAllowedSlippageBps) {
       return res.status(400).json({

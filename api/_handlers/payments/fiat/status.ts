@@ -18,15 +18,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ success: false, error: 'Intent not found' })
     }
 
+    const tipRecord = await db('tips').where({ signature: intentId }).first()
+    const effectiveStatus = tipRecord ? 'completed' : (intent.status || 'requires_action')
+
     return res.json({
       success: true,
       intentId,
-      status: intent.status || 'requires_action',
-      completedAt: intent.completed_at || null
+      status: effectiveStatus,
+      completedAt: intent.completed_at || tipRecord?.timestamp || null
     })
   } catch (error: any) {
     console.error('Fiat status lookup failed:', error?.message || error)
     return res.status(500).json({ success: false, error: 'Failed to fetch fiat status' })
   }
 }
-

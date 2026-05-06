@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { db } from '../../../_lib/db.js'
 import { emitTorqueEvent } from '../../../_lib/torque.js'
 import { Redis } from '@upstash/redis'
+import { PublicKey } from '@solana/web3.js'
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
   ? new Redis({
@@ -79,6 +80,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing webhook reference or destination wallet' })
   }
 
+  // SANITY: Validate destination wallet format
+  try {
+    new PublicKey(destinationWallet);
+  } catch (e) {
+    console.warn(`🛡️ Fiat Webhook: Invalid destination wallet format: ${destinationWallet}`);
+    return res.status(400).json({ error: 'Invalid destination wallet' });
+  }
+
   // FossaPay uses 'deposit.completed', legacy code uses 'completed' or 'successful'
   const isCompleted = status === 'completed' || status === 'successful' || event === 'deposit.completed'
 
@@ -127,6 +136,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error_message: 'Unknown intent reference',
         created_at: new Date(),
         updated_at: new Date()
+      }).onConflict('reference').merge({
+        processing_state: 'rejected',
+        error_message: 'Unknown intent reference',
+        updated_at: new Date()
       })
       return res.status(409).json({ error: 'Unknown intent reference' })
     }
@@ -143,6 +156,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         processing_state: 'rejected',
         error_message: 'Destination wallet mismatch',
         created_at: new Date(),
+        updated_at: new Date()
+      }).onConflict('reference').merge({
+        processing_state: 'rejected',
+        error_message: 'Destination wallet mismatch',
         updated_at: new Date()
       })
       return res.status(409).json({ error: 'Destination wallet mismatch for intent' })
@@ -188,6 +205,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payload_json: payload,
       processing_state: 'processed',
       created_at: timestamp,
+      updated_at: timestamp
+    }).onConflict('reference').merge({
+      processing_state: 'processed',
       updated_at: timestamp
     })
 
