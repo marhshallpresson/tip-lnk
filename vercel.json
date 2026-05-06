@@ -3,24 +3,12 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/actions.json",
-      "destination": "/api/solana/actions/config"
-    },
-    {
-      "source": "/api/actions.json",
-      "destination": "/api/solana/actions/config"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "src": "/actions.json", "dest": "/api/solana/actions/config" },
+    { "src": "/api/actions.json", "dest": "/api/solana/actions/config" },
+    { "src": "/api/:path*", "dest": "/api/index" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
   "headers": [
     {
