@@ -6,7 +6,7 @@ import { BrowserSDK, AddressType } from '@phantom/browser-sdk';
  */
 const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID;
 
-const appUrl = import.meta.env.VITE_APP_URL?.replace(/\/$/, '') || window.location.origin;
+const appUrl = import.meta.env.VITE_APP_URL?.replace(/\/$/, '') || 'https://tipstack.fun';
 const redirectUrl = `${appUrl}/auth/callback/phantom-google`;
 
 export const phantomSdk = new BrowserSDK({
