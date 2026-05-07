@@ -58,7 +58,8 @@ export default function SettingsModal({ isOpen, onClose }) {
 
   const handleConnectSocial = (platformId) => {
     if (platformId === 'google' || platformId === 'google-auth') {
-      window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google/start?next=${window.location.pathname}`;
+      setShowWalletModal(true);
+      onClose();
     } else {
       window.location.reload();
     }

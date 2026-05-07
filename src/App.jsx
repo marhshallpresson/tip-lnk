@@ -20,6 +20,9 @@ import AdminDashboard from './components/AdminDashboard';
 import AppNavbar from './components/AppNavbar';
 import ResetPassword from './components/ResetPassword';
 import api from './lib/api';
+import { phantomSdk } from './lib/phantom';
+import { buildSiwsMessage } from './lib/siws';
+import bs58 from 'bs58';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 
@@ -136,6 +139,7 @@ function AppContent() {
               </div>
             } />
 
+            <Route path="/auth/callback" element={<AuthCallbackHandler />} />
             <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
             <Route path="/auth/complete" element={<AuthCompletion />} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -221,6 +225,65 @@ function AuthCallbackHandler() {
 
   useEffect(() => {
     if (isPhantomGoogle) {
+      const finalizePhantomGoogle = async () => {
+        try {
+          if (!import.meta.env.VITE_PHANTOM_APP_ID) {
+            throw new Error('Phantom Google login is not configured.');
+          }
+
+          const provider = 'google';
+          const connectResult = (!phantomSdk.isConnected || !phantomSdk.publicKey)
+            ? await phantomSdk.connect({ provider })
+            : null;
+          const publicKey = connectResult?.publicKey || phantomSdk.publicKey;
+
+          if (!publicKey) {
+            throw new Error('No Phantom wallet was returned from Google login.');
+          }
+
+          const walletAddress = publicKey.toBase58();
+          const message = buildSiwsMessage(walletAddress);
+          const signResult = await phantomSdk.signMessage({
+            provider,
+            message: new TextEncoder().encode(message),
+          });
+          const signature = bs58.encode(signResult.signature);
+          const res = await api.post('/auth/callback/phantom-google', {
+            walletAddress,
+            signature,
+            message,
+          });
+
+          if (!res.ok || !res.data?.success) {
+            throw new Error(res.data?.error || 'Phantom Google login failed.');
+          }
+
+          api.setAccessToken(res.data.auth?.accessToken || null);
+          setStatus('success');
+
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'AUTH_SUCCESS',
+              accessToken: res.data.auth.accessToken,
+              user: res.data.user,
+            }, window.location.origin);
+            setTimeout(() => window.close(), 500);
+          } else {
+            setTimeout(() => navigate('/dashboard', { replace: true }), 300);
+          }
+        } catch (err) {
+          setError(err.message || 'Authentication failed.');
+          setStatus('error');
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'AUTH_ERROR',
+              error: err.message || 'Authentication failed.',
+            }, window.location.origin);
+          }
+        }
+      };
+
+      finalizePhantomGoogle();
       return;
     }
 
@@ -344,11 +407,28 @@ function AuthCallbackHandler() {
     <div className="min-h-screen flex items-center justify-center bg-surface-950">
       <div className="text-center animate-fade-in">
         {isPhantomGoogle ? (
-           <>
-            <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold text-white">Authenticating Wallet...</h2>
-            <p className="text-surface-400 mt-2 italic">Securing link with Google infrastructure...</p>
-           </>
+          status === 'error' ? (
+            <div className="text-accent-red">
+              <h2 className="text-2xl font-bold">Authentication Failed</h2>
+              <p className="mt-2">{error}</p>
+            </div>
+          ) : status === 'success' ? (
+            <div className="text-accent-green">
+              <div className="w-16 h-16 rounded-full bg-accent-green/20 flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold">Wallet Authenticated</h2>
+              <p className="text-surface-400 mt-2 italic">Finalizing your Phantom Google session...</p>
+            </div>
+          ) : (
+            <>
+              <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+              <h2 className="text-2xl font-bold text-white">Authenticating Wallet...</h2>
+              <p className="text-surface-400 mt-2 italic">Finalizing Phantom Google sign-in...</p>
+            </>
+          )
         ) : status === 'error' ? (
           <div className="text-accent-red">
             <h2 className="text-2xl font-bold">Verification Failed</h2>

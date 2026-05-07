@@ -103,66 +103,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = () => {
-    const isProd = import.meta.env.PROD;
-    const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-    const next = window.location.pathname + window.location.search;
-    
-    // Popup window configuration
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    const popup = window.open(
-      `${API_BASE}/api/auth/google/start?next=${encodeURIComponent(next)}`,
-      'tipstack_auth',
-      `width=${width},height=${height},left=${left},top=${top},status=no,location=no,menubar=no,toolbar=no`
-    );
-
-    if (!popup) {
-      setError('Popup blocked. Please allow popups for this site.');
-      return;
-    }
-
-    const handleMessage = async (event) => {
-      if (event.origin !== window.location.origin) return;
-      
-      if (event.data?.type === 'AUTH_SUCCESS') {
-        const { accessToken, user: userData } = event.data;
-        api.setAccessToken(accessToken);
-        localStorage.setItem('tipstack_auth_token', accessToken);
-        setUser(userData);
-        window.removeEventListener('message', handleMessage);
-      } else if (event.data?.type === 'AUTH_ERROR') {
-        setError(event.data.error || 'Authentication failed.');
-        window.removeEventListener('message', handleMessage);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-  };
-
-  const loginWithPhantomSocial = async (provider = 'google') => {
-    try {
-      setError(null);
-      // Phantom Social (Google) uses a redirect flow by default in BrowserSDK
-      // But we want to manage it in a popup if possible, or handle the redirect.
-      // For now, let's keep it in the current window but ensure state is handled.
-      const result = await phantomSdk.connect({ provider });
-      if (result && result.publicKey) {
-        // This will only run if NO REDIRECT happened (e.g. desktop)
-        const addr = result.publicKey.toBase58();
-        // Trigger SIWS
-        // ... handled in WalletConnect for now to keep context
-        return { success: true, publicKey: result.publicKey };
-      }
-    } catch (err) {
-      setError(err.message || 'Phantom connection failed');
-      return { success: false, error: err.message };
-    }
-  };
-
   const loginWithWallet = async (walletAddress, signature, message) => {
     try {
       setError(null);
@@ -227,7 +167,6 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    loginWithGoogle,
     loginWithWallet,
     checkEmailStatus,
     initLoginOtp,
