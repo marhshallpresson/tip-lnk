@@ -126,7 +126,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const JUP_API_KEY = process.env.JUPITER_API_KEY
 
       if (!JUP_API_KEY) {
-        throw new Error('JUPITER_API_KEY is missing in environment')
+        // Log as info/debug rather than error if we expect it might be missing
+        console.log('ℹ️ Jupiter Ultra key missing, using V6 public fallback')
+        throw new Error('NO_ULTRA_KEY')
       }
 
       const isGasless = creatorGaslessEnabled === true;
@@ -171,7 +173,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
 
     } catch (ultraErr: any) {
-      console.error('❌ Jupiter Ultra Error:', ultraErr.response?.data || ultraErr.message)
+      if (ultraErr.message !== 'NO_ULTRA_KEY') {
+        console.error('❌ Jupiter Ultra Error:', ultraErr.response?.data || ultraErr.message)
+      }
       
       // Secondary Fallback: Jupiter V6 (Classic)
       const JUP_V6_API = 'https://quote-api.jup.ag/v6'

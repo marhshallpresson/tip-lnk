@@ -23,6 +23,7 @@ import {
 import ReferralModal from './ReferralModal';
 import EmbedGenerator from './EmbedGenerator';
 import SettingsModal from './SettingsModal';
+import DistributionModal from './DistributionModal';
 import DashboardWalkthrough from './DashboardWalkthrough';
 
 export default function Dashboard() {
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isDistributionOpen, setIsDistributionOpen] = useState(false);
 
   useEffect(() => {
     const hasSeenWalkthrough = localStorage.getItem(`walkthrough_seen_${authUser?.id}`);
@@ -115,6 +117,13 @@ export default function Dashboard() {
         isOpen={isReferralOpen}
         onClose={() => setIsReferralOpen(false)}
         referralId={profile.referralId || profile.solDomain?.replace('.tipstack.sol', '') || 'creator'}
+      />
+
+      <DistributionModal 
+        isOpen={isDistributionOpen}
+        onClose={() => setIsDistributionOpen(false)}
+        creatorId={authUser?.id}
+        handle={profile.solDomain || profile.displayName || authUser?.id}
       />
 
       <SettingsModal
@@ -224,7 +233,7 @@ export default function Dashboard() {
                 <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest pl-2">Network Friends</span>
               </div>
               <button
-                onClick={() => setIsReferralOpen(true)}
+                onClick={() => setIsDistributionOpen(true)}
                 className="grass-pill bg-brand-500 !text-black !border-none hover:opacity-90 active:scale-95 transition-all font-bold text-xs"
               >
                 SHARE WITH FRIENDS

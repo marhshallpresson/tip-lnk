@@ -231,7 +231,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
   }
 
   return (
-    <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-5 w-full max-w-[380px] mx-auto shadow-2xl relative overflow-hidden font-sans">
+    <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-6 w-full max-w-[380px] mx-auto shadow-2xl relative overflow-hidden font-sans">
       
       {/* Header Info */}
       <div className="flex items-center gap-3 mb-6">
@@ -244,26 +244,25 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
                  </div>
              )}
           </div>
-          <div>
+          <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                  <h3 className="font-bold text-white text-base">@{recipientInput || 'creator'}</h3>
+                  <h3 className="font-bold text-white text-base tracking-tight">@{recipientInput || 'creator'}</h3>
                   <ShieldCheck size={14} className="text-brand-500" fill="currentColor" stroke="none" />
               </div>
+              <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Verified Creator</p>
           </div>
       </div>
 
-      <div className="h-px bg-white/5 mb-6" />
-
-      {/* Amount Presets */}
-      <div className="grid grid-cols-5 gap-2 mb-4">
+      {/* Amount Presets - Row Based as per reference */}
+      <div className="grid grid-cols-5 gap-2 mb-6">
           {PRESET_AMOUNTS.map(val => (
               <button
                 key={val}
                 onClick={() => setAmount(val.toString())}
-                className={`h-12 rounded-xl font-bold text-sm transition-all border ${
+                className={`h-11 rounded-xl font-bold text-xs transition-all border ${
                     isPresetActive(val) 
-                    ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-[1.05]' 
-                    : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'
+                    ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-[1.02]' 
+                    : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white'
                 }`}
               >
                   ${val}
@@ -271,20 +270,22 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
           ))}
       </div>
 
-      {/* Custom Amount & Note Section */}
-      <div className="space-y-4 mb-6">
+      {/* Custom Amount Section with Naira Conversion */}
+      <div className="space-y-4 mb-8">
           <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 font-bold">$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 font-bold text-lg">$</span>
               <input 
                 type="number" 
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl pl-8 pr-4 text-white font-bold focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
-                placeholder="Other amount"
+                className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl pl-10 pr-24 text-white font-bold text-xl focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
+                placeholder="0.00"
               />
-              {paymentMethod === 'card' && fiatQuote && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-brand-500 bg-brand-500/10 px-2 py-1 rounded-lg border border-brand-500/20">
-                      ~₦{Number(fiatQuote.amountNgn).toLocaleString()}
+              {paymentMethod === 'card' && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
+                      <div className="text-[10px] font-black text-brand-500 bg-brand-500/10 px-2.5 py-1.5 rounded-lg border border-brand-500/20 shadow-sm animate-fade-in whitespace-nowrap">
+                         {quoteLoading ? <Loader2 size={10} className="animate-spin" /> : `~₦${Number(fiatQuote?.amountNgn || 0).toLocaleString()}`}
+                      </div>
                   </div>
               )}
           </div>
@@ -297,24 +298,24 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
                 placeholder="Add a private note..."
                 className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl px-4 text-sm text-white/70 placeholder:text-white/20 focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500/50 bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
-                  <Lock size={10} /> Encrypted
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-500/20 shadow-sm">
+                  <Lock size={10} fill="currentColor" /> ENCRYPTED
               </div>
           </div>
       </div>
 
       {/* Payment Selection & Token Picker (Crypto Only) */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-4 mb-8">
           <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
               <button 
                 onClick={() => setPaymentMethod('card')}
-                className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
               >
                   <CreditCard size={12} /> Card (NGN)
               </button>
               <button 
                 onClick={() => setPaymentMethod('crypto')}
-                className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'crypto' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'crypto' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
               >
                   <Wallet size={12} /> Crypto (SOL)
               </button>

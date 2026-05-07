@@ -36,7 +36,7 @@ function useIsPhantom() {
 export default function WalletConnect({ onConnected }) {
   const { publicKey, connected, connect, select, wallets, signMessage } = useWallet();
   const { setVisible } = useWalletModal();
-  const { login, register, user, loginWithWallet, refreshUser, checkEmailStatus, initLoginOtp, verifyLoginOtp } = useAuth();
+  const { login, register, user, loginWithWallet, refreshUser, checkEmailStatus, initLoginOtp, verifyLoginOtp, loginWithGoogle } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   
