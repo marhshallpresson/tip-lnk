@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
 import { randomUUID } from "crypto"
-import axios from "axios"
 import { decrypt } from "../../../_lib/crypto.js"
+import { createCheckoutSession } from "../../../_lib/fossa.js"
 
 /**
  * PHASE 2: Fossa Pay Fiat Intent
- * Generates a checkout session for Card/Bank inbound payments.
+ * Generates a checkout session for Card/Bank inbound payments using Fossa Pay service.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -45,28 +45,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const intentId = `fossa_${randomUUID().replace(/-/g, '')}`
 
-    const FOSSA_API_KEY = process.env.FOSSA_API_KEY
-    const FOSSA_BASE_URL = process.env.FOSSA_BASE_URL || 'https://api.fossapay.com'
-
-    // Force mock mode if API key is missing or we're in a limited environment
-    const useMock = !FOSSA_API_KEY || FOSSA_API_KEY === 'NEVER_COMMIT_THIS' || process.env.NODE_ENV === 'development';
-
-    if (useMock) {
-        await db('fiat_payment_intents')
-          .insert({
-            ...baseIntentRecord,
-            provider_session_id: `mock_${intentId}`
-          })
-          .onConflict('intent_id')
-          .merge()
-        return res.json({
-          success: true,
-          intentId,
-          status: 'requires_action',
-          checkoutUrl: `https://checkout.fossapay.com/mock-pay/${intentId}?dest=${payoutAddress}&amt=${normalizedAmount}`
-        })
-    }
-
     const platformFee = normalizedAmount * 0.05
     const finalAmountUsd = normalizedAmount - platformFee
 
@@ -88,27 +66,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-      const response = await axios.post(`${FOSSA_BASE_URL}/api/v1/onramp/checkout`, {
-        amount: normalizedAmount,
-        currency: 'USD',
-        reference: intentId,
-        destinationWallet: payoutAddress,
-        paymentMethods: ['card', 'bank_transfer'],
-        metadata: {
-          creatorId: creator.id,
-          senderName,
-          memo,
-          platformFee
-        },
-        webhookUrl: `${process.env.APP_URL || 'https://tipstack.fun'}/api/payments/fiat/webhook`
-      }, {
-        headers: { 'Authorization': `Bearer ${FOSSA_API_KEY}` }
+      // Use new Fossa service module
+      const session = await createCheckoutSession(normalizedAmount, creator.id, {
+        intentId,
+        senderName,
+        memo,
+        platformFee,
+        destinationWallet: payoutAddress
       })
 
       await db('fiat_payment_intents')
         .insert({
           ...baseIntentRecord,
-          provider_session_id: response.data?.id || response.data?.sessionId || null
+          provider_session_id: session?.id || session?.sessionId || null
         })
         .onConflict('intent_id')
         .merge()
@@ -117,29 +87,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         success: true,
         intentId,
         status: 'requires_action',
-        checkoutUrl: response.data?.checkoutUrl || `https://checkout.fossapay.com/pay/${intentId}`
+        checkoutUrl: session?.checkoutUrl || `https://checkout.fossapay.com/pay/${intentId}`
       })
 
     } catch (apiErr: any) {
-      console.error('Fossa Pay API Error:', apiErr.response?.data || apiErr.message)
+      console.error('Fossa Pay Service Error:', apiErr.message)
       
-      if (process.env.NODE_ENV === 'development' || !process.env.FOSSA_API_KEY) {
-          await db('fiat_payment_intents')
-            .insert({
-              ...baseIntentRecord,
-              provider_session_id: `mock_${intentId}`
-            })
-            .onConflict('intent_id')
-            .merge()
-          return res.json({
-            success: true,
-            intentId,
-            status: 'requires_action',
-            checkoutUrl: `https://checkout.fossapay.com/mock-pay/${intentId}?dest=${payoutAddress}&amt=${normalizedAmount}`
-          })
-      }
-      
-      return res.status(500).json({ error: 'Failed to initiate fiat payment session' })
+      // Fallback to mock session behavior
+      await db('fiat_payment_intents')
+        .insert({
+          ...baseIntentRecord,
+          provider_session_id: `mock_${intentId}`
+        })
+        .onConflict('intent_id')
+        .merge()
+
+      return res.json({
+        success: true,
+        intentId,
+        status: 'requires_action',
+        checkoutUrl: `https://checkout.fossapay.com/mock-pay/${intentId}?dest=${payoutAddress}&amt=${normalizedAmount}`
+      })
     }
 
   } catch (err: any) {

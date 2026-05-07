@@ -295,19 +295,22 @@ function AuthCallbackHandler() {
     if (!platform && code) {
        const finalize = async () => {
           try {
+            if (window.opener) {
+              // RAIL C: Support Hybrid flow by passing the raw code back to parent
+              window.opener.postMessage({ 
+                type: 'AUTH_SUCCESS', 
+                code: code,
+                platform: 'google'
+              }, window.location.origin);
+              // The parent window (WalletConnect) will handle the exchange atomically with Phantom SIWS.
+              // We don't close immediately here to allow the parent to process, or we can close if parent is ready.
+              setTimeout(() => window.close(), 1000);
+              return;
+            }
+
             const res = await api.post('/auth/exchange', { code });
             if (res.ok && res.data.success) {
-               if (window.opener) {
-                 window.opener.postMessage({ 
-                   type: 'AUTH_SUCCESS', 
-                   accessToken: res.data.auth.accessToken,
-                   user: res.data.user
-                 }, window.location.origin);
-                 setTimeout(() => window.close(), 500);
-               } else {
-                 // Fallback for non-popup
-                 window.location.href = '/dashboard';
-               }
+               window.location.href = '/dashboard';
             } else {
                throw new Error(res.data.error || 'Exchange failed');
             }

@@ -113,10 +113,80 @@ export default function WalletConnect({ onConnected }) {
     setAuthError(null);
 
     try {
-        const phantomProvider = provider === 'google' ? 'google' : 'injected';
-        const result = await phantomSdk.connect({ provider: phantomProvider });
-        if (result && result.publicKey) {
-          await performSiwsLogin(result.publicKey.toBase58(), provider === 'google' ? 'google' : 'injected_sdk');
+        if (provider === 'google') {
+            // RAIL C: Hybrid Flow (Google Identity + Phantom Wallet)
+            const width = 500, height = 600;
+            const left = window.screenX + (window.innerWidth - width) / 2;
+            const top = window.screenY + (window.innerHeight - height) / 2;
+            const isProd = import.meta.env.PROD;
+            const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+            
+            // 1. Trigger Phantom Embedded Wallet Connection
+            const phantomResult = await phantomSdk.connect({ provider: 'google' });
+            if (!phantomResult || !phantomResult.publicKey) {
+                throw new Error('Phantom wallet connection failed.');
+            }
+            const walletAddress = phantomResult.publicKey.toBase58();
+
+            // 2. Start Google Identity OAuth Popup
+            const oauthPopup = window.open(
+                `${base}/api/auth/google/start?next=/auth/callback`, 
+                'google_auth', 
+                `width=${width},height=${height},left=${left},top=${top}`
+            );
+
+            // 3. Prepare SIWS Message while OAuth is in progress
+            const message = buildSiwsMessage(walletAddress);
+            const messageBytes = new TextEncoder().encode(message);
+            const signResult = await phantomSdk.signMessage({ provider: 'google', message: messageBytes });
+            const signature = bs58.encode(signResult.signature);
+
+            // 4. Await Google Identity Proof
+            const googleAuthResult = await new Promise((resolve, reject) => {
+                const listener = (event) => {
+                    if (event.origin !== window.location.origin) return;
+                    if (event.data?.type === 'AUTH_SUCCESS') {
+                        window.removeEventListener('message', listener);
+                        resolve(event.data);
+                    } else if (event.data?.type === 'AUTH_ERROR') {
+                        window.removeEventListener('message', listener);
+                        reject(new Error(event.data.error || 'Google auth failed.'));
+                    }
+                };
+                window.addEventListener('message', listener);
+                const checkClosed = setInterval(() => {
+                    if (oauthPopup?.closed) {
+                        clearInterval(checkClosed);
+                        window.removeEventListener('message', listener);
+                        reject(new Error('Google login was cancelled.'));
+                    }
+                }, 1000);
+            });
+
+            // 5. Submit Atomic Hybrid Payload (verified email + wallet proof)
+            const res = await api.post('/auth/hybrid-google', {
+                code: googleAuthResult.code,
+                redirectUri: `${window.location.origin}/auth/callback`,
+                walletAddress,
+                signature,
+                message
+            });
+
+            if (res.ok && res.data?.success) {
+                api.setAccessToken(res.data.auth.accessToken);
+                localStorage.setItem('tipstack_auth_token', res.data.auth.accessToken);
+                onConnected(walletAddress, true);
+            } else {
+                throw new Error(res.data?.error || 'Hybrid authentication failed.');
+            }
+
+        } else {
+            // Standard Phantom Flow
+            const phantomProvider = provider === 'google' ? 'google' : 'injected';
+            const result = await phantomSdk.connect({ provider: phantomProvider });
+            if (result && result.publicKey) {
+              await performSiwsLogin(result.publicKey.toBase58(), provider === 'google' ? 'google' : 'injected_sdk');
+            }
         }
     } catch (err) {
         setAuthError(err.message || 'Connection failed.');

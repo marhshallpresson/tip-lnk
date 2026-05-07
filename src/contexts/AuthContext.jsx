@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [oauthState, setOauthState] = useState({ codeVerifier: null });
 
   // Initialize from localStorage on mount
   useEffect(() => {
@@ -125,6 +126,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithHybridGoogle = async (hybridData) => {
+    try {
+      setError(null);
+      const { data, ok } = await api.post('/auth/hybrid-google', hybridData);
+      if (ok && data.success) {
+        if (data.auth?.accessToken) {
+          api.setAccessToken(data.auth.accessToken);
+          localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
+        }
+        setUser(data.user);
+        return { success: true, user: data.user };
+      } else {
+        setError(data.error || 'Hybrid login failed');
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      setError('An unexpected error occurred during hybrid authentication.');
+      return { success: false, error: 'Network error' };
+    }
+  };
+
   const checkEmailStatus = async (email) => {
     try {
       const { data, ok } = await api.post('/auth/check', { email });
@@ -168,12 +190,15 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loginWithWallet,
+    loginWithHybridGoogle,
     checkEmailStatus,
     initLoginOtp,
     verifyLoginOtp,
     refreshUser: fetchMe,
     showWalletModal,
-    setShowWalletModal
+    setShowWalletModal,
+    oauthState,
+    setOauthState
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
