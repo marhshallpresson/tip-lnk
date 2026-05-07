@@ -15,14 +15,10 @@ import AuthCompletion from './components/AuthCompletion';
 import CreatorPage from './components/CreatorPage';
 import CheckoutPage from './components/CheckoutPage';
 import Dashboard from './components/Dashboard';
-import { OverviewTab, TransactionHistoryTab } from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AppNavbar from './components/AppNavbar';
 import ResetPassword from './components/ResetPassword';
 import api from './lib/api';
-import { phantomSdk } from './lib/phantom';
-import { buildSiwsMessage } from './lib/siws';
-import bs58 from 'bs58';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 
@@ -79,7 +75,7 @@ function AppContent() {
           <img src="/logo.svg" className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] blur-[80px]" alt="" />
       </div>
 
-      {/* Standard App Navbar - Hidden on White-Label Creator Pages */}
+      {/* Standard App Navbar */}
       {!location.pathname.match(/^\/[^/]+$/) || ['/terms', '/privacy', '/onboarding', '/dashboard'].some(p => location.pathname.startsWith(p)) ? (
         <AppNavbar
           onGetStarted={handleGetStarted}
@@ -104,12 +100,9 @@ function AppContent() {
               <RequireAuth requiredRole="user">
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-surface-950/80 backdrop-blur-sm animate-fade-in">
                   <div className="w-full max-w-2xl bg-surface-900 border border-white/10 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] animate-slide-up">
-                    {/* Header with Step Indicator */}
                     <div className="px-6 py-4 md:px-10 md:py-6 border-b border-white/5 bg-surface-800/50">
                       <StepIndicator current={onboardingStep} />
                     </div>
-
-                    {/* Content Area - Scrollable for mobile */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
                       <div className="mx-auto w-full">
                         {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
@@ -154,7 +147,6 @@ function AppContent() {
         </Suspense>
       </main>
 
-      {/* --- Global Elite Overlays --- */}
       <WalletModal 
         isOpen={showWalletModal} 
         onClose={() => setShowWalletModal(false)} 
@@ -190,9 +182,7 @@ function RequireAuth({ children, requiredRole }) {
     return <Navigate to="/auth/complete" state={{ from: location }} replace />;
   }
 
-  // Strict role enforcement
   if (requiredRole === 'creator') {
-    // Only creators can access creator routes
     if (role !== 'creator') {
       return <Navigate to="/dashboard" replace />;
     }
@@ -200,7 +190,6 @@ function RequireAuth({ children, requiredRole }) {
   }
 
   if (requiredRole === 'user') {
-    // Only users can access user routes
     if (role !== 'user') {
       return <Navigate to="/dashboard" replace />;
     }
@@ -210,10 +199,6 @@ function RequireAuth({ children, requiredRole }) {
   return children;
 }
 
-/**
- * Real-world OAuth2 Callback Handler
- * Acts as the landing zone for official X/Discord validation.
- */
 function AuthCallbackHandler() {
   const { platform } = useParams();
   const navigate = useNavigate();
@@ -221,96 +206,26 @@ function AuthCallbackHandler() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
 
-  const isPhantomGoogle = platform === 'phantom-google';
-
   useEffect(() => {
-    if (isPhantomGoogle) {
-      const finalizePhantomGoogle = async () => {
-        try {
-          if (!import.meta.env.VITE_PHANTOM_APP_ID) {
-            throw new Error('Phantom Google login is not configured.');
-          }
-
-          const provider = 'google';
-          const connectResult = (!phantomSdk.isConnected || !phantomSdk.publicKey)
-            ? await phantomSdk.connect({ provider })
-            : null;
-          const publicKey = connectResult?.publicKey || phantomSdk.publicKey;
-
-          if (!publicKey) {
-            throw new Error('No Phantom wallet was returned from Google login.');
-          }
-
-          const walletAddress = publicKey.toBase58();
-          const message = buildSiwsMessage(walletAddress);
-          const signResult = await phantomSdk.signMessage({
-            provider,
-            message: new TextEncoder().encode(message),
-          });
-          const signature = bs58.encode(signResult.signature);
-          const res = await api.post('/auth/callback/phantom-google', {
-            walletAddress,
-            signature,
-            message,
-          });
-
-          if (!res.ok || !res.data?.success) {
-            throw new Error(res.data?.error || 'Phantom Google login failed.');
-          }
-
-          api.setAccessToken(res.data.auth?.accessToken || null);
-          setStatus('success');
-
-          if (window.opener) {
-            window.opener.postMessage({
-              type: 'AUTH_SUCCESS',
-              accessToken: res.data.auth.accessToken,
-              user: res.data.user,
-            }, window.location.origin);
-            setTimeout(() => window.close(), 500);
-          } else {
-            setTimeout(() => navigate('/dashboard', { replace: true }), 300);
-          }
-        } catch (err) {
-          setError(err.message || 'Authentication failed.');
-          setStatus('error');
-          if (window.opener) {
-            window.opener.postMessage({
-              type: 'AUTH_ERROR',
-              error: err.message || 'Authentication failed.',
-            }, window.location.origin);
-          }
-        }
-      };
-
-      finalizePhantomGoogle();
-      return;
-    }
-
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const errorParam = params.get('error');
 
-    // Handle generic /auth/callback from backend (official Google OAuth)
     if (!platform && code) {
        const finalize = async () => {
           try {
-            if (window.opener) {
-              // RAIL C: Support Hybrid flow by passing the raw code back to parent
-              window.opener.postMessage({ 
-                type: 'AUTH_SUCCESS', 
-                code: code,
-                platform: 'google'
-              }, window.location.origin);
-              // The parent window (WalletConnect) will handle the exchange atomically with Phantom SIWS.
-              // We don't close immediately here to allow the parent to process, or we can close if parent is ready.
-              setTimeout(() => window.close(), 1000);
-              return;
-            }
-
             const res = await api.post('/auth/exchange', { code });
             if (res.ok && res.data.success) {
-               window.location.href = '/dashboard';
+               if (window.opener) {
+                 window.opener.postMessage({ 
+                   type: 'AUTH_SUCCESS', 
+                   accessToken: res.data.auth.accessToken,
+                   user: res.data.user
+                 }, window.location.origin);
+                 setTimeout(() => window.close(), 500);
+               } else {
+                 window.location.href = '/dashboard';
+               }
             } else {
                throw new Error(res.data.error || 'Exchange failed');
             }
@@ -339,7 +254,7 @@ function AuthCallbackHandler() {
       return;
     }
 
-    if (code) {
+    if (code && platform) {
       const exchangeCode = async () => {
         try {
           const codeVerifier = sessionStorage.getItem(`pkce_verifier_${platform}`);
@@ -366,7 +281,6 @@ function AuthCallbackHandler() {
             }
 
             updateProfile(updates);
-
             setStatus('success');
 
             if (window.opener) {
@@ -384,7 +298,6 @@ function AuthCallbackHandler() {
             throw new Error(res.data?.message || 'Identity provider rejected the authorization code.');
           }
         } catch (err) {
-          console.error('OAuth Exchange Error:', err);
           setError(err.message);
           setStatus('error');
           if (window.opener) {
@@ -396,43 +309,13 @@ function AuthCallbackHandler() {
         }
       };
       exchangeCode();
-    } else if (!code && !errorParam && platform) {
-      setError('No authorization code received.');
-      setStatus('error');
-      if (window.opener) {
-        window.opener.postMessage({ type: 'OAUTH_ERROR', platform, error: 'No code received' }, window.location.origin);
-        setTimeout(() => window.close(), 1500);
-      }
     }
-  }, [platform, navigate, updateProfile, isPhantomGoogle]);
+  }, [platform, navigate, updateProfile]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-950">
       <div className="text-center animate-fade-in">
-        {isPhantomGoogle ? (
-          status === 'error' ? (
-            <div className="text-accent-red">
-              <h2 className="text-2xl font-bold">Authentication Failed</h2>
-              <p className="mt-2">{error}</p>
-            </div>
-          ) : status === 'success' ? (
-            <div className="text-accent-green">
-              <div className="w-16 h-16 rounded-full bg-accent-green/20 flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold">Wallet Authenticated</h2>
-              <p className="text-surface-400 mt-2 italic">Finalizing your Phantom Google session...</p>
-            </div>
-          ) : (
-            <>
-              <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-              <h2 className="text-2xl font-bold text-white">Authenticating Wallet...</h2>
-              <p className="text-surface-400 mt-2 italic">Finalizing Phantom Google sign-in...</p>
-            </>
-          )
-        ) : status === 'error' ? (
+        {status === 'error' ? (
           <div className="text-accent-red">
             <h2 className="text-2xl font-bold">Verification Failed</h2>
             <p className="mt-2">{error}</p>

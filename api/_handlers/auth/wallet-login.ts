@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .first();
 
         if (existingWalletUser) {
-          if (!existingWalletUser.email && !existingWalletUser.passwordHash && !existingWalletUser.googleSub) {
+          if (!existingWalletUser.email && !existingWalletUser.passwordHash) {
             await db('user').where({ id: existingWalletUser.id }).delete();
           } else {
             return res.status(409).json({ success: false, error: 'Wallet already linked to another account.' });

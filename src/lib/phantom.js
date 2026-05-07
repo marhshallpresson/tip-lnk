@@ -6,15 +6,11 @@ import { BrowserSDK, AddressType } from '@phantom/browser-sdk';
  */
 const PHANTOM_APP_ID = import.meta.env.VITE_PHANTOM_APP_ID;
 
-const appUrl = import.meta.env.VITE_APP_URL?.replace(/\/$/, '') || 'https://tipstack.fun';
-const redirectUrl = `${appUrl}/auth/callback/phantom-google`;
-
 export const phantomSdk = new BrowserSDK({
-  providers: ["google", "injected"],
+  providers: ["injected"],
   appId: PHANTOM_APP_ID,
   addressTypes: [AddressType.solana],
   autoConnect: true,
-  authOptions: { redirectUrl },
 });
 
 export { AddressType };

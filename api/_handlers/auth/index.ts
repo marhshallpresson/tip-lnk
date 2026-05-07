@@ -6,14 +6,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const action = parts[2] 
   const subAction = parts[3]
 
-  try {
-    let module;
-    
-    if (action === 'google') {
-        if (subAction === 'start') module = await import('./google/start.js')
-        if (subAction === 'callback') module = await import('./google/callback.js')
-    } else if (action === 'twitter') {
-        if (subAction === 'callback') module = await import('./twitter/callback.js')
+  let module;
+  if (action === 'twitter') {
+      if (subAction === 'callback') module = await import('./twitter/callback.js')
+  }
+
     } else if (action === 'discord') {
         if (subAction === 'callback') module = await import('./discord/callback.js')
     } else if (action === 'link-email') {
@@ -28,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (action === 'csrf') module = await import('./csrf.js')
         if (action === 'wallet-login') module = await import('./wallet-login.js')
         if (action === 'admin-login') module = await import('./admin-login.js')
-        if (action === 'phantom-google-callback') module = await import('./phantom-google-callback.js')
         if (action === 'reset-password-start') module = await import('./reset-password-start.js')
         if (action === 'reset-password-verify') module = await import('./reset-password-verify.js')
     }

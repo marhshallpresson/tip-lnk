@@ -4,7 +4,6 @@ import { randomCode, sha256Hex, randomToken } from "../../_lib/password.js"
 import { randomUUID } from "crypto"
 import { sendMail } from "../../_lib/mailer.js"
 import { templates } from "../../_lib/mail-templates.js"
-import * as oidc from "openid-client"
 
 export const normalizeBaseUrl = (url: string) => url.trim().replace(/\/+$/, '')
 
@@ -27,7 +26,7 @@ export const appUrl = (req?: VercelRequest) => {
   if (env) return normalizeBaseUrl(env)
   const fallback = inferredOrigin(req)
   if (fallback) return fallback
-  return 'https://tip-lnk.vercel.app'
+  return 'https://tipstack.fun'
 }
 
 export const apiUrl = (req?: VercelRequest) => {
@@ -117,84 +116,6 @@ export function patchResponse(res: VercelResponse) {
       (res as any).cookie(name, '', { ...options, maxAge: 0 })
     }
   }
-}
-
-export const hostFromAbsoluteUrl = (value: string) => {
-  try {
-    return new URL(value).hostname.toLowerCase()
-  } catch {
-    return ''
-  }
-}
-
-export const oauthRedirectUrl = (req?: VercelRequest) => {
-  const env = normalizeBaseUrl(process.env.GOOGLE_REDIRECT_URL || '')
-  const inferred = inferredOrigin(req)
-    if (env && /^https?:\/\//.test(env)) {
-    const inferredHost = hostFromAbsoluteUrl(inferred)
-    const envHost = hostFromAbsoluteUrl(env)
-    if (inferredHost === envHost) return `${env}/api/auth/google/callback`
-    return `${inferred}/api/auth/google/callback`
-  }
-  if (env && /^https?:\/\//.test(env)) return `${env}/api/auth/google/callback`
-  return `${apiUrl(req)}/api/auth/google/callback`
-}
-
-export type OAuthErrorCode =
-  | 'missing_state'
-  | 'invalid_client'
-  | 'invalid_grant'
-  | 'google_disabled'
-  | 'oauth_not_configured'
-  | 'oauth_failed'
-
-export const classifyGoogleOAuthError = (err: unknown): OAuthErrorCode => {
-  const e = err as any
-  const parts = [
-    e?.error,
-    e?.code,
-    e?.message,
-  ].filter(Boolean).map(v => String(v).toLowerCase()).join(' | ')
-
-  if (parts.includes('google_oauth_not_configured')) return 'oauth_not_configured'
-  if (parts.includes('google_disabled')) return 'google_disabled'
-  if (parts.includes('invalid_client')) return 'invalid_client'
-  if (parts.includes('invalid_grant')) return 'invalid_grant'
-  if (parts.includes('state') || parts.includes('nonce')) return 'missing_state'
-  return 'oauth_failed'
-}
-
-export const redirectToLoginWithOAuthError = (
-  req: VercelRequest,
-  res: VercelResponse,
-  code: OAuthErrorCode,
-  nextPath?: string,
-) => {
-  const redirect = new URL('/login', appUrl(req))
-  redirect.searchParams.set('oauth_error', code)
-  const rawNext = typeof nextPath === 'string' ? nextPath.trim() : ''
-  if (rawNext.startsWith('/')) {
-    redirect.searchParams.set('next', rawNext)
-  }
-  res.setHeader('Location', redirect.toString())
-  res.status(302).end()
-}
-
-let googleConfigPromise: Promise<oidc.Configuration> | null = null
-
-export const getGoogleConfig = async (): Promise<oidc.Configuration> => {
-  if (googleConfigPromise) return googleConfigPromise
-  googleConfigPromise = (async () => {
-    const clientId = String(process.env.GOOGLE_CLIENT_ID || '').trim()
-    const clientSecret = String(process.env.GOOGLE_CLIENT_SECRET || '').trim()
-    if (!clientId) throw new Error('GOOGLE_OAUTH_NOT_CONFIGURED: GOOGLE_CLIENT_ID')
-    if (!clientSecret) throw new Error('GOOGLE_OAUTH_NOT_CONFIGURED: GOOGLE_CLIENT_SECRET')
-    return oidc.discovery(new URL('https://accounts.google.com'), clientId, clientSecret)
-  })().catch((err) => {
-    googleConfigPromise = null
-    throw err
-  })
-  return googleConfigPromise
 }
 
 export const oauthExchangeTtlMs = () => 10 * 60 * 1000

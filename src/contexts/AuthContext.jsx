@@ -8,7 +8,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [oauthState, setOauthState] = useState({ codeVerifier: null });
 
   // Initialize from localStorage on mount
   useEffect(() => {
@@ -126,62 +125,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithHybridGoogle = async (hybridData) => {
-    try {
-      setError(null);
-      const { data, ok } = await api.post('/auth/hybrid-google', hybridData);
-      if (ok && data.success) {
-        if (data.auth?.accessToken) {
-          api.setAccessToken(data.auth.accessToken);
-          localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
-        }
-        setUser(data.user);
-        return { success: true, user: data.user };
-      } else {
-        setError(data.error || 'Hybrid login failed');
-        return { success: false, error: data.error };
-      }
-    } catch (err) {
-      setError('An unexpected error occurred during hybrid authentication.');
-      return { success: false, error: 'Network error' };
-    }
-  };
-
-  const checkEmailStatus = async (email) => {
-    try {
-      const { data, ok } = await api.post('/auth/check', { email });
-      if (ok && data.success) return data;
-      return { success: false, error: data.error || 'Check failed' };
-    } catch (err) {
-      return { success: false, error: 'Network error' };
-    }
-  };
-
-  const initLoginOtp = async (email) => {
-    try {
-      const { data, ok } = await api.post('/auth/otp/start', { email });
-      if (ok && data.success) return { success: true };
-      return { success: false, error: data.error || 'Failed to send code' };
-    } catch (err) {
-      return { success: false, error: 'Network error' };
-    }
-  };
-
-  const verifyLoginOtp = async (email, code) => {
-    try {
-      const { data, ok } = await api.post('/auth/otp/verify', { email, code });
-      if (ok && data.success) {
-        api.setAccessToken(data.auth.accessToken);
-        localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
-        setUser(data.user);
-        return { success: true, user: data.user };
-      }
-      return { success: false, error: data.error || 'Verification failed' };
-    } catch (err) {
-      return { success: false, error: 'Network error' };
-    }
-  };
-
   const value = {
     user,
     loading,
@@ -190,15 +133,12 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loginWithWallet,
-    loginWithHybridGoogle,
     checkEmailStatus,
     initLoginOtp,
     verifyLoginOtp,
     refreshUser: fetchMe,
     showWalletModal,
-    setShowWalletModal,
-    oauthState,
-    setOauthState
+    setShowWalletModal
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

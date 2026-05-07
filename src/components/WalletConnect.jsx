@@ -37,7 +37,7 @@ function useIsPhantom() {
 export default function WalletConnect({ onConnected }) {
   const { publicKey, connected, connect, select, wallets, signMessage } = useWallet();
   const { setVisible } = useWalletModal();
-  const { login, register, user, loginWithWallet, refreshUser, checkEmailStatus, initLoginOtp, verifyLoginOtp, loginWithHybridGoogle } = useAuth();
+  const { login, register, user, loginWithWallet, refreshUser, checkEmailStatus, initLoginOtp, verifyLoginOtp } = useAuth();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   
@@ -79,9 +79,8 @@ export default function WalletConnect({ onConnected }) {
       const messageBytes = new TextEncoder().encode(message);
       let signatureStr;
 
-      if (providerType === 'google' || providerType === 'injected_sdk') {
-        const p = providerType === 'google' ? 'google' : 'injected';
-        const result = await phantomSdk.signMessage({ provider: p, message: messageBytes });
+      if (providerType === 'injected_sdk') {
+        const result = await phantomSdk.signMessage({ provider: 'injected', message: messageBytes });
         signatureStr = bs58.encode(result.signature);
       } else {
         if (!signMessage) throw new Error("Wallet does not support message signing");
@@ -107,105 +106,16 @@ export default function WalletConnect({ onConnected }) {
   }, [loginWithWallet, onConnected, signMessage]);
 
   const handleSocialSelect = async (provider) => {
+    // Currently only handles injected SDK connections as a 'social' fallback if needed
     if (!provider) return;
     
     setLoadingProvider(provider);
     setAuthError(null);
 
     try {
-        if (provider === 'google') {
-            // 1. Open Google OAuth Popup FIRST (This is our identity provider)
-            const width = 500, height = 600;
-            const left = window.screenX + (window.innerWidth - width) / 2;
-            const top = window.screenY + (window.innerHeight - height) / 2;
-            const isProd = import.meta.env.PROD;
-            const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
-            
-            const oauthPopup = window.open(
-                `${base}/api/auth/google/start?next=/auth/callback`, 
-                'google_auth', 
-                `width=${width},height=${height},left=${left},top=${top}`
-            );
-
-            // 2. Connect Phantom in background - using "injected" if available, else google
-            // We use autoConnect: false or similar if SDK supported, but here we just call connect
-            let phantomResult;
-            try {
-                // We attempt to connect. If this triggers a popup, it's unavoidable with current SDK, 
-                // but we'll try to sync it with our identity popup.
-                phantomResult = await phantomSdk.connect({ provider: 'google' });
-            } catch (pErr) {
-                console.error("Phantom Background Connect Error:", pErr);
-                oauthPopup?.close();
-                throw new Error('Wallet connection failed. Please ensure popups are allowed.');
-            }
-
-            if (!phantomResult || !phantomResult.publicKey) {
-                oauthPopup?.close();
-                throw new Error('Phantom wallet connection failed.');
-            }
-            const walletAddress = phantomResult.publicKey.toBase58();
-
-            // 3. Prepare SIWS
-            const message = buildSiwsMessage(walletAddress);
-            const messageBytes = new TextEncoder().encode(message);
-            const signResult = await phantomSdk.signMessage({ provider: 'google', message: messageBytes });
-            const signature = bs58.encode(signResult.signature);
-
-            // 4. Wait for our Identity Popup (Google OAuth)
-            const googleAuthResult = await new Promise((resolve, reject) => {
-                const listener = (event) => {
-                    if (event.origin !== window.location.origin) return;
-                    if (event.data?.type === 'AUTH_SUCCESS') {
-                        window.removeEventListener('message', listener);
-                        resolve(event.data);
-                    } else if (event.data?.type === 'AUTH_ERROR') {
-                        window.removeEventListener('message', listener);
-                        reject(new Error(event.data.error || 'Google auth failed.'));
-                    }
-                };
-                window.addEventListener('message', listener);
-                const checkClosed = setInterval(() => {
-                    if (oauthPopup?.closed) {
-                        clearInterval(checkClosed);
-                        window.removeEventListener('message', listener);
-                        reject(new Error('Google login was cancelled.'));
-                    }
-                }, 1000);
-            });
-
-            // 5. Atomic Submission
-            const res = await api.post('/auth/hybrid-google', {
-                code: googleAuthResult.code,
-                redirectUri: `${window.location.origin}/auth/callback`,
-                walletAddress,
-                signature,
-                message
-            });
-
-            if (res.ok && res.data?.success) {
-                api.setAccessToken(res.data.auth.accessToken);
-                localStorage.setItem('tipstack_auth_token', res.data.auth.accessToken);
-                onConnected(walletAddress, true);
-            } else {
-                throw new Error(res.data?.error || 'Hybrid authentication failed.');
-            }
-
-            if (res.ok && res.data?.success) {
-                api.setAccessToken(res.data.auth.accessToken);
-                localStorage.setItem('tipstack_auth_token', res.data.auth.accessToken);
-                onConnected(walletAddress, true);
-            } else {
-                throw new Error(res.data?.error || 'Hybrid authentication failed.');
-            }
-
-        } else {
-            // Standard Phantom Flow
-            const phantomProvider = provider === 'google' ? 'google' : 'injected';
-            const result = await phantomSdk.connect({ provider: phantomProvider });
-            if (result && result.publicKey) {
-              await performSiwsLogin(result.publicKey.toBase58(), provider === 'google' ? 'google' : 'injected_sdk');
-            }
+        const result = await phantomSdk.connect({ provider: 'injected' });
+        if (result && result.publicKey) {
+          await performSiwsLogin(result.publicKey.toBase58(), 'injected_sdk');
         }
     } catch (err) {
         setAuthError(err.message || 'Connection failed.');
@@ -493,17 +403,10 @@ export default function WalletConnect({ onConnected }) {
     <div className="glass-card !bg-[#0f0f11] !border-white/5 p-6 sm:p-8 max-w-[400px] mx-auto animate-slide-up relative overflow-hidden">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-xl font-bold text-white">Connect Tip Stack</h2>
-         </div>
+      </div>
 
       <div className="space-y-3">
-        <button onClick={() => handleSocialSelect('google')} disabled={loadingProvider !== null} className="w-full h-14 rounded-xl bg-white text-black hover:bg-white/90 transition-all font-bold flex items-center justify-center gap-3">
-          {loadingProvider === 'google' ? <Loader2 size={20} className="animate-spin text-black" /> : <><Chrome size={20} /> Continue with Google</>}
-        </button>
-
-        <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest"><span className="bg-[#0f0f11] px-4 text-white/20">or connect wallet</span></div>
-        </div>
+        {/* Google button removed per request */}
 
         {!connected ? (
             <div className="flex flex-col gap-2">

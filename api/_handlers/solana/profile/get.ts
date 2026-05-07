@@ -71,10 +71,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!user) {
         user = await db('user').where({ walletAddress: wallet }).first()
     }
-    
-    if (!user) {
-        user = await db('user').where({ googleSub: wallet }).first()
-    }
 
     if (!user && wallet.includes('.sol')) {
         const onChainWallet = await resolveSnsDomain(wallet)

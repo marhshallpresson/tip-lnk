@@ -78,11 +78,6 @@ function WalletProviderInner({ children }) {
 
   // Global Phantom SDK listeners
   useEffect(() => {
-    if (!import.meta.env.VITE_PHANTOM_APP_ID) {
-      console.warn('VITE_PHANTOM_APP_ID is missing. Phantom Google login will be disabled.');
-      return;
-    }
-
     const handleConnect = async (connectEvent) => {
       if (connectEvent.publicKey && !isLinking) {
         setIsLinking(true);
@@ -91,7 +86,6 @@ function WalletProviderInner({ children }) {
         
         try {
           // Check if we need to perform SIWS
-          // In the future, this can auto-trigger the SIWS flow if the user isn't logged in
         } catch (err) {
           console.error('❌ Phantom SDK Auto-Login Error:', err);
         } finally {
@@ -102,7 +96,6 @@ function WalletProviderInner({ children }) {
 
     phantomSdk.on('connect', handleConnect);
     
-    // Check if already connected on mount (handles redirect resumption)
     if (phantomSdk.isConnected && phantomSdk.publicKey) {
         handleConnect({ publicKey: phantomSdk.publicKey });
     }

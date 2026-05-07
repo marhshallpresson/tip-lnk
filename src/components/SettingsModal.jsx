@@ -57,12 +57,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   };
 
   const handleConnectSocial = (platformId) => {
-    if (platformId === 'google' || platformId === 'google-auth') {
-      setShowWalletModal(true);
-      onClose();
-    } else {
-      window.location.reload();
-    }
+    window.location.reload();
   };
 
   const address = publicKey?.toBase58() || '';

@@ -35,10 +35,6 @@ export async function fetchProfileByWalletOrHandle(wallet: string): Promise<Prof
     if (!user) {
       user = await db('user').where({ walletAddress: wallet }).first()
     }
-    
-    if (!user) {
-      user = await db('user').where({ googleSub: wallet }).first()
-    }
 
     if (!user && wallet.includes('.sol')) {
       const onChainWallet = await resolveSnsDomain(wallet)
