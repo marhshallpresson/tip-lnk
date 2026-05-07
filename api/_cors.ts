@@ -26,7 +26,7 @@ export function applyCors(req: any, res: any): boolean {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com",
-    "connect-src 'self' https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://solana-mainnet.rpc.extnode.com https://api.torquemarketing.xyz https://api.fossapay.com https://api.pajcash.com https://api.dynamic.xyz wss://*.dynamic.xyz",
+    "connect-src 'self' data: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://solana-mainnet.rpc.extnode.com https://api.torquemarketing.xyz https://api.fossapay.com https://api.pajcash.com https://api.dynamic.xyz wss://*.dynamic.xyz",
     "frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io",
     "object-src 'none'",
     "base-uri 'self'",
