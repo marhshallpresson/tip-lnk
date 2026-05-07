@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 const FOSSA_API_KEY = process.env.FOSSA_API_KEY;
 const FOSSA_BASE_URL = process.env.FOSSA_BASE_URL || 'https://api.fossapay.com';

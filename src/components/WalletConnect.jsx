@@ -114,34 +114,45 @@ export default function WalletConnect({ onConnected }) {
 
     try {
         if (provider === 'google') {
-            // RAIL C: Hybrid Flow (Google Identity + Phantom Wallet)
+            // 1. Open Google OAuth Popup FIRST (This is our identity provider)
             const width = 500, height = 600;
             const left = window.screenX + (window.innerWidth - width) / 2;
             const top = window.screenY + (window.innerHeight - height) / 2;
             const isProd = import.meta.env.PROD;
             const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
             
-            // 1. Trigger Phantom Embedded Wallet Connection
-            const phantomResult = await phantomSdk.connect({ provider: 'google' });
-            if (!phantomResult || !phantomResult.publicKey) {
-                throw new Error('Phantom wallet connection failed.');
-            }
-            const walletAddress = phantomResult.publicKey.toBase58();
-
-            // 2. Start Google Identity OAuth Popup
             const oauthPopup = window.open(
                 `${base}/api/auth/google/start?next=/auth/callback`, 
                 'google_auth', 
                 `width=${width},height=${height},left=${left},top=${top}`
             );
 
-            // 3. Prepare SIWS Message while OAuth is in progress
+            // 2. Connect Phantom in background - using "injected" if available, else google
+            // We use autoConnect: false or similar if SDK supported, but here we just call connect
+            let phantomResult;
+            try {
+                // We attempt to connect. If this triggers a popup, it's unavoidable with current SDK, 
+                // but we'll try to sync it with our identity popup.
+                phantomResult = await phantomSdk.connect({ provider: 'google' });
+            } catch (pErr) {
+                console.error("Phantom Background Connect Error:", pErr);
+                oauthPopup?.close();
+                throw new Error('Wallet connection failed. Please ensure popups are allowed.');
+            }
+
+            if (!phantomResult || !phantomResult.publicKey) {
+                oauthPopup?.close();
+                throw new Error('Phantom wallet connection failed.');
+            }
+            const walletAddress = phantomResult.publicKey.toBase58();
+
+            // 3. Prepare SIWS
             const message = buildSiwsMessage(walletAddress);
             const messageBytes = new TextEncoder().encode(message);
             const signResult = await phantomSdk.signMessage({ provider: 'google', message: messageBytes });
             const signature = bs58.encode(signResult.signature);
 
-            // 4. Await Google Identity Proof
+            // 4. Wait for our Identity Popup (Google OAuth)
             const googleAuthResult = await new Promise((resolve, reject) => {
                 const listener = (event) => {
                     if (event.origin !== window.location.origin) return;
@@ -163,7 +174,7 @@ export default function WalletConnect({ onConnected }) {
                 }, 1000);
             });
 
-            // 5. Submit Atomic Hybrid Payload (verified email + wallet proof)
+            // 5. Atomic Submission
             const res = await api.post('/auth/hybrid-google', {
                 code: googleAuthResult.code,
                 redirectUri: `${window.location.origin}/auth/callback`,
@@ -171,6 +182,14 @@ export default function WalletConnect({ onConnected }) {
                 signature,
                 message
             });
+
+            if (res.ok && res.data?.success) {
+                api.setAccessToken(res.data.auth.accessToken);
+                localStorage.setItem('tipstack_auth_token', res.data.auth.accessToken);
+                onConnected(walletAddress, true);
+            } else {
+                throw new Error(res.data?.error || 'Hybrid authentication failed.');
+            }
 
             if (res.ok && res.data?.success) {
                 api.setAccessToken(res.data.auth.accessToken);

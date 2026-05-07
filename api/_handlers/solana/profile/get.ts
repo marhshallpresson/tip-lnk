@@ -50,7 +50,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (redis) {
         const cached = await redis.get(cacheKey);
         if (cached) {
-            console.log(`🛡️ Cache Hit: Returned profile for ${wallet}`);
             return res.json(cached);
         }
     }
@@ -165,7 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .orderBy('timestamp', 'desc')
       .limit(20)
     
-    const solPrice = await getSolPrice()
+    const solPrice = await getSolPrice().catch(() => 150)
     responseData.profile.tipsReceived = tips.map(tip => ({
       ...tip,
       sender: `${tip.sender.slice(0, 4)}...`, // Masked
@@ -178,8 +177,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.json(responseData)
-  } catch (err) {
-    console.error('Profile Fetch Error:', err)
-    res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' })
+  } catch (err: any) {
+    console.error('Profile Fetch Error:', err.message)
+    return res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' })
   }
 }

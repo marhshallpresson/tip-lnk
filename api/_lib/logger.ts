@@ -36,3 +36,11 @@ export const logRequest = (meta: Record<string, unknown>) => {
 export const logError = (message: string, meta: Record<string, unknown> = {}) => {
   log('error', message, meta)
 }
+
+export const logger = {
+  log,
+  info: (message: string, meta: Record<string, unknown> = {}) => log('info', message, meta),
+  warn: (message: string, meta: Record<string, unknown> = {}) => log('warn', message, meta),
+  error: logError,
+  logRequest
+}
