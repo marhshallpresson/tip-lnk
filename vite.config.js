@@ -66,11 +66,12 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // High-level protocol libraries that are large but mostly independent
             if (id.includes('@kamino-finance') || id.includes('@jup-ag') || id.includes('@orca-so')) {
               return 'vendor-defi';
             }
-            // Keep core libraries (Solana web3, React, Crypto) together to avoid circular resolution issues
+            if (id.includes('@dynamic-labs')) {
+              return 'vendor-auth';
+            }
             return 'vendor';
           }
         },
