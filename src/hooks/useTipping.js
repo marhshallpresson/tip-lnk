@@ -226,7 +226,7 @@ export function useTipping(creatorAddress) {
         const payload = {
           creatorId: creatorAddress,
           inputTokenMint: token.mint,
-          amount: tokenAmount.toString(),
+          amount: toLamports(parseFloat(tokenAmount), token.decimals).toString(),
           paymentMethod: 'external_wallet',
           sourceWalletAddress: publicKey?.toBase58() || '',
           memo: note
@@ -258,7 +258,9 @@ export function useTipping(creatorAddress) {
           outAmount: intentData.quote.outAmount,
           transaction: intentData.transaction,
           executionMode: intentData.executionMode || 'sync',
-          intentId: intentData.intentId
+          intentId: intentData.intentId,
+          provider: intentData.provider,
+          requestId: intentData.requestId
         };
 
         const baseOutAmount = BigInt(order.outAmount);
@@ -319,24 +321,32 @@ export function useTipping(creatorAddress) {
           console.log('⚡ Detected embedded wallet (no signTransaction). Using sendTransaction...');
           signature = await sendTransaction(tx, connection);
         } else {
-          console.log('⚡ Detected extension wallet. Using signTransaction + backend submission...');
+          console.log('⚡ Detected extension wallet. Signing transaction...');
           const signedTx = await signTransaction(tx);
-          const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              transaction: Buffer.from(signedTx.serialize()).toString('base64'),
-              note: note
-            }),
-          });
+          const signedTransaction = Buffer.from(signedTx.serialize()).toString('base64');
 
-          if (!submitRes.ok) {
-            const errData = await submitRes.json();
-            throw new Error(errData.error || 'Transaction submission failed.');
+          if (route.provider === 'jupiter-ultra' && route.requestId) {
+            const executeRes = await fetch(`${API_BASE_URL}/api/payments/execute`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                provider: route.provider,
+                requestId: route.requestId,
+                signedTransaction
+              }),
+            });
+
+            const executeData = await executeRes.json();
+            if (!executeRes.ok || !executeData.success) {
+              throw new Error(executeData.error || 'Jupiter execution failed.');
+            }
+            signature = executeData.signature;
+          } else {
+            signature = await connection.sendRawTransaction(signedTx.serialize(), {
+              skipPreflight: false,
+              maxRetries: 2
+            });
           }
-
-          const submitData = await submitRes.json();
-          signature = submitData.result;
         }
 
         if (!signature) {

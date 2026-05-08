@@ -167,7 +167,7 @@ export function AppProvider({ children }) {
 
     const isAdmin = authUser?.roles?.includes('admin');
     
-    if (isAdmin || state.onboardingComplete) return 'creator';
+    if (isAdmin || authUser?.onboardingComplete || authUser?.onboarding_complete || state.onboardingComplete) return 'creator';
 
     return 'user';
   }, [authUser, authLoading, state.onboardingComplete]);

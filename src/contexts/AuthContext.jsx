@@ -124,6 +124,58 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: 'Network error' };
     }
   };
+  const checkEmailStatus = async (email) => {
+    try {
+      const { data, ok } = await api.post('/auth/check', { email });
+      if (ok && data.success) return data;
+      return { success: false, error: data.error || 'Check failed' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const initLoginOtp = async (email) => {
+    try {
+      const { data, ok } = await api.post('/auth/otp/start', { email });
+      if (ok && data.success) return { success: true };
+      return { success: false, error: data.error || 'Failed to send code' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const verifyLoginOtp = async (email, code) => {
+    try {
+      const { data, ok } = await api.post('/auth/otp/verify', { email, code });
+      if (ok && data.success) {
+        api.setAccessToken(data.auth.accessToken);
+        localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
+        setUser(data.user);
+        return { success: true, user: data.user };
+      }
+      return { success: false, error: data.error || 'Verification failed' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const loginWithDynamic = async (dynamicJwt) => {
+    try {
+      setError(null);
+      const { data, ok } = await api.post('/auth/dynamic-verify', { dynamicJwt });
+      if (ok && data.success) {
+        api.setAccessToken(data.auth.accessToken);
+        localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
+        setUser(data.user);
+        return { success: true, user: data.user };
+      }
+      setError(data.error || 'Dynamic login failed');
+      return { success: false, error: data.error || 'Dynamic login failed' };
+    } catch (err) {
+      setError('An unexpected error occurred');
+      return { success: false, error: 'Network error' };
+    }
+  };
 
   const value = {
     user,
@@ -133,6 +185,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loginWithWallet,
+    loginWithDynamic,
     checkEmailStatus,
     initLoginOtp,
     verifyLoginOtp,

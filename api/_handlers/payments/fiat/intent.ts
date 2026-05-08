@@ -3,6 +3,7 @@ import { db } from "../../../_lib/db.js"
 import { randomUUID } from "crypto"
 import { decrypt } from "../../../_lib/crypto.js"
 import { createCheckoutSession } from "../../../_lib/fossa.js"
+import { rateLimit } from "../../../_ratelimit.js"
 
 /**
  * PHASE 2: Fossa Pay Fiat Intent
@@ -10,6 +11,7 @@ import { createCheckoutSession } from "../../../_lib/fossa.js"
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (!(await rateLimit(req, res))) return
 
   try {
     const { 
@@ -59,7 +61,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       memo,
       metadata_json: JSON.stringify({
         platformFee,
-        finalAmountUsd
+        finalAmountUsd,
+        senderName,
+        memo
       }),
       created_at: new Date(),
       updated_at: new Date()
@@ -73,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         memo,
         platformFee,
         destinationWallet: payoutAddress
-      })
+      }, intentId)
 
       await db('fiat_payment_intents')
         .insert({
@@ -87,11 +91,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         success: true,
         intentId,
         status: 'requires_action',
-        checkoutUrl: session?.checkoutUrl || `https://checkout.fossapay.com/pay/${intentId}`
+        checkoutUrl: session?.checkoutUrl || session?.url || session?.paymentUrl || null,
+        paymentInstructions: session?.paymentInstructions || null
       })
 
     } catch (apiErr: any) {
       console.error('Fossa Pay Service Error:', apiErr.message)
+
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(502).json({
+          success: false,
+          error: 'Fiat payment provider unavailable'
+        })
+      }
       
       // Fallback to mock session behavior
       await db('fiat_payment_intents')

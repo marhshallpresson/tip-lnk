@@ -4,6 +4,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Smartphone, CheckCircle, Loader2, X, ChevronLeft, Mail, Chrome, User, Lock, Eye, EyeOff, Wallet as WalletIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { phantomSdk } from '../lib/phantom';
 import { buildSiwsMessage } from '../lib/siws';
 import api from '../lib/api';
@@ -38,6 +39,7 @@ export default function WalletConnect({ onConnected }) {
   const { publicKey, connected, connect, select, wallets, signMessage } = useWallet();
   const { setVisible } = useWalletModal();
   const { login, register, user, loginWithWallet, refreshUser, checkEmailStatus, initLoginOtp, verifyLoginOtp } = useAuth();
+  const { setShowAuthFlow } = useDynamicContext();
   const isSolflare = useIsSolflare();
   const isPhantom = useIsPhantom();
   
@@ -54,6 +56,21 @@ export default function WalletConnect({ onConnected }) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', code: '' });
   const navigate = useNavigate();
+  const dynamicEnvironmentId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID;
+
+  const handleGoogleLogin = () => {
+    setAuthError(null);
+
+    if (!dynamicEnvironmentId || dynamicEnvironmentId === 'your_dynamic_env_id') {
+      setAuthError('Dynamic login is not configured.');
+      return;
+    }
+
+    setLoadingProvider('google');
+    sessionStorage.setItem('auth_origin', window.location.pathname);
+    setShowAuthFlow(true);
+    window.setTimeout(() => setLoadingProvider(null), 300);
+  };
 
   const handleWalletSelect = async (walletName) => {
     try {
@@ -406,7 +423,13 @@ export default function WalletConnect({ onConnected }) {
       </div>
 
       <div className="space-y-3">
-        {/* Google button removed per request */}
+        <button
+          onClick={handleGoogleLogin}
+          disabled={loadingProvider !== null}
+          className="w-full h-14 rounded-xl bg-white text-black hover:bg-white/90 transition-all font-bold flex items-center justify-center gap-3"
+        >
+          {loadingProvider === 'google' ? <Loader2 size={20} className="animate-spin text-black" /> : <><Chrome size={20} /> Continue with Google</>}
+        </button>
 
         {!connected ? (
             <div className="flex flex-col gap-2">

@@ -88,8 +88,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid destination wallet' });
   }
 
-  // FossaPay uses 'deposit.completed', legacy code uses 'completed' or 'successful'
-  const isCompleted = status === 'completed' || status === 'successful' || event === 'deposit.completed'
+  // FossaPay current docs use payment.received; legacy code used deposit.completed/completed/successful.
+  const isCompleted = status === 'completed' || status === 'successful' || event === 'deposit.completed' || event === 'payment.received'
 
   if (!isCompleted) {
     console.log(`ℹ️ Fiat Webhook: Reference ${reference} has status ${status} / event ${event}. Ignoring until completed.`)
@@ -165,6 +165,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(409).json({ error: 'Destination wallet mismatch for intent' })
     }
 
+    const intentAmountUsd = Number(intent.amount_usd || 0)
+    const webhookAmount = Number(amount || 0)
+    if (!Number.isFinite(webhookAmount) || webhookAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount in webhook' })
+    }
+
+    if (!Number.isFinite(intentAmountUsd) || Math.abs(webhookAmount - intentAmountUsd) > 0.01) {
+      await db('fiat_webhook_events').insert({
+        reference,
+        tx_hash: txHash,
+        destination_wallet: destinationWallet,
+        status: status || 'unknown',
+        event_type: event || 'unknown',
+        payload_digest: payloadDigest,
+        payload_json: payload,
+        processing_state: 'rejected',
+        error_message: 'Webhook amount mismatch',
+        created_at: new Date(),
+        updated_at: new Date()
+      }).onConflict('reference').merge({
+        processing_state: 'rejected',
+        error_message: 'Webhook amount mismatch',
+        updated_at: new Date()
+      })
+      return res.status(409).json({ error: 'Amount mismatch for intent' })
+    }
+
     const existing = await db('tips').where({ signature: reference }).first()
     if (existing) {
         console.log(`ℹ️ Fiat Webhook: Reference ${reference} already processed in ledger. Skipping.`)
@@ -173,13 +200,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`💰 Fossa Pay Inbound Success: ${reference} | Amount: $${amount} to ${destinationWallet}`)
 
-    const senderName = metadata?.senderName || 'Anonymous'
-    const message = metadata?.memo || null
+    let intentMetadata: any = {}
+    try {
+      intentMetadata = intent.metadata_json ? JSON.parse(intent.metadata_json) : {}
+    } catch {}
+
+    const senderName = metadata?.senderName || intentMetadata?.senderName || 'Anonymous'
+    const message = metadata?.memo || intentMetadata?.memo || null
     const timestamp = new Date()
-    const numericAmount = Number(amount || 0)
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid amount in webhook' })
-    }
+    const numericAmount = webhookAmount
 
     const insertResult = await db('tips').insert({
       signature: reference,

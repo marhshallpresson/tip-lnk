@@ -139,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         inputMint: inputTokenMint,
         outputMint: outputMint,
         amount: normalizedAmount.toString(),
-        userPublicKey: sourceWalletAddress,
+        taker: sourceWalletAddress,
         slippageBps: '50',
         // Managed landing is required for gasless abstraction
         managedLanding: isGasless ? 'true' : 'false'
@@ -161,6 +161,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           priceImpactPct: order.priceImpactPct
         },
         transaction: order.transaction, 
+        requestId: order.requestId,
         executionMode: isGasless ? 'async' : 'sync', // Gasless usually requires async landing
         lastValidBlockHeight: order.lastValidBlockHeight,
         provider: 'jupiter-ultra',

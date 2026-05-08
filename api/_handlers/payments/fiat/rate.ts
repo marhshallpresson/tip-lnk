@@ -48,6 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let rate = FALLBACK_RATE
   let provider = 'fallback'
   let isFallback = true
+  let fetchError: string | null = null
 
   try {
     const moneirateUrl = process.env.MONEIRATE_API_URL
@@ -65,8 +66,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rate = moneirate
         provider = 'moneirate'
         isFallback = false
+      } else if (process.env.NODE_ENV === 'production') {
+        return res.status(502).json({ success: false, error: 'Fiat exchange-rate provider returned no NGN rate' })
       }
     } else {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(503).json({ success: false, error: 'MONEIRATE_API_URL is not configured' })
+      }
       const fallbackRes = await axios.get('https://api.exchangerate-api.com/v4/latest/USD', { timeout: 5000 })
       const fallbackRate = extractNgnRate(fallbackRes.data)
       if (fallbackRate) {
@@ -76,7 +82,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
   } catch (error: any) {
-    console.warn('Fiat rate fetch failed, using fallback rate:', error?.message || error)
+    fetchError = error?.message || String(error)
+    console.warn('Fiat rate fetch failed, using fallback rate:', fetchError)
+  }
+
+  if (process.env.NODE_ENV === 'production' && isFallback) {
+    return res.status(502).json({
+      success: false,
+      error: 'Fiat exchange-rate provider unavailable',
+      provider,
+      fetchError
+    })
   }
 
   const amountNgn = Number((amountUsd * rate).toFixed(2))

@@ -21,6 +21,7 @@ import { default as authDiscordCallback } from './_handlers/auth/discord/callbac
 import { default as authCheck } from './_handlers/auth/check.js'
 import { default as authOtpStart } from './_handlers/auth/otp-start.js'
 import { default as authOtpVerify } from './_handlers/auth/otp-verify.js'
+import { default as authDynamicVerify } from './_handlers/auth/dynamic-verify.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
 import { default as solanaProfileGet } from './_handlers/solana/profile/get.js'
@@ -55,6 +56,7 @@ import { default as adminMigration } from './_handlers/admin/migration.js'
 import { default as creatorAnalytics } from './_handlers/creators/analytics.js'
 
 import { default as paymentsIntent } from './_handlers/payments/intent.js'
+import { default as paymentsExecute } from './_handlers/payments/execute.js'
 import { default as paymentsFiatIntent } from './_handlers/payments/fiat/intent.js'
 import { default as paymentsFiatWebhook } from './_handlers/payments/fiat/webhook.js'
 import { default as paymentsFiatRate } from './_handlers/payments/fiat/rate.js'
@@ -82,6 +84,7 @@ const ROUTES: Record<string, Function> = {
   'auth/check': authCheck,
   'auth/otp/start': authOtpStart,
   'auth/otp/verify': authOtpVerify,
+  'auth/dynamic-verify': authDynamicVerify,
 
   'solana/profile': solanaProfile,
   'solana/profile/get': solanaProfileGet,
@@ -116,6 +119,7 @@ const ROUTES: Record<string, Function> = {
   'creators/analytics': creatorAnalytics,
 
   'payments/intent': paymentsIntent,
+  'payments/execute': paymentsExecute,
   'payments/fiat/intent': paymentsFiatIntent,
   'payments/fiat/webhook': paymentsFiatWebhook,
   'payments/fiat/rate': paymentsFiatRate,
@@ -154,10 +158,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isMutation = ['POST', 'PUT', 'DELETE'].includes(req.method || '')
   const bypassCsrf = [
     'auth/csrf', 
+    'auth/dynamic-verify',
     'payouts/webhook', 
     'payments/fiat/webhook',
     'payments/fiat/intent',
     'payments/intent',
+    'payments/execute',
     'solana/webhooks/helius', 
     'solana/profile/update', 
     'quicknode/rpc/solana',

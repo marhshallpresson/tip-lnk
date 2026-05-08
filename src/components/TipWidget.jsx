@@ -33,6 +33,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
   const [searchTerm, setSearchTerm] = useState('');
   const [fiatQuote, setFiatQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [fiatPaymentInstructions, setFiatPaymentInstructions] = useState(null);
   const [widgetError, setWidgetError] = useState('');
 
   const {
@@ -150,6 +151,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
     } else {
         // Enhanced Fiat Flow: Intent creation + monitoring
         try {
+            setFiatPaymentInstructions(null);
             const isProd = import.meta.env.PROD;
             const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
             const response = await fetch(`${base}/api/payments/fiat/intent`, {
@@ -167,11 +169,23 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
             });
 
             const data = await response.json();
-            if (!response.ok || !data?.checkoutUrl) {
+            if (!response.ok || (!data?.checkoutUrl && !data?.paymentInstructions)) {
                 throw new Error(data?.error || 'Failed to initialize card payment session.');
             }
 
-            const checkoutPopup = window.open(data.checkoutUrl, 'tipstack_pay', 'width=520,height=760,status=no,location=no');
+            const instructions = data.paymentInstructions || null;
+            let checkoutPopup = null;
+            if (data.checkoutUrl) {
+                checkoutPopup = window.open(data.checkoutUrl, 'tipstack_pay', 'width=520,height=760,status=no,location=no');
+            } else if (instructions) {
+                setFiatPaymentInstructions({
+                    ...instructions,
+                    amountUsd: Number(amount),
+                    amountNgn: fiatQuote?.amountNgn,
+                    rate: fiatQuote?.rate,
+                    intentId: data.intentId
+                });
+            }
             
             // Local state to show processing while popup is open
             setTxResult({ status: 'pending', signature: data.intentId, outAmount: Number(amount) });
@@ -186,6 +200,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
                     const sData = await sRes.json();
                     if (sData?.success && sData.status === 'completed') {
                         clearInterval(pollStatus);
+                        setFiatPaymentInstructions(null);
                         setTxResult({ status: 'confirmed', signature: data.intentId, outAmount: Number(amount) });
                         addTip({
                             recipientId: resolvedAddress,
@@ -217,6 +232,53 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
 
   const isPresetActive = (val) => Number(amount) === val;
 
+  if (txResult?.status === 'pending' && fiatPaymentInstructions) {
+      return (
+          <div className="bg-[#121214] border border-white/5 rounded-[28px] p-6 max-w-[380px] mx-auto shadow-2xl">
+              <div className="flex items-center gap-3 mb-5">
+                  <div className="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20">
+                      <CreditCard size={20} className="text-brand-500" />
+                  </div>
+                  <div>
+                      <h3 className="text-white font-bold text-base">Bank Transfer</h3>
+                      <p className="text-white/40 text-xs">Transfer exactly this amount to continue.</p>
+                  </div>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4">
+                      <span className="text-white/40">Amount</span>
+                      <span className="text-white font-black">
+                        {fiatPaymentInstructions.amountNgn
+                          ? `₦${Number(fiatPaymentInstructions.amountNgn).toLocaleString()}`
+                          : `$${Number(fiatPaymentInstructions.amountUsd || 0).toFixed(2)}`}
+                      </span>
+                  </div>
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4">
+                      <span className="text-white/40">Bank</span>
+                      <span className="text-white font-bold text-right">{fiatPaymentInstructions.bankName || 'FossaPay Bank'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(fiatPaymentInstructions.accountNumber || '')}
+                    className="w-full rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4 text-left"
+                  >
+                      <span className="text-white/40">Account</span>
+                      <span className="text-white font-mono font-black">{fiatPaymentInstructions.accountNumber || 'Pending'}</span>
+                  </button>
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4">
+                      <span className="text-white/40">Reference</span>
+                      <span className="text-white font-mono text-xs text-right">{fiatPaymentInstructions.reference || fiatPaymentInstructions.intentId}</span>
+                  </div>
+              </div>
+
+              <div className="mt-5 h-14 rounded-[18px] bg-brand-500/10 text-brand-500 font-black flex items-center justify-center gap-2">
+                  <Loader2 size={18} className="animate-spin" /> Waiting for confirmation
+              </div>
+          </div>
+      );
+  }
+
   if (txResult?.status === 'confirmed') {
       return (
           <div className="bg-[#121214] border border-white/5 rounded-[28px] p-8 text-center animate-scale-in max-w-[360px] mx-auto shadow-2xl">
@@ -225,7 +287,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Sent Successfully!</h3>
               <p className="text-white/40 text-sm mb-6">Your support of ${Number(amount).toFixed(2)} was delivered instantly.</p>
-              <button onClick={() => { reset(); setAmount('5'); setNote(''); }} className="btn-primary w-full">Send Another</button>
+              <button onClick={() => { reset(); setFiatPaymentInstructions(null); setAmount('5'); setNote(''); }} className="btn-primary w-full">Send Another</button>
           </div>
       );
   }
@@ -284,7 +346,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
               {paymentMethod === 'card' && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
                       <div className="text-[10px] font-black text-brand-500 bg-brand-500/10 px-2.5 py-1.5 rounded-lg border border-brand-500/20 shadow-sm animate-fade-in whitespace-nowrap">
-                         {quoteLoading ? <Loader2 size={10} className="animate-spin" /> : `~₦${Number(fiatQuote?.amountNgn || 0).toLocaleString()}`}
+                         {quoteLoading ? <Loader2 size={10} className="animate-spin" /> : (fiatQuote ? `~₦${Number(fiatQuote.amountNgn || 0).toLocaleString()}` : 'Rate unavailable')}
                       </div>
                   </div>
               )}
@@ -351,7 +413,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
       {/* Main Action Button */}
       <button 
         onClick={handlePay}
-        disabled={processing || quoteLoading || !amount || Number(amount) <= 0 || !resolvedAddress}
+        disabled={processing || quoteLoading || !amount || Number(amount) <= 0 || !resolvedAddress || (paymentMethod === 'card' && !fiatQuote)}
         className="w-full h-16 rounded-[22px] bg-gradient-to-r from-[#FFB800] to-[#FF9500] text-black font-black text-lg shadow-[0_8px_30px_rgba(255,184,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none"
       >
           {processing || quoteLoading ? (

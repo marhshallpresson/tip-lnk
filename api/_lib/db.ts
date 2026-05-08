@@ -27,9 +27,9 @@ const config = process.env.DATABASE_URL
       }
     }
   : {
-      client: 'sqlite3',
-      connection: {
-        filename: path.join(__dirname, '../../dev.db')
+    client: 'sqlite3',
+    connection: {
+        filename: process.env.SQLITE_DATABASE_PATH || path.join(__dirname, '../../dev.db')
       },
       useNullAsDefault: true
     };
@@ -90,6 +90,15 @@ export async function getCreatorBalance(userId: string) {
     }
 }
 
+let schemaInitPromise: Promise<void> | null = null;
+
+export function initSchema() {
+  if (!schemaInitPromise) {
+    schemaInitPromise = initSchemaInternal();
+  }
+  return schemaInitPromise;
+}
+
 initSchema().catch(err => {
 });
 
@@ -97,7 +106,7 @@ initSchema().catch(err => {
  * Production Schema Initialization
  * Automatically creates and hardens tables on your Supabase instance.
  */
-export async function initSchema() {
+async function initSchemaInternal() {
   try {
     console.log('🛡️ initSchema: Starting...');
     if (!(await db.schema.hasTable('user'))) {
@@ -170,7 +179,8 @@ export async function initSchema() {
             console.log('🛡️ Migration: Added encrypted address columns to user table.');
         }
 
-        const hasTipIds = await db.schema.hasColumn('tips', 'recipient_id');
+        const tipsTableExists = await db.schema.hasTable('tips');
+        const hasTipIds = tipsTableExists ? await db.schema.hasColumn('tips', 'recipient_id') : true;
         if (!hasTipIds) {
             await db.schema.table('tips', (table) => {
                 table.string('sender_id').references('id').inTable('user').onDelete('SET NULL');
@@ -179,7 +189,8 @@ export async function initSchema() {
             console.log('🛡️ Migration: Added user ID relations to tips table.');
         }
 
-        const hasPayoutUserId = await db.schema.hasColumn('payouts', 'user_id');
+        const payoutsTableExists = await db.schema.hasTable('payouts');
+        const hasPayoutUserId = payoutsTableExists ? await db.schema.hasColumn('payouts', 'user_id') : true;
         if (!hasPayoutUserId) {
             await db.schema.table('payouts', (table) => {
                 table.string('user_id').references('id').inTable('user').onDelete('SET NULL');
@@ -238,8 +249,19 @@ export async function initSchema() {
         table.string('method').defaultTo('crypto');
         table.string('status').defaultTo('confirmed');
         table.string('type').defaultTo('tip');
+        table.text('metadata');
       });
       await db.raw('CREATE INDEX IF NOT EXISTS idx_tips_timestamp ON "tips" (timestamp DESC);');
+    }
+
+    if (await db.schema.hasTable('tips')) {
+      const hasTipMetadata = await db.schema.hasColumn('tips', 'metadata');
+      if (!hasTipMetadata) {
+        await db.schema.table('tips', (table) => {
+          table.text('metadata');
+        });
+        console.log('🛡️ Migration: Added metadata column to tips table.');
+      }
     }
 
     if (!(await db.schema.hasTable('analytics_daily'))) {

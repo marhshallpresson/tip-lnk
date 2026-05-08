@@ -19,8 +19,9 @@ import AdminDashboard from './components/AdminDashboard';
 import AppNavbar from './components/AppNavbar';
 import ResetPassword from './components/ResetPassword';
 import api from './lib/api';
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { getAuthToken, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 const TermsOfService = lazy(() => import('./components/legal/TermsOfService.jsx'));
 const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy.jsx'));
@@ -36,9 +37,47 @@ function ScrollToTop() {
 
 function AppContent() {
   const { role, onboardingStep, update } = useApp();
-  const { showWalletModal, setShowWalletModal } = useAuth();
+  const { showWalletModal, setShowWalletModal, user: authUser, loading: authLoading, loginWithDynamic } = useAuth();
+  const { user: dynamicUser } = useDynamicContext();
   const navigate = useNavigate();
   const location = useLocation();
+  const dynamicLoginInFlightRef = useRef(false);
+  const processedDynamicTokenRef = useRef(null);
+
+  useEffect(() => {
+    if (!dynamicUser || authUser || authLoading || dynamicLoginInFlightRef.current) return;
+
+    const dynamicJwt = getAuthToken();
+    if (!dynamicJwt || processedDynamicTokenRef.current === dynamicJwt) return;
+
+    processedDynamicTokenRef.current = dynamicJwt;
+    dynamicLoginInFlightRef.current = true;
+
+    loginWithDynamic(dynamicJwt)
+      .then((result) => {
+        if (!result.success) {
+          console.error('Dynamic login exchange failed:', result.error);
+          return;
+        }
+
+        const storedOrigin = sessionStorage.getItem('auth_origin');
+        const origin = storedOrigin && storedOrigin.startsWith('/') && !storedOrigin.startsWith('//')
+          ? storedOrigin
+          : '/dashboard';
+        const completedOnboarding = Boolean(result.user?.onboardingComplete || result.user?.onboarding_complete);
+        const target = completedOnboarding ? (origin === '/' ? '/dashboard' : origin) : '/onboarding';
+
+        setShowWalletModal(false);
+        navigate(target, { replace: true });
+      })
+      .catch((err) => {
+        console.error('Dynamic login exchange failed:', err);
+      })
+      .finally(() => {
+        sessionStorage.removeItem('auth_origin');
+        dynamicLoginInFlightRef.current = false;
+      });
+  }, [dynamicUser, authUser, authLoading, loginWithDynamic, navigate, setShowWalletModal]);
 
   const handleGetStarted = () => {
     if (role === 'guest') {
