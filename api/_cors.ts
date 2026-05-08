@@ -21,16 +21,17 @@ export function applyCors(req: any, res: any): boolean {
 
   // Professional CSP Headers - prevents XSS and enforces security standards
   const cspDirectives = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='",
+    "default-src 'self' blob: data: https://tokens.jup.ag",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' 'wasm-unsafe-eval' blob: data: https://www.google.com https://*.google.com https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.dynamic-labs.com https://*.dynamicauth.com 'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com",
-    "connect-src 'self' data: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://solana-mainnet.rpc.extnode.com https://api.torquemarketing.xyz https://api.fossapay.com https://api.pajcash.com https://api.dynamic.xyz wss://*.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com",
-    "frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com",
+    "font-src 'self' data: https://fonts.gstatic.com https://*.gstatic.com",
+    "img-src 'self' data: https: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://*.dynamicauth.com https://tokens.jup.ag https://*.jup.ag",
+    "connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://*.helius-rpc.com https://*.solana.com wss://*.solana.com https://api.dflow.net https://api.pajcash.com https://price.jup.ag https://api.jup.ag https://quote-api.jup.ag https://tokens.jup.ag wss://relay.walletconnect.com wss://relay.walletconnect.org https://*.walletconnect.com https://api.eitherway.ai https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://*.dynamicauth.com https://*.dynamic-labs.com https://logs.dynamicauth.com https://app.dynamicauth.com https://www.tipstack.fun https://tipstack.fun https://auth.phantom.app https://api.kamino.finance https://api.torquemarketing.xyz",
+    "frame-src 'self' https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://*.dynamicauth.com https://tipstack.fun",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
+    "worker-src 'self' blob: data:",
     "upgrade-insecure-requests"
   ]
 
