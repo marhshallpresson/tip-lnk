@@ -47,6 +47,9 @@ import { default as socialXPosts } from './_handlers/social/x-posts.js'
 import { default as payoutsWebhook } from './_handlers/payouts/webhook.js'
 import { default as payoutsHistory } from './_handlers/payouts/history.js'
 import { default as payoutsWithdraw } from './_handlers/payouts/withdraw.js'
+import { default as payoutsBalance } from './_handlers/payouts/balance.js'
+import { default as payoutsBanks } from './_handlers/payouts/banks.js'
+import { default as payoutsResolve } from './_handlers/payouts/resolve.js'
 
 import { default as adminStats } from './_handlers/admin/stats.js'
 import { default as adminCreators } from './_handlers/admin/creators.js'
@@ -111,6 +114,9 @@ const ROUTES: Record<string, Function> = {
   'payouts/webhook': payoutsWebhook,
   'payouts/history': payoutsHistory,
   'payouts/withdraw': payoutsWithdraw,
+  'payouts/balance': payoutsBalance,
+  'payouts/banks': payoutsBanks,
+  'payouts/resolve': payoutsResolve,
 
   'admin/stats': adminStats,
   'admin/creators': adminCreators,

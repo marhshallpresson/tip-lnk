@@ -3,7 +3,7 @@ import { db } from '../../_lib/db.js'
 import { getSessionUser } from '../../_lib/session.js'
 
 /**
- * Task 1: Pajcash Payout History
+ * Payout history
  * Fetches the user's withdrawal history from the database.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -20,14 +20,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .orderBy('created_at', 'desc')
       .limit(50)
 
-    const formattedHistory = history.map(p => ({
-      id: p.id,
-      date: p.created_at,
-      amountUSDC: Number(p.amount_ngn) / 1250,
-      amountNGN: Number(p.amount_ngn),
-      status: p.status,
-      reference: p.pajcash_reference
-    }))
+    const formattedHistory = history.map(p => {
+      let raw: any = {}
+      try {
+        raw = p.raw_payload ? JSON.parse(p.raw_payload) : {}
+      } catch {}
+
+      return {
+        id: p.id,
+        date: p.created_at,
+        amountUSDC: Number(raw.amountUSDC || raw.amount_usdc || Number(p.amount_ngn) / 1500),
+        amountNGN: Number(p.amount_ngn),
+        status: p.status,
+        reference: p.pajcash_reference,
+        provider: raw.provider || 'fossapay',
+        bankName: raw.bankName || null
+      }
+    })
 
     res.status(200).json({ success: true, history: formattedHistory })
   } catch (err: any) {

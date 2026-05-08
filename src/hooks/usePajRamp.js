@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
-import { 
-  initializeSDK, 
-  initiate, 
-  verify, 
-  getBanks, 
-  resolveBankAccount, 
+import {
+  initializeSDK,
+  initiate,
+  verify,
+  getBanks,
+  resolveBankAccount,
   createOfframpOrder,
   getRateByAmount
 } from 'paj_ramp';
@@ -70,7 +70,7 @@ export function usePajRamp() {
       setBanks(bankList || []);
       return bankList || [];
     } catch (err) {
-      console.error('🛡️ usePajRamp: Failed to fetch banks', err);
+      console.error('usePajRamp: Failed to fetch banks', err);
       return [];
     } finally {
       setLoadingBanks(false);
@@ -83,7 +83,7 @@ export function usePajRamp() {
       const res = await resolveBankAccount(sessionToken, bankId, accountNumber);
       return res;
     } catch (err) {
-      console.error('🛡️ usePajRamp: Resolve error', err);
+      console.error('usePajRamp: Resolve error', err);
       throw err;
     }
   }, [sessionToken]);
@@ -94,7 +94,7 @@ export function usePajRamp() {
       const rateData = await getRateByAmount(amount, type);
       return rateData;
     } catch (err) {
-      console.error('🛡️ usePajRamp: Rate fetch failed', err);
+      console.error('usePajRamp: Rate fetch failed', err);
       return null;
     }
   }, []);

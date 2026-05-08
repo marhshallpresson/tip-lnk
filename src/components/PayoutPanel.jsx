@@ -4,7 +4,7 @@ import api from '../lib/api';
 import { usePajRamp } from '../hooks/usePajRamp';
 import { useWallet } from '../contexts/WalletContext';
 import { useConnection } from '../contexts/WalletContext';
-import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { createTransferInstruction, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 
 export default function PayoutPanel() {
@@ -30,6 +30,15 @@ export default function PayoutPanel() {
   const [resolvedName, setResolvedName] = useState('');
   const [rateInfo, setRateInfo] = useState(null);
   const [creatorBalance, setCreatorBalance] = useState(null);
+  const [fiatAmount, setFiatAmount] = useState('');
+  const [fiatBanks, setFiatBanks] = useState([]);
+  const [fiatBankCode, setFiatBankCode] = useState('');
+  const [fiatAccountNumber, setFiatAccountNumber] = useState('');
+  const [fiatAccountName, setFiatAccountName] = useState('');
+  const [fiatRateInfo, setFiatRateInfo] = useState(null);
+  const [fiatProcessing, setFiatProcessing] = useState(false);
+  const [fiatMessage, setFiatMessage] = useState(null);
+  const [fiatError, setFiatError] = useState(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -83,6 +92,38 @@ export default function PayoutPanel() {
       setRateInfo(null);
     }
   }, [ngnAmount, getRate]);
+
+  useEffect(() => {
+    const fetchFiatBanks = async () => {
+      try {
+        const res = await api.get('/payouts/banks');
+        if (res.ok && Array.isArray(res.data?.banks)) {
+          setFiatBanks(res.data.banks);
+        }
+      } catch (err) {
+        console.error('FiatPay bank list failed:', err);
+      }
+    };
+
+    fetchFiatBanks();
+  }, []);
+
+  useEffect(() => {
+    if (fiatAmount && Number(fiatAmount) >= 1) {
+      const timer = setTimeout(async () => {
+        try {
+          const res = await api.get(`/payments/fiat/rate?amount=${encodeURIComponent(fiatAmount)}&asset=USDC&quote=NGN`);
+          if (res.ok) {
+            setFiatRateInfo(res.data);
+          }
+        } catch (err) {
+          console.error('FiatPay quote failed:', err);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    setFiatRateInfo(null);
+  }, [fiatAmount]);
 
   // Phase 2: OTP expiration timer
   useEffect(() => {
@@ -145,9 +186,65 @@ export default function PayoutPanel() {
     }
   };
 
+  const handleResolveFiatAccount = async () => {
+    if (!fiatBankCode || fiatAccountNumber.length < 10) return;
+    setFiatProcessing(true);
+    setFiatError(null);
+    setFiatMessage(null);
+    try {
+      const res = await api.post('/payouts/resolve', {
+        bankCode: fiatBankCode,
+        accountNumber: fiatAccountNumber,
+      });
+      if (!res.ok) throw new Error(res.data?.error || 'Could not resolve account');
+      setFiatAccountName(res.data.accountName);
+      setFiatMessage(res.data.verified ? 'Account verified' : 'Account captured for payout');
+    } catch (err) {
+      setFiatError(err.message || 'Could not resolve bank account.');
+    } finally {
+      setFiatProcessing(false);
+    }
+  };
+
+  const handleFiatPayPayout = async () => {
+    if (!fiatAmount || !fiatBankCode || fiatAccountNumber.length < 10 || !fiatAccountName) return;
+    const selectedBankName = fiatBanks.find(bank => bank.code === fiatBankCode || bank.id === fiatBankCode)?.name || 'selected bank';
+    const confirmed = window.confirm(
+      `Confirm FiatPay withdrawal of ${fiatAmount} USDC?\n\nDestination: ${fiatAccountName} at ${selectedBankName}\nEstimated payout: ₦${Number(fiatRateInfo?.convertedAmount || fiatRateInfo?.amountNgn || 0).toLocaleString()}`
+    );
+    if (!confirmed) return;
+
+    setFiatProcessing(true);
+    setFiatError(null);
+    setFiatMessage(null);
+    try {
+      const res = await api.post('/payouts/withdraw', {
+        provider: 'fossapay',
+        amountUSDC: Number(fiatAmount),
+        bankCode: fiatBankCode,
+        accountNumber: fiatAccountNumber,
+        accountName: fiatAccountName,
+      });
+      if (!res.ok) throw new Error(res.data?.message || res.data?.error || 'FiatPay withdrawal failed');
+
+      setFiatMessage(`FiatPay payout submitted: ${res.data.reference}`);
+      setFiatAmount('');
+      setFiatAccountNumber('');
+      setFiatAccountName('');
+      const historyRes = await api.get('/payouts/history');
+      if (historyRes.ok && historyRes.data?.history) {
+        setPayoutHistory(historyRes.data.history);
+      }
+    } catch (err) {
+      setFiatError(err.message || 'FiatPay withdrawal failed');
+    } finally {
+      setFiatProcessing(false);
+    }
+  };
+
   const handleExecuteOfframp = async () => {
     if (!publicKey) return;
-    
+
     // Add confirmation step before actual withdrawal
     const confirmed = window.confirm(
       `Confirm withdrawal of ${ngnAmount} USDC?\n\nYou will receive approximately ₦${rateInfo?.totalReceived.toLocaleString() || 'N/A'}\n\nThis action cannot be undone.`
@@ -172,7 +269,6 @@ export default function PayoutPanel() {
       try {
         const accountInfo = await connection.getAccountInfo(toAta);
         if (!accountInfo) {
-          console.log('🛡️ Pent Test: Destination ATA missing. Adding creation instruction.');
           transaction.add(
             createAssociatedTokenAccountInstruction(
               publicKey,
@@ -185,7 +281,7 @@ export default function PayoutPanel() {
       } catch (e) {
         console.warn('ATA check error, assuming missing:', e);
       }
-      
+
       transaction.add(
         createTransferInstruction(
           fromAta,
@@ -443,25 +539,126 @@ export default function PayoutPanel() {
           </div>
         </div>
 
-        {/* Standard Fiat/Crypto Payouts (Simplified for Tip Stack Style) */}
-        <div className="glass-card p-6 border-white/5 flex flex-col justify-between">
-           <div>
-              <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
-                <CreditCard size={18} className="text-brand-400" /> Card & Global Payout
-              </h3>
-              <p className="text-surface-500 text-sm">International withdrawals via Stripe Connect</p>
-           </div>
-           
-           <div className="py-10 text-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 opacity-50">
-                 <Clock size={24} className="text-surface-600" />
-              </div>
-              <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Coming Soon for Creators</p>
-           </div>
+        {/* FossaPay Direct Fiat Withdrawal */}
+        <div className="glass-card p-6 border-brand-500/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
-           <button disabled className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white/20 font-bold uppercase tracking-widest text-[10px] cursor-not-allowed">
-              Link Global Account
-           </button>
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-brand-400">
+                <CreditCard size={18} /> FiatPay Withdrawal
+              </h3>
+              <p className="text-surface-400 text-sm mt-1">Send settled balance to a Nigerian bank account</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {creatorBalance !== null && (
+              <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-surface-500">Available Balance</span>
+                  <span className="font-bold text-white">${creatorBalance.toFixed(2)} USDC</span>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-surface-800/50 p-5 rounded-2xl border border-surface-700 focus-within:border-brand-400/50 transition-all">
+              <label className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-3 block">Amount to Withdraw (USDC)</label>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl font-black text-surface-500">$</span>
+                <input
+                  type="number"
+                  value={fiatAmount}
+                  onChange={(e) => setFiatAmount(e.target.value)}
+                  className="bg-transparent border-none outline-none text-3xl font-black w-full placeholder:text-surface-700"
+                  placeholder="50.00"
+                  disabled={creatorBalance === null || creatorBalance <= 0}
+                />
+              </div>
+            </div>
+
+            {fiatRateInfo && (
+              <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-surface-500">Current Rate:</span>
+                  <span className="font-mono text-white">₦ {Number(fiatRateInfo.rate).toLocaleString()} / USDC</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold">
+                  <span className="text-surface-400">Estimated Payout:</span>
+                  <span className="text-brand-400">₦ {Number(fiatRateInfo.convertedAmount || 0).toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <select
+                value={fiatBankCode}
+                onChange={(e) => {
+                  setFiatBankCode(e.target.value);
+                  setFiatAccountName('');
+                  setFiatMessage(null);
+                }}
+                className="w-full bg-surface-800/50 border border-surface-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brand-400/50"
+              >
+                <option value="">Select payout bank</option>
+                {fiatBanks.map(bank => <option key={bank.id} value={bank.code}>{bank.name}</option>)}
+              </select>
+
+              <div className="bg-surface-800/50 p-4 rounded-xl border border-surface-700 focus-within:border-brand-400/30">
+                <label className="text-[10px] font-bold text-surface-500 uppercase mb-1 block">Account Number</label>
+                <input
+                  type="text"
+                  value={fiatAccountNumber}
+                  onChange={(e) => {
+                    setFiatAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10));
+                    setFiatAccountName('');
+                    setFiatMessage(null);
+                  }}
+                  className="bg-transparent border-none outline-none text-lg font-bold w-full text-white"
+                  placeholder="0123456789"
+                  maxLength={10}
+                />
+              </div>
+
+              {fiatAccountName && (
+                <div className="p-4 rounded-2xl bg-accent-green/10 border border-accent-green/20">
+                  <p className="text-[10px] font-bold text-accent-green uppercase tracking-widest">Account Holder</p>
+                  <p className="text-sm font-bold text-white uppercase mt-1">{fiatAccountName}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={handleResolveFiatAccount}
+                disabled={fiatProcessing || !fiatBankCode || fiatAccountNumber.length < 10}
+                className="w-full py-4 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                {fiatProcessing ? <Loader2 className="animate-spin" size={16} /> : 'Validate Account'}
+              </button>
+
+              <button
+                onClick={handleFiatPayPayout}
+                disabled={
+                  fiatProcessing ||
+                  !fiatAmount ||
+                  Number(fiatAmount) < 1 ||
+                  creatorBalance === null ||
+                  creatorBalance <= 0 ||
+                  Number(fiatAmount) > creatorBalance ||
+                  !fiatBankCode ||
+                  fiatAccountNumber.length < 10 ||
+                  !fiatAccountName
+                }
+                className="btn-primary w-full py-4 rounded-2xl bg-brand-500 text-black font-black uppercase tracking-tighter flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                {fiatProcessing ? <Loader2 className="animate-spin" size={16} /> : <>Withdraw <ArrowRight size={16} /></>}
+              </button>
+            </div>
+
+            {fiatMessage && <div className="p-3 bg-accent-green/10 border border-accent-green/20 rounded-xl text-accent-green text-[10px] font-bold text-center uppercase tracking-widest">{fiatMessage}</div>}
+            {fiatError && <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-bold text-center uppercase tracking-widest">{fiatError}</div>}
+          </div>
         </div>
 
       </div>
@@ -504,7 +701,9 @@ export default function PayoutPanel() {
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
                         <Landmark size={12} className="text-white/20" />
-                        <span className="text-white/60 font-medium">Nigerian Bank</span>
+                        <span className="text-white/60 font-medium">
+                          {payout.provider === 'fossapay' ? (payout.bankName || 'FiatPay Bank') : 'Pajcash Off-ramp'}
+                        </span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">

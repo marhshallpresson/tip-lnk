@@ -71,13 +71,18 @@ export async function getCreatorBalance(userId: string) {
             return acc + amount;
         }, 0);
         
-        const payouts = await db('payouts')
+        const payoutRows = await db('payouts')
             .where({ wallet_address: address })
-            .whereIn('status', ['pending', 'completed'])
-            .sum('amount_ngn as total');
+            .whereIn('status', ['pending', 'processing', 'submitted', 'completed']);
 
-        const totalWithdrawnNGN = Number(payouts[0]?.total || 0);
-        const totalWithdrawnUSD = totalWithdrawnNGN / 1250; 
+        const totalWithdrawnUSD = payoutRows.reduce((acc, payout) => {
+            try {
+                const raw = payout.raw_payload ? JSON.parse(payout.raw_payload) : {};
+                const amountUSDC = Number(raw.amountUSDC || raw.amount_usdc || 0);
+                if (Number.isFinite(amountUSDC) && amountUSDC > 0) return acc + amountUSDC;
+            } catch {}
+            return acc + (Number(payout.amount_ngn || 0) / 1500);
+        }, 0);
 
         return {
             totalTipsUSD,

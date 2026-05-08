@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,7 +11,6 @@ export default defineConfig({
   plugins: [
     react(),
     wasm(),
-    topLevelAwait(),
     nodePolyfills({
       include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder', 'process', 'events'],
       globals: {
@@ -48,7 +46,7 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 5000,
+    chunkSizeWarningLimit: 8000,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
@@ -71,10 +69,6 @@ export default defineConfig({
             // High-level protocol libraries that are large but mostly independent
             if (id.includes('@kamino-finance') || id.includes('@jup-ag') || id.includes('@orca-so')) {
               return 'vendor-defi';
-            }
-            // Identity and Wallet providers
-            if (id.includes('@dynamic-labs') || id.includes('@walletconnect') || id.includes('@reown') || id.includes('@trezor') || id.includes('@ledgerhq')) {
-              return 'vendor-auth';
             }
             // Keep core libraries (Solana web3, React, Crypto) together to avoid circular resolution issues
             return 'vendor';
