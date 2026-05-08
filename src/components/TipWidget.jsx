@@ -62,7 +62,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
       if (!recipientInput) { setResolvedAddress(null); return; }
       setIsResolving(true);
       try {
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
         const handle = recipientInput.startsWith('@') ? recipientInput : `@${recipientInput}`;
         const res = await fetch(`${base}/api/deep-link/resolve?handle=${encodeURIComponent(handle)}`);
@@ -94,7 +94,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
       }
       setQuoteLoading(true);
       try {
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
         const res = await fetch(`${base}/api/payments/fiat/rate?amount=${parsed}`);
         const data = await res.json();
@@ -152,7 +152,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
         // Enhanced Fiat Flow: Intent creation + monitoring
         try {
             setFiatPaymentInstructions(null);
-            const isProd = import.meta.env.PROD;
+            const isProd = import.meta.env.MODE === 'production';
             const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
             const response = await fetch(`${base}/api/payments/fiat/intent`, {
                 method: 'POST',

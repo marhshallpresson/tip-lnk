@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const isProd = import.meta.env.PROD;
+      const isProd = import.meta.env.MODE === 'production';
       const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
       
       const adminSecret = 'tipstack-elite-admin-2026-god-mode'; 
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
         const response = await fetch(`${API_BASE}/api/auth/admin/login`, {

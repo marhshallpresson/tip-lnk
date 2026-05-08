@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node build-vite.mjs",
     "preview": "vite preview",
     "migrate": "node scripts/apply-privacy-migration.cjs"
   },
@@ -59,7 +59,7 @@
     "tweetnacl": "1.0.3",
     "typescript": "5.8.3",
     "uuid": "11.0.3",
-    "vite": "6.4.2",
+    "vite": "5.4.21",
     "vite-plugin-node-polyfills": "0.23.0"
   },
   "devDependencies": {

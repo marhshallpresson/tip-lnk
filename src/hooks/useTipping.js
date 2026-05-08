@@ -157,7 +157,7 @@ export function useTipping(creatorAddress) {
           throw new Error(`Token ${tokenSymbol} has unsupported decimals`);
         }
 
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
         // frequency mapped to seconds
@@ -218,7 +218,7 @@ export function useTipping(creatorAddress) {
           throw new Error('Creator address not resolved');
         }
 
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
         console.log('🔗 API Base URL:', API_BASE_URL);
@@ -306,7 +306,7 @@ export function useTipping(creatorAddress) {
       setError(null);
 
       try {
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         const DFLOW_API = 'https://quote-api.dflow.net';
         const DFLOW_API_KEY = import.meta.env.VITE_DFLOW_API_KEY;
@@ -419,7 +419,7 @@ export function useTipping(creatorAddress) {
       setError(null);
 
       try {
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         
         const tx = VersionedTransaction.deserialize(Buffer.from(recurringRoute.transaction, 'base64'));

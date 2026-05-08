@@ -113,7 +113,7 @@ export function AppProvider({ children }) {
     const fetchTips = async () => {
       if (pubkeyStr && connected) {
         try {
-          const isProd = import.meta.env.PROD;
+          const isProd = import.meta.env.MODE === 'production';
           const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
           
           const res = await fetch(`${API_BASE_URL}/api/solana/tips/history?address=${pubkeyStr}`);

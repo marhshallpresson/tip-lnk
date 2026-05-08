@@ -7,7 +7,11 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
+export default defineConfig(({ command }) => {
+  const nodeEnv = command === 'build' ? 'production' : (process.env.NODE_ENV || 'development');
+  process.env.NODE_ENV = nodeEnv;
+
+  return {
   plugins: [
     react(),
     wasm(),
@@ -22,8 +26,11 @@ export default defineConfig({
   ],
   define: {
     'global': 'globalThis',
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    'process.env.NODE_ENV': JSON.stringify(nodeEnv),
   },
+  esbuild: command === 'build' ? {
+    jsxDev: false,
+  } : undefined,
   optimizeDeps: {
     include: [
       'string_decoder',
@@ -34,6 +41,10 @@ export default defineConfig({
       'jayson',
       'react-dom/client',
       'qrcode.react',
+      '@dynamic-labs/sdk-react-core',
+      '@dynamic-labs/sdk-api-core',
+      '@dynamic-labs/solana',
+      '@dynamic-labs/ethereum',
       'bs58',
       'buffer',
       'tweetnacl'
@@ -58,7 +69,12 @@ export default defineConfig({
       },
       external: (id) => {
         const serverOnly = ['bcryptjs', 'nodemailer', 'express', 'pg', 'knex', 'sqlite3'];
-        return serverOnly.some(pkg => id.includes(pkg));
+        const normalizedId = id.replace(/\\/g, '/');
+        return serverOnly.some(pkg =>
+          id === pkg ||
+          id.startsWith(`${pkg}/`) ||
+          normalizedId.includes(`/node_modules/${pkg}/`)
+        );
       },
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
@@ -68,9 +84,6 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('@kamino-finance') || id.includes('@jup-ag') || id.includes('@orca-so')) {
               return 'vendor-defi';
-            }
-            if (id.includes('@dynamic-labs')) {
-              return 'vendor-auth';
             }
             return 'vendor';
           }
@@ -91,4 +104,5 @@ export default defineConfig({
       '@kamino-finance/farms-sdk/dist/@codegen/farms/programId': path.resolve(__dirname, 'src/shims/kamino-farms-programId.js'),
     },
   },
+  };
 });

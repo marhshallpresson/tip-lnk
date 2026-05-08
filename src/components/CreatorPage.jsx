@@ -260,7 +260,7 @@ const TabContent = ({ activeTab, profile }) => {
       if (activeTab !== 'posts' || !profile?.twitterHandle) return;
       setLoadingPosts(true);
       try {
-        const isProd = import.meta.env.PROD;
+        const isProd = import.meta.env.MODE === 'production';
         const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || '');
         const res = await fetch(`${API_BASE}/api/social/x-posts/${profile.twitterHandle}`);
         if (res.ok) {

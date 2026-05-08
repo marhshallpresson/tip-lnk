@@ -27,7 +27,7 @@ export default function useWalletPortfolio() {
     setPortfolio((p) => ({ ...p, loading: true, error: null }));
 
     try {
-      const isProd = import.meta.env.PROD;
+      const isProd = import.meta.env.MODE === 'production';
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
       const [balance, priceRes, assetRes] = await Promise.all([

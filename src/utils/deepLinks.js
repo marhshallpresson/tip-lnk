@@ -46,7 +46,7 @@ export const getBackpackDeepLink = (url) => {
 };
 
 export const getSolanaPayUri = (creatorAddress, amount, inputTokenMint) => {
-  const isProd = import.meta.env.PROD;
+  const isProd = import.meta.env.MODE === 'production';
   const baseUrl = isProd ? 'https://tipstack.fun' : window.location.origin;
   
   const actionUrl = new URL(`${baseUrl}/api/solana/actions/tip/${creatorAddress}`);

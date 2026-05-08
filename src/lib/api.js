@@ -3,7 +3,7 @@
  * Handles CSRF tokens, Bearer tokens, and base URL
  */
 
-const isProd = import.meta.env.PROD;
+const isProd = import.meta.env.MODE === 'production';
 const API_BASE_URL = (isProd
   ? window.location.origin
   : (import.meta.env.VITE_API_BASE_URL)) + '/api';

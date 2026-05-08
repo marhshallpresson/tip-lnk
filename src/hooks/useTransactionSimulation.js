@@ -14,7 +14,7 @@ export function useTransactionSimulation() {
     setSimulating(true);
     setError(null);
     try {
-      const isProd = import.meta.env.PROD;
+      const isProd = import.meta.env.MODE === 'production';
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
       let response;
