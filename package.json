@@ -60,7 +60,9 @@
     "typescript": "5.8.3",
     "uuid": "11.0.3",
     "vite": "5.4.21",
-    "vite-plugin-node-polyfills": "0.23.0"
+    "vite-plugin-node-polyfills": "0.23.0",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.6.0"
   },
   "devDependencies": {
     "@types/compression": "1.7.5",
@@ -70,9 +72,7 @@
     "@types/node": "22.15.30",
     "@vercel/node": "5.5.30",
     "sqlite3": "6.0.1",
-    "tsx": "4.20.3",
-    "vite-plugin-top-level-await": "^1.6.0",
-    "vite-plugin-wasm": "^3.6.0"
+    "tsx": "4.20.3"
   },
   "overrides": {
     "protobufjs": "8.0.1",

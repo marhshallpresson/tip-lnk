@@ -22,12 +22,12 @@ export function applyCors(req: any, res: any): boolean {
   // Professional CSP Headers - prevents XSS and enforces security standards
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io 'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://app.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com'sha256-w9Gn6hxxqmmYiSBD85TknzSe316/NXpWY53J0mhbBbQ='",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com",
-    "connect-src 'self' data: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://solana-mainnet.rpc.extnode.com https://api.torquemarketing.xyz https://api.fossapay.com https://api.pajcash.com https://api.dynamic.xyz wss://*.dynamic.xyz",
-    "frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io",
+    "img-src 'self' data: blob: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com",
+    "connect-src 'self' data: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://*.helius-rpc.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://solana-mainnet.rpc.extnode.com https://api.torquemarketing.xyz https://api.fossapay.com https://api.pajcash.com https://api.dynamic.xyz wss://*.dynamic.xyz https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com",
+    "frame-src 'self' https://app.dynamic.xyz https://*.dynamic-js.io https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://dynamic-static-assets.com https://*.dynamicauth.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
