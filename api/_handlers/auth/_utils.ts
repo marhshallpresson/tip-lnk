@@ -138,3 +138,35 @@ export const issueAuthExchangeCode = async (sessionId: string) => {
 
   return { code, expiresAt }
 }
+
+export const parseProfileData = (value: unknown) => {
+  if (!value) return {}
+  if (typeof value === "object") return { ...(value as Record<string, unknown>) }
+  if (typeof value !== "string") return {}
+
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+export const mergeUserHistory = async (trx: any, sourceUser: any, targetUser: any) => {
+  if (!sourceUser || !targetUser || sourceUser.id === targetUser.id) return
+
+  await trx("tips").where({ sender_id: sourceUser.id }).update({ sender_id: targetUser.id }).catch(() => null)
+  await trx("tips").where({ recipient_id: sourceUser.id }).update({ recipient_id: targetUser.id }).catch(() => null)
+  await trx("payouts").where({ user_id: sourceUser.id }).update({ user_id: targetUser.id }).catch(() => null)
+  await trx("fiat_payment_intents").where({ creator_id: sourceUser.id }).update({ creator_id: targetUser.id }).catch(() => null)
+  await trx("analytics_daily").where({ user_id: sourceUser.id }).update({ user_id: targetUser.id }).catch(() => null)
+  await trx("oauth_tokens").where({ userId: sourceUser.id }).update({ userId: targetUser.id }).catch(() => null)
+  await trx("session").where({ userId: sourceUser.id }).update({
+    revokedAt: new Date(),
+    expiresAt: new Date(),
+  }).catch(() => null)
+  await trx("email_verification_token").where({ userId: sourceUser.id }).delete().catch(() => null)
+  await trx("password_reset_token").where({ userId: sourceUser.id }).delete().catch(() => null)
+  await trx("user_roles").where({ userId: sourceUser.id }).delete().catch(() => null)
+  await trx("user").where({ id: sourceUser.id }).delete()
+}

@@ -6,6 +6,7 @@ import { getSessionUser } from '../../_lib/session.js'
 import { getCryptoFiatQuote } from '../../_lib/crypto-fiat-rates.js'
 import { createCustomer, createFiatPayout } from '../../_lib/fossa.js'
 import { findNigerianBank } from '../../_lib/nigeria-banks.js'
+import { decrypt } from '../../_lib/crypto.js'
 
 const parseProfileData = (value: any) => {
   if (!value) return {}

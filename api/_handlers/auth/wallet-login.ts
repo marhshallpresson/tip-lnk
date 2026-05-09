@@ -3,7 +3,7 @@ import { db } from "../../_lib/db.js"
 import { createSession, getSessionUser, getUserRoles } from "../../_lib/session.js"
 import { logError, serializeError } from "../../_lib/logger.js"
 import { randomUUID } from "crypto"
-import { patchResponse } from "./_utils.js"
+import { patchResponse, parseProfileData, mergeUserHistory } from "./_utils.js"
 import { verifySignature, hashAddress, encrypt } from "../../_lib/crypto.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -48,16 +48,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (existingWalletUser) {
           if (!existingWalletUser.email && !existingWalletUser.passwordHash) {
-            await db('user').where({ id: existingWalletUser.id }).delete();
+            // MERGE wallet user into session user to retain profileData and history
+            const existingProfile = parseProfileData(existingWalletUser.profileData)
+            const sessionProfile = parseProfileData(sessionUser.profileData)
+            const mergedProfile = { ...existingProfile, ...sessionProfile }
+            
+            await db.transaction(async (trx) => {
+              await trx('user').where({ id: sessionUser.id }).update({ 
+                walletAddressHash: addressHash,
+                encryptedWalletAddress: encryptedAddress,
+                profileData: JSON.stringify(mergedProfile),
+                onboardingComplete: existingWalletUser.onboardingComplete || sessionUser.onboardingComplete || false,
+                updated_at: new Date() 
+              });
+              await mergeUserHistory(trx, existingWalletUser, sessionUser);
+            });
           } else {
             return res.status(409).json({ success: false, error: 'Wallet already linked to another account.' });
           }
+        } else {
+          await db('user').where({ id: sessionUser.id }).update({ 
+            walletAddressHash: addressHash,
+            encryptedWalletAddress: encryptedAddress,
+            updated_at: new Date() 
+          });
         }
-        await db('user').where({ id: sessionUser.id }).update({ 
-          walletAddressHash: addressHash,
-          encryptedWalletAddress: encryptedAddress,
-          updated_at: new Date() 
-        });
+
         const updatedUser = await db('user').where({ id: sessionUser.id }).first();
         const roles = await getUserRoles(sessionUser.id);
         return res.status(200).json({ 

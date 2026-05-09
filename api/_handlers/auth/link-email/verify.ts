@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { db } from "../../../_lib/db.js"
 import { getSessionUser, createSession } from "../../../_lib/session.js"
 import { sha256Hex } from "../../../_lib/password.js"
-import { patchResponse } from "../_utils.js"
+import { patchResponse, parseProfileData, mergeUserHistory } from "../_utils.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Email Linking Phase 2
@@ -39,16 +39,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
-      await db('user').where({ id: existingUser.id }).update({
-        walletAddress: user.walletAddress,
-        name: existingUser.name || name || user.name,
-        emailVerifiedAt: new Date(),
-        updated_at: new Date()
-      })
+      const existingProfile = parseProfileData(existingUser.profileData)
+      const userProfile = parseProfileData(user.profileData)
+      const mergedProfile = { ...existingProfile, ...userProfile }
 
-      await db('user').where({ id: user.id }).delete()
-      
-      await db('email_verification_token').where({ userId: user.id }).delete()
+      await db.transaction(async (trx) => {
+        await trx('user').where({ id: existingUser.id }).update({
+          walletAddress: user.walletAddress,
+          walletAddressHash: user.walletAddressHash || existingUser.walletAddressHash,
+          encryptedWalletAddress: user.encryptedWalletAddress || existingUser.encryptedWalletAddress,
+          name: existingUser.name || name || user.name,
+          profileData: JSON.stringify(mergedProfile),
+          onboardingComplete: existingUser.onboardingComplete || user.onboardingComplete || false,
+          emailVerifiedAt: new Date(),
+          updated_at: new Date()
+        })
+        await mergeUserHistory(trx, user, existingUser)
+      })
 
       const session = await createSession(req as any, res as any, existingUser.id)
 
