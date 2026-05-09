@@ -275,6 +275,26 @@ async function initSchemaInternal() {
         });
         console.log('🛡️ Migration: Added metadata column to tips table.');
       }
+
+      // PHASE 3: Privacy & Performance
+      const hasRecipientHash = await db.schema.hasColumn('tips', 'recipient_hash');
+      if (!hasRecipientHash) {
+        await db.schema.table('tips', (table) => {
+          table.string('recipient_hash').index();
+          table.string('sender_hash').index();
+        });
+        console.log('🛡️ Migration: Added privacy hash columns to tips table.');
+      }
+
+      const hasRecipientIdIndex = await db.schema.hasColumn('tips', 'recipient_id');
+      if (hasRecipientIdIndex) {
+          // Knex doesn't have a direct 'hasIndex', but we can safely try to create it or assume from schema
+          // For PG, we can use raw to ensure indexes exist on relation columns
+          if (db.client.config.client === 'pg') {
+              await db.raw('CREATE INDEX IF NOT EXISTS idx_tips_recipient_id ON "tips" (recipient_id);');
+              await db.raw('CREATE INDEX IF NOT EXISTS idx_tips_sender_id ON "tips" (sender_id);');
+          }
+      }
     }
 
     if (!(await db.schema.hasTable('analytics_daily'))) {

@@ -61,8 +61,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const tipRecord = {
       recipient: creatorWallet,
       recipient_id: recipientUser?.id || null,
+      recipient_hash: hashAddress(creatorWallet),
       sender: senderWallet,
       sender_id: senderUser?.id || null,
+      sender_hash: hashAddress(senderWallet),
       amount: tipAmount,
       tokenSymbol,
       signature: txSignature,

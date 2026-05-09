@@ -16,6 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     encryptedWallets: 0,
     linkedTips: 0,
     linkedPayouts: 0,
+    hashedTips: 0,
     errors: [] as string[]
   }
   
@@ -89,6 +90,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       } catch (e: any) {
         results.errors.push(`Payout linking error for ${payout.id}: ${e.message}`)
+      }
+    }
+
+    // 5. Backfill Hashes for Tips (PHASE 3)
+    const tipsToHash = await db('tips').whereNull('recipient_hash').orWhereNull('sender_hash').limit(500)
+    for (const tip of tipsToHash) {
+      try {
+        await db('tips').where({ signature: tip.signature }).update({
+          recipient_hash: hashAddress(tip.recipient),
+          sender_hash: hashAddress(tip.sender)
+        })
+        results.hashedTips++
+      } catch (e: any) {
+        results.errors.push(`Tip hashing error for ${tip.signature}: ${e.message}`)
       }
     }
 
