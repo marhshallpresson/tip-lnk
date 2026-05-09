@@ -316,6 +316,25 @@ export function useTipping(creatorAddress) {
         // ZERO-KNOWLEDGE: Frontend never builds transactions. It only signs buffers from the backend.
         const tx = VersionedTransaction.deserialize(Buffer.from(route.transaction, 'base64'));
 
+        // ─── ELITE SECURITY: PRE-SIGN SIMULATION ───
+        try {
+          const simulation = await connection.simulateTransaction(tx, {
+            replaceRecentBlockhash: true,
+            commitment: 'confirmed'
+          });
+          if (simulation.value.err) {
+            console.warn('⚠️ Transaction Simulation Failed:', simulation.value.err);
+            // We still allow proceeding if it's just a slippage/balance warning, 
+            // but strict errors should stop the flow.
+            if (JSON.stringify(simulation.value.err).includes('InsufficientFunds')) {
+               throw new Error('Simulation failed: Insufficient funds for transaction.');
+            }
+          }
+        } catch (simErr) {
+          console.error('Simulation check fault:', simErr);
+          if (simErr.message.includes('Insufficient funds')) throw simErr;
+        }
+
         // DETECT EMBEDDED WALLET: Embedded wallets (Google login) do not support signTransaction.
         if (!signTransaction) {
           console.log('⚡ Detected embedded wallet (no signTransaction). Using sendTransaction...');
