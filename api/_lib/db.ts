@@ -447,7 +447,10 @@ async function initSchemaInternal() {
 
     await db('user')
       .where('email', 'like', '%@phantom.local')
-      .update({ email: null });
+      .update({ 
+          email: null,
+          emailVerifiedAt: null // Also reset verification status for mock emails
+      });
 
     try {
         const usersToFix = await db('user')

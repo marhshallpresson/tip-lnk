@@ -217,7 +217,7 @@ function RequireAuth({ children, requiredRole }) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  if (!user?.email || !user?.emailVerifiedAt || !user?.name) {
+  if (!user?.email || user?.email?.endsWith('@phantom.local') || !user?.emailVerifiedAt || !user?.name) {
     return <Navigate to="/auth/complete" state={{ from: location }} replace />;
   }
 

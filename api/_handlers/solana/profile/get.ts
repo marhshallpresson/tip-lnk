@@ -102,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const userId = randomUUID()
             await db('user').insert({
                 id: userId,
-                email: `${wallet}@phantom.local`,
+                email: null,
                 walletAddress: wallet,
                 profileData: JSON.stringify({ displayName: 'New Creator' }),
                 created_at: new Date()
