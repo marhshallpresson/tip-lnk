@@ -17,6 +17,7 @@ tipstack_pitch.html
 dynamic-labs-security-recovered.ts
 dynamic-verify-recovered.ts
 
-# Ignore all markdown files except README
+# Ignore all markdown files except README and DX-REPORT
 *.md
 !README.md
+!DX-REPORT.md
