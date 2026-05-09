@@ -46,18 +46,21 @@ import { decrypt } from './crypto.js';
 /**
  * Professional Ledger Utility
  * Calculates current spendable balance for a user.
+ * Elite Hardening: Supports Knex transactions to ensure atomic reads.
  */
-export async function getCreatorBalance(userId: string) {
+export async function getCreatorBalance(userId: string, transaction?: any) {
     if (!userId) return { totalTipsUSD: 0, totalWithdrawnUSD: 0, balance: 0 };
 
+    const query = transaction || db;
+
     try {
-        const user = await db('user').where({ id: userId }).first();
+        const user = await query('user').where({ id: userId }).first();
         if (!user) return { totalTipsUSD: 0, totalWithdrawnUSD: 0, balance: 0 };
 
         const address = user.walletAddress || (user.encryptedWalletAddress ? decrypt(user.encryptedWalletAddress) : null);
         if (!address) return { totalTipsUSD: 0, totalWithdrawnUSD: 0, balance: 0 };
 
-        const tips = await db('tips')
+        const tips = await query('tips')
             .where({ recipient_id: userId, status: 'confirmed' })
             .orWhere({ recipient: address, status: 'confirmed' });
         
@@ -71,7 +74,7 @@ export async function getCreatorBalance(userId: string) {
             return acc + amount;
         }, 0);
         
-        const payoutRows = await db('payouts')
+        const payoutRows = await query('payouts')
             .where({ wallet_address: address })
             .whereIn('status', ['pending', 'processing', 'submitted', 'completed']);
 
@@ -80,14 +83,19 @@ export async function getCreatorBalance(userId: string) {
                 const raw = payout.raw_payload ? JSON.parse(payout.raw_payload) : {};
                 const amountUSDC = Number(raw.amountUSDC || raw.amount_usdc || 0);
                 if (Number.isFinite(amountUSDC) && amountUSDC > 0) return acc + amountUSDC;
-            } catch {}
-            return acc + (Number(payout.amount_ngn || 0) / 1500);
+                
+                // Fallback to rate in payload or default
+                const rate = Number(raw.rate || 1500); 
+                return acc + (Number(payout.amount_ngn || 0) / rate);
+            } catch {
+                return acc + (Number(payout.amount_ngn || 0) / 1500);
+            }
         }, 0);
 
         return {
             totalTipsUSD,
             totalWithdrawnUSD,
-            balance: totalTipsUSD - totalWithdrawnUSD
+            balance: Math.max(0, totalTipsUSD - totalWithdrawnUSD)
         };
     } catch (err) {
         console.error('🛡️ Ledger Fault:', err);

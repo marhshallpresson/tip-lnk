@@ -165,22 +165,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const baseIntentRecord = {
       intent_id: intentId,
       creator_id: creator.id,
-      destination_wallet: payoutAddress,
+      destination_wallet: creator.walletAddress || payoutAddress, // Store raw address for webhook matching
       amount_usd: normalizedAmount,
       status: 'requires_action',
       provider: 'fossapay',
       sender_name: senderName,
       memo,
-      metadata_json: JSON.stringify({
-        platformFee,
-        finalAmountUsd,
-        expectedAmountNgn: quote.convertedAmount,
-        rate: quote.rate,
-        rateProvider: quote.provider,
-        rateCoinId: quote.coinId,
-        senderName,
-        memo
-      }),
       created_at: new Date(),
       updated_at: new Date()
     }

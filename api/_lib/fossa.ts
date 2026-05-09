@@ -86,14 +86,16 @@ export async function createFiatWallet(input: {
   }, requestConfig(idempotencyKey));
 
   const data = responseData(response);
+  const instructions = data.paymentInstructions || data.payment_instructions || data;
+
   return {
     id: data.walletId || data.id || input.walletReference,
     paymentInstructions: {
       type: 'bank_transfer',
-      bankName: data.bankName,
-      bankCode: data.bankCode,
-      accountNumber: data.accountNumber,
-      accountName: data.accountName || data.walletName || input.walletName,
+      bankName: instructions.bankName || instructions.bank_name,
+      bankCode: instructions.bankCode || instructions.bank_code,
+      accountNumber: instructions.accountNumber || instructions.account_number,
+      accountName: instructions.accountName || instructions.account_name || data.walletName || input.walletName,
       reference: input.walletReference,
     },
     raw: response.data,

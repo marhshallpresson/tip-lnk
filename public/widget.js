@@ -1,6 +1,7 @@
 (function() {
-  const SCRIPT_URL = 'https://tipstack.fun/widget.js';
-  const IFRAME_BASE = 'https://tipstack.fun/checkout';
+  const DEFAULT_BASE = 'https://tipstack.fun';
+  const BASE_URL = window.TIPSTACK_BASE_URL || document.currentScript?.dataset.baseUrl || DEFAULT_BASE;
+  const IFRAME_BASE = `${BASE_URL}/checkout`;
 
   class TipStackWidget {
     constructor() {
@@ -18,7 +19,7 @@
 
       // Listen for messages from the iframe
       window.addEventListener('message', (event) => {
-        if (event.origin !== 'https://tipstack.fun') return;
+        if (!event.origin.startsWith(BASE_URL)) return;
         if (event.data === 'tipstack-close') {
           this.closeModal();
         }

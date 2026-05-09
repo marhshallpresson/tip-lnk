@@ -10,5 +10,15 @@ if (process.argv.includes('--debug')) {
 }
 
 const { build } = await import('vite');
+const { copyFile, mkdir } = await import('fs/promises');
+const { join } = await import('path');
 
 await build({ mode: 'production' });
+
+// Ensure public assets are correctly placed for CDN delivery
+try {
+  await copyFile('public/widget.js', 'dist/widget.js');
+  console.log('✅ widget.js copied to dist/');
+} catch (err) {
+  console.error('❌ Failed to copy widget.js:', err.message);
+}

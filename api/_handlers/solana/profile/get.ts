@@ -3,6 +3,7 @@ import { randomUUID } from "crypto"
 import { db } from "../../../_lib/db.js"
 import { getSolPrice } from "../../../_lib/price.js"
 import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.js"
+import { hashAddress } from "../../../_lib/crypto.js"
 import { Redis } from '@upstash/redis'
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
@@ -69,7 +70,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!user) {
-        user = await db('user').where({ walletAddress: wallet }).first()
+        user = await db('user')
+            .where({ walletAddress: wallet })
+            .orWhere({ walletAddressHash: hashAddress(wallet) })
+            .first()
     }
 
     if (!user && wallet.includes('.sol')) {
@@ -156,15 +160,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Use recipient_id or legacy address for history
     const tips = await db('tips')
       .where({ recipient_id: user.id })
-      .orWhere({ recipient: user.walletAddress })
+      .orWhere({ walletAddressHash: hashAddress(user.walletAddress || '') })
       .orderBy('timestamp', 'desc')
       .limit(20)
     
     const solPrice = await getSolPrice().catch(() => 150)
     responseData.profile.tipsReceived = tips.map(tip => ({
-      ...tip,
+      signature: tip.signature,
+      timestamp: tip.timestamp,
       sender: `${tip.sender.slice(0, 4)}...`, // Masked
       amount: Number(tip.amount),
+      tokenSymbol: tip.tokenSymbol,
+      message: tip.message,
       amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount) : Number(tip.amount) * solPrice
     }))
 

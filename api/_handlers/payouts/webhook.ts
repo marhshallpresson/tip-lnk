@@ -1,6 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
 import { db } from '../../_lib/db.js'
+import { Redis } from '@upstash/redis'
+
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null
 
 /**
  * Secure payout webhook implementation for FossaPay and Pajcash.
@@ -69,6 +77,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    if (redis) {
+      const lockKey = `lock:payout:${reference}:${status}`
+      const isDuplicate = await redis.set(lockKey, '1', { nx: true, ex: 600 })
+      if (!isDuplicate) {
+        console.log(`ℹ️ Payout Webhook: Skipped duplicate processing for ${reference} status ${status}`)
+        return res.status(200).json({ success: true, duplicated: true })
+      }
+    }
+
     const existing = await db('payouts').where({ pajcash_reference: reference }).first()
     if (existing && existing.status === status) {
         console.log(`ℹ️ Payout Webhook: Reference ${reference} already processed with status ${status}. Skipping.`)

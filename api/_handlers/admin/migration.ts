@@ -5,6 +5,11 @@ import { encrypt, hashAddress } from "../../_lib/crypto.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  const adminSecret = req.headers['x-admin-secret'] || req.query.secret
+  if (!adminSecret || adminSecret !== process.env.ADMIN_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   console.log('🚀 Starting Privacy & Domain Migration...')
   const results = {
     scrubbedProfiles: 0,

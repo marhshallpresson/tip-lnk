@@ -119,7 +119,7 @@ async function findIntentForWebhook(input: {
 
   return candidates.find((candidate: any) =>
     amountMatchesIntent(candidate, input.webhookAmount, input.webhookCurrency)
-  ) || candidates[0] || null
+  ) || null
 }
 
 const insertWebhookAudit = async (input: {
