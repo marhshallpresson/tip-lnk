@@ -160,7 +160,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Use recipient_id or legacy address for history
     const tips = await db('tips')
       .where({ recipient_id: user.id })
-      .orWhere({ walletAddressHash: hashAddress(user.walletAddress || '') })
+      .orWhere((builder) => {
+          if (user.walletAddress) {
+              builder.where({ recipient: user.walletAddress });
+          } else {
+              builder.whereRaw('1=0'); // Impossible condition if no address
+          }
+      })
       .orderBy('timestamp', 'desc')
       .limit(20)
     
