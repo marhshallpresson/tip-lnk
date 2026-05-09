@@ -222,18 +222,14 @@ function RequireAuth({ children, requiredRole }) {
   }
 
   if (requiredRole === 'creator') {
-    if (role !== 'creator') {
-      return <Navigate to="/dashboard" replace />;
+    // Allow both creators AND authenticated users who are onboarding to access the dashboard container.
+    // They will be limited via UI blurring inside the Dashboard component itself.
+    if (role === 'creator' || role === 'user') {
+      return children;
     }
-    return children;
+    return <Navigate to="/" replace />;
   }
 
-  if (requiredRole === 'user') {
-    if (role !== 'user') {
-      return <Navigate to="/dashboard" replace />;
-    }
-    return children;
-  }
 
   return children;
 }
@@ -296,9 +292,19 @@ function AuthCallbackHandler() {
     if (code && platform) {
       const exchangeCode = async () => {
         try {
+          // ─── ELITE SECURITY: CSRF PROTECTION ───
+          const returnedState = params.get('state');
+          const storedState = sessionStorage.getItem(`oauth_state_${platform}`);
+          
+          if (!returnedState || returnedState !== storedState) {
+            console.error('🛡️ OAuth Security Alert: State mismatch detected. Potential CSRF attack.');
+            throw new Error('Security verification failed. Please try again.');
+          }
+
           const codeVerifier = sessionStorage.getItem(`pkce_verifier_${platform}`);
           const res = await api.post(`/auth/${platform}/callback`, {
             code,
+            state: returnedState, // Pass state for backend verification
             redirectUri: `${window.location.origin}/auth/callback/${platform}`,
             codeVerifier
           });

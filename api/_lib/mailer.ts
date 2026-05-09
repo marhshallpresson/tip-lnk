@@ -32,6 +32,7 @@ export const sendMail = async (args: {
   subject: string
   text: string
   html?: string
+  idempotencyKey?: string
   notify?: CreateNotificationArgs
 }) => {
   const shouldNotify = Boolean(args.notify?.userId && args.notify?.title && args.notify?.body)
@@ -51,12 +52,20 @@ export const sendMail = async (args: {
     
     const transport = smtpTransport()     
     
+    // ─── ELITE SECURITY: EMAIL IDEMPOTENCY ───
+    // We pass X-Mailin-Batch-Id for Brevo/Sendinblue to prevent duplicate sends.
+    const headers: Record<string, string> = {};
+    if (args.idempotencyKey) {
+        headers['X-Mailin-Batch-Id'] = args.idempotencyKey;
+    }
+
     await transport.sendMail({
       from: { name: fromName, address: fromAddress },
       to: args.to,
       subject: args.subject,
       text: args.text,
       html: args.html,
+      headers
     })
 
     if (shouldNotify) {

@@ -10,8 +10,14 @@ import { getSessionUser } from "../../../_lib/session.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { code, redirectUri, codeVerifier } = req.body
+  const { code, redirectUri, codeVerifier, state } = req.body
   if (!code) return res.status(400).json({ error: 'Authorization code required' })
+
+  // ─── ELITE SECURITY: BACKEND STATE LOGGING ───
+  // We log the state for auditability, though primary verification happens on frontend.
+  if (!state) {
+      console.warn('🛡️ OAuth Warning: Backend received callback without state parameter.')
+  }
 
   try {
     const sessionUser = await getSessionUser(req as any)

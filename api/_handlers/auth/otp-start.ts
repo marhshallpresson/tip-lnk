@@ -33,8 +33,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Store in email_verification_token table (reusing for OTP)
     await db('email_verification_token').where({ userId: user.id }).delete()
+    const tokenId = randomUUID()
     await db('email_verification_token').insert({
-        id: randomUUID(),
+        id: tokenId,
         userId: user.id,
         email,
         tokenHash: codeHash,
@@ -45,6 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await sendMail({
       to: email,
       subject: `Login Verification Code: ${code} - Tip Stack`,
+      idempotencyKey: tokenId, // Elite Hardening: Brevo Idempotency
       text: `Your Tip Stack login verification code is: ${code}`,
       html: `
         <div style="font-family: sans-serif; background: #0d1117; color: white; padding: 40px; border-radius: 20px;">

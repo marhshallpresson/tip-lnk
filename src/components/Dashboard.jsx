@@ -241,18 +241,75 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* --- ONBOARDING ALERT BANNER --- */}
+          {role === 'user' && (
+            <div className="mb-8 p-5 rounded-[24px] bg-brand-500/10 border border-brand-500/20 flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in">
+                <div className="flex items-center gap-4 text-center md:text-left">
+                  <div className="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center shrink-0">
+                    <Zap size={24} className="text-brand-500" fill="currentColor" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-lg tracking-tight">Complete your profile</h4>
+                    <p className="text-sm text-white/40 font-medium">Claim your handle and verify your identity to unlock payouts and analytics.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => navigate('/onboarding')}
+                  className="px-6 py-3 bg-brand-500 text-black font-black text-xs uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(159,53,232,0.2)]"
+                >
+                  Start Onboarding
+                </button>
+            </div>
+          )}
+
           <Routes>
-            <Route index element={<OverviewTab onReceive={() => setIsShareModalOpen(true)} />} />
-            <Route path="overview" element={<OverviewTab onReceive={() => setIsShareModalOpen(true)} />} />
-            <Route path="analytics" element={<CreatorAnalyticsPanel />} />
-            <Route path="embed" element={<EmbedGenerator creatorId={authUser?.id} handle={profile.solDomain || profile.displayName || authUser?.id} />} />
-            <Route path="history" element={<TransactionHistoryTab />} />
-            <Route path="payouts" element={<PayoutPanel />} />
+            <Route index element={<PartialAccessGuard><OverviewTab onReceive={() => setIsShareModalOpen(true)} /></PartialAccessGuard>} />
+            <Route path="overview" element={<PartialAccessGuard><OverviewTab onReceive={() => setIsShareModalOpen(true)} /></PartialAccessGuard>} />
+            <Route path="analytics" element={<PartialAccessGuard><CreatorAnalyticsPanel /></PartialAccessGuard>} />
+            <Route path="embed" element={<PartialAccessGuard><EmbedGenerator creatorId={authUser?.id} handle={profile.solDomain || profile.displayName || authUser?.id} /></PartialAccessGuard>} />
+            <Route path="history" element={<PartialAccessGuard><TransactionHistoryTab /></PartialAccessGuard>} />
+            <Route path="payouts" element={<PartialAccessGuard><PayoutPanel /></PartialAccessGuard>} />
             <Route path="settings" element={<SettingTab onInvite={() => setIsReferralOpen(true)} onOpenSettings={() => setIsSettingsOpen(true)} />} />
             <Route path="*" element={<Navigate to="overview" replace />} />
           </Routes>
         </div>
       </main>
+    </div>
+  );
+}
+
+/* ─── Partial Access UI Guard ─── */
+function PartialAccessGuard({ children }) {
+  const { role } = useApp();
+  const navigate = useNavigate();
+
+  if (role === 'creator') return children;
+
+  return (
+    <div className="relative group/blur">
+      {/* Blurred Content */}
+      <div className="blur-xl pointer-events-none select-none opacity-40 transition-all">
+        {children}
+      </div>
+
+      {/* Access Overlay */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
+        <div className="glass-card p-10 max-w-sm w-full text-center border-white/10 shadow-2xl animate-slide-up">
+           <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6 border border-white/5">
+              <ShieldCheck size={32} className="text-brand-500/50" />
+           </div>
+           <h3 className="text-xl font-bold mb-3">Feature Locked</h3>
+           <p className="text-sm text-white/40 mb-8 leading-relaxed">
+             This section requires an active creator profile. Finish onboarding to view your live data and manage funds.
+           </p>
+           <button 
+             onClick={() => navigate('/onboarding')}
+             className="w-full py-4 bg-white text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-brand-50 transition-all flex items-center justify-center gap-2"
+           >
+             Finish Setup <ChevronRight size={16} />
+           </button>
+        </div>
+      </div>
     </div>
   );
 }

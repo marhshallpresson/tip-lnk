@@ -192,6 +192,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new Error('Both Ultra and V6 engines failed.')
       }
 
+      // ─── ELITE SECURITY: DYNAMIC PRIORITY FEES ───
+      // According to Helius/QuickNode docs, hardcoded fees fail during congestion.
+      // We fetch real-time estimates for the destination account.
+      let prioritizationFeeLamports: any = 'auto'
+      try {
+          const { getPriorityFeeEstimate } = await import('../../_lib/helius.js')
+          const fees = await getPriorityFeeEstimate([payoutAddress])
+          prioritizationFeeLamports = Math.max(fees.medium, 1000) 
+          console.log(`🚀 Priority Fee Adjusted: ${prioritizationFeeLamports} microlamports`)
+      } catch (feeErr) {
+          console.warn('Priority fee estimation failed, falling back to auto.')
+      }
+
       const swapPayload = {
         quoteResponse: quote,
         userPublicKey: sourceWalletAddress,
@@ -199,7 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         wrapAndUnwrapSol: true,
         feeAccount: process.env.VITE_TREASURY_WALLET,
         dynamicComputeUnitLimit: true,
-        prioritizationFeeLamports: 'auto'
+        prioritizationFeeLamports
       }
 
       const swapResponse = await axios.post(`${JUP_V6_API}/swap`, swapPayload, {

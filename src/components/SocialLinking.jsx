@@ -48,6 +48,9 @@ export default function SocialLinking({ onComplete, onBack }) {
     };
 
     let url = '';
+    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem(`oauth_state_${platform}`, state);
+
     if (platform === 'twitter') {
       const clientId = import.meta.env.VITE_X_CLIENT_ID;
       if (!clientId) {
@@ -56,7 +59,6 @@ export default function SocialLinking({ onComplete, onBack }) {
         return;
       }
       const codeVerifier = generatePKCEVerifier();
-      const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       sessionStorage.setItem(`pkce_verifier_${platform}`, codeVerifier);
       url = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=users.read%20tweet.read%20offline.access&state=${state}&code_challenge=${codeVerifier}&code_challenge_method=plain`;
     } else if (platform === 'discord') {
@@ -66,7 +68,7 @@ export default function SocialLinking({ onComplete, onBack }) {
         setVerifying(null);
         return;
       }
-      url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20email`;
+      url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20email&state=${state}`;
     }
 
     if (!url) return;

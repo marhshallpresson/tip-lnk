@@ -36,7 +36,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const promises = transactions.map(async (tx) => {
+        // ─── ELITE SECURITY: TRANSACTION VALIDATION ───
+        // According to Helius docs, we must verify tx status and type.
         if (tx.transactionError) return;
+        if (tx.type !== 'TRANSFER' && tx.type !== 'SOL_TRANSFER') {
+            console.log(`🛡️ Webhook: Ignored non-transfer transaction ${tx.signature} (Type: ${tx.type})`);
+            return;
+        }
 
         const signature = tx.signature
         

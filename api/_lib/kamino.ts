@@ -26,6 +26,11 @@ export async function getKaminoDepositInstructions(
   }
 
   const mint = MINT_MAP[tokenSymbol] || tokenSymbol;
+
+  // ─── ELITE SECURITY: ORACLE FRESHNESS ───
+  // According to Kamino docs, market.refreshAll() is mandatory before building transactions
+  // to ensure interest rates and Scope price feeds are not stale.
+  await market.refreshAll();
   
   const kaminoAction = await KaminoAction.buildDepositTxns(
     market,
