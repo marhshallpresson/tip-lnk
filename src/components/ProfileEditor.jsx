@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Upload, User, RefreshCw, ChevronRight, ChevronLeft, Pencil } from 'lucide-react';
+import { Upload, User, RefreshCw, ChevronRight, ChevronLeft, Pencil, Loader2 } from 'lucide-react';
+import api from '../lib/api';
 
 export default function ProfileEditor({ onComplete, onBack }) {
   const { profile, updateProfile } = useApp();
   const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState(profile.displayName || '');
   const [bio, setBio] = useState(profile.bio || '');
   const [roleTitle, setRoleTitle] = useState(profile.roleTitle || '');
@@ -39,13 +41,33 @@ export default function ProfileEditor({ onComplete, onBack }) {
     }
   };
 
-  const handleSave = () => {
-    updateProfile({
-      displayName: displayName.trim(),
-      bio: bio.trim(),
-      roleTitle: roleTitle.trim()
-    });
-    onComplete();
+  const handleSave = async () => {
+    const cleanName = displayName.trim();
+    
+    setLoading(true);
+    try {
+      // ─── ELITE IDENTITY SYNC: CORE NAME ───
+      // We update the legal/account name in the backend to match the display name.
+      await api.post('/auth/update-name', { name: cleanName });
+      
+      updateProfile({
+        displayName: cleanName,
+        bio: bio.trim(),
+        roleTitle: roleTitle.trim()
+      });
+      onComplete();
+    } catch (err) {
+      console.error('🛡️ Profile Save Fault:', err);
+      // We still allow local update if backend fails (optimistic)
+      updateProfile({
+        displayName: cleanName,
+        bio: bio.trim(),
+        roleTitle: roleTitle.trim()
+      });
+      onComplete();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,7 +100,7 @@ export default function ProfileEditor({ onComplete, onBack }) {
                 </div>
               )}
 
-              {isUploading && (
+              {(isUploading || loading) && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
                   <RefreshCw size={24} className="text-brand-500 animate-spin" />
                 </div>
@@ -87,6 +109,7 @@ export default function ProfileEditor({ onComplete, onBack }) {
 
             <button
               onClick={triggerUpload}
+              disabled={loading}
               className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-brand-500 text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-90"
             >
               <Upload size={18} strokeWidth={3} />
@@ -121,6 +144,7 @@ export default function ProfileEditor({ onComplete, onBack }) {
               placeholder="e.g. John Doe"
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all"
               maxLength={50}
+              required
             />
           </div>
 
@@ -160,9 +184,10 @@ export default function ProfileEditor({ onComplete, onBack }) {
       <div className="pt-8 border-t border-white/5">
         <button
           onClick={handleSave}
+          disabled={loading || !displayName.trim()}
           className="btn-primary w-full py-4 rounded-2xl text-lg font-bold group shadow-lg shadow-brand-500/10"
         >
-          Finalize Profile <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+          {loading ? <Loader2 size={24} className="animate-spin mx-auto" /> : <>Finalize Profile <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" /></>}
         </button>
       </div>
     </div>

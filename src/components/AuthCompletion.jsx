@@ -8,11 +8,9 @@ export default function AuthCompletion() {
   const { user, loading: authLoading, refreshUser, logout } = useAuth();
   const [view, setView] = useState(() => {
     if (!user?.email || user?.email?.endsWith('@phantom.local')) return 'email-prompt';
-    if (user?.email && user?.emailVerifiedAt && !user?.name) return 'name-prompt';
     return 'email-verify';
   });
   const [email, setEmail] = useState(user?.email && !user?.email?.endsWith('@phantom.local') ? user.email : '');
-  const [name, setName] = useState(user?.name || '');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,14 +18,13 @@ export default function AuthCompletion() {
 
   useEffect(() => {
     if (user?.email && !user?.email?.endsWith('@phantom.local') && !email) setEmail(user.email);
-    if (user?.name && !name) setName(user.name);
   }, [user]);
 
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
         navigate('/');
-      } else if (user?.email && !user?.email?.endsWith('@phantom.local') && user?.emailVerifiedAt && user?.name) {
+      } else if (user?.email && !user?.email?.endsWith('@phantom.local') && user?.emailVerifiedAt) {
         navigate('/onboarding');
       }
     }
@@ -49,15 +46,10 @@ export default function AuthCompletion() {
       return;
     }
 
-    if (!name || name.trim().length < 2) {
-      setError('Please enter your full name (at least 2 characters).');
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post('/auth/link-email/start', { email, name: name.trim() });
+      const res = await api.post('/auth/link-email/start', { email });
       if (res.ok && res.data.success) {
         setView('email-verify');
       } else {
@@ -75,37 +67,12 @@ export default function AuthCompletion() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post('/auth/link-email/verify', { email, code, name: name.trim() });
+      const res = await api.post('/auth/link-email/verify', { email, code });
       if (res.ok && res.data.success) {
         await refreshUser();
-        setView('email-success');
+        // Redirect will be handled by useEffect
       } else {
         setError(res.data.error || 'Invalid or expired verification code.');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateName = async (e) => {
-    e.preventDefault();
-    
-    if (!name || name.trim().length < 2) {
-      setError('Please enter your full name (at least 2 characters).');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.post('/auth/update-name', { name: name.trim() });
-      if (res.ok && res.data.success) {
-        await refreshUser();
-        navigate('/onboarding');
-      } else {
-        setError(res.data.error || 'Failed to update name.');
       }
     } catch (err) {
       setError('An unexpected error occurred.');
@@ -129,11 +96,11 @@ export default function AuthCompletion() {
         {view === 'email-prompt' && (
           <div className="glass-card p-8 sm:p-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-8 border border-brand-500/20">
-                <User size={32} className="text-brand-500" />
+                <Mail size={32} className="text-brand-500" />
             </div>
-            <h2 className="text-3xl font-bold text-white mb-4">Finalize Profile</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">Secure Account</h2>
             <p className="text-surface-400 text-sm mb-8 leading-relaxed">
-                To secure your account and enable payouts, please provide your name and email.
+                To enable payouts and secure your identity, please provide your email address.
             </p>
             
             {error && (
@@ -143,21 +110,6 @@ export default function AuthCompletion() {
             )}
 
             <form onSubmit={handleStartLinking} className="space-y-4 text-left">
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-black tracking-widest text-surface-500 ml-1">Full Name</label>
-                <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-600" />
-                  <input 
-                    type="text" 
-                    required 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
-                    className="input-field w-full !pl-12 h-14" 
-                    placeholder="e.g. John Doe" 
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <label className="text-[10px] uppercase font-black tracking-widest text-surface-500 ml-1">Email Address</label>
                 <div className="relative">
@@ -253,56 +205,6 @@ export default function AuthCompletion() {
                 Resend Code
               </button>
             </div>
-          </div>
-        )}
-
-        {view === 'name-prompt' && (
-          <div className="glass-card p-8 sm:p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-8 border border-brand-500/20">
-                <User size={32} className="text-brand-500" />
-            </div>
-            <h2 className="text-3xl font-bold text-white mb-4">What's your name?</h2>
-            <p className="text-surface-400 text-sm mb-8 leading-relaxed">
-                We need your full name to complete your profile and comply with payout regulations.
-            </p>
-            
-            {error && (
-              <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-xl text-accent-red text-xs text-left animate-shake">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleUpdateName} className="space-y-4 text-left">
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-black tracking-widest text-surface-500 ml-1">Full Name</label>
-                <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-600" />
-                  <input 
-                    type="text" 
-                    required 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
-                    className="input-field w-full !pl-12 h-14" 
-                    placeholder="e.g. John Doe" 
-                  />
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="btn-primary w-full h-14 text-base font-bold flex items-center justify-center gap-2 group"
-              >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : <>Finish Setup <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>}
-              </button>
-            </form>
-            
-            <button 
-              onClick={logout}
-              className="mt-8 text-surface-500 hover:text-white text-xs font-bold transition-colors uppercase tracking-widest"
-            >
-              Sign out
-            </button>
           </div>
         )}
 
