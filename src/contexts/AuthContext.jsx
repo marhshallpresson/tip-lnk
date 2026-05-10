@@ -50,16 +50,23 @@ export const AuthProvider = ({ children }) => {
     fetchMe();
   }, []);
 
+  const { handleLogout: dynamicLogout } = useDynamicContext();
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
     } catch (err) {
       console.error('Logout request failed:', err);
     } finally {
+      // ─── ELITE IDENTITY SYNC: UNIFIED LOGOUT ───
+      // Terminate both local and Dynamic identity sessions simultaneously.
+      if (typeof dynamicLogout === 'function') {
+        dynamicLogout();
+      }
+      
       api.setAccessToken(null);
       localStorage.removeItem('tipstack_auth_token');
       setUser(null);
-      // Clear any Dynamic session too if possible, but definitely redirect
       window.location.href = '/';
     }
   };

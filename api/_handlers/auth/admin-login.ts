@@ -31,10 +31,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const session = await createSession(req as any, res as any, user.id)
     const roles = await getUserRoles(user.id)
+    
+    // ─── ELITE SECURITY: RBAC VALIDATION ───
+    const adminRoles = ['superadmin', 'support', 'compliance', 'admin'];
+    const highestRole = roles.find(r => adminRoles.includes(r)) || 'user';
+
+    if (highestRole === 'user') {
+      return res.status(403).json({ success: false, error: 'Access denied: User account lacks administrative permissions.' });
+    }
 
     res.status(200).json({
       success: true,
-      user: { id: user.id, email: user.email, name: user.name, roles },
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        roles,
+        role: highestRole // Driving the adaptive UI
+      },
       auth: {
         accessToken: session.accessToken,
         tokenType: 'Bearer',
