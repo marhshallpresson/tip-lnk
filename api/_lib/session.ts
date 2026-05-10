@@ -27,6 +27,8 @@ export interface SessionUser {
     onboarding_complete: boolean;
     sessionId: string;
     walletAddress?: string;
+    encryptedWalletAddress?: string;
+    walletAddressHash?: string;
     profileData: any;
 }
 
@@ -199,6 +201,8 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
           onboarding_complete: Boolean(user.onboardingComplete),
           sessionId: sid,
           walletAddress,
+          encryptedWalletAddress: user.encryptedWalletAddress,
+          walletAddressHash: user.walletAddressHash,
           profileData
       }
     } catch (e) {

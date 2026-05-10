@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { db } from "../../_lib/db.js"
+import { db, auditLog } from "../../_lib/db.js"
 import { Redis } from '@upstash/redis'
+import { getSessionUser, getUserRoles } from "../../_lib/session.js"
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
   ? new Redis({
@@ -11,22 +12,35 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
 
 /**
  * PHASE 4: ANALYTICS & DATA - Scalable Dashboard Metrics
- * Uses caching to prevent heavy queries on live tables.
+ * Elite RBAC: Accessible to superadmin, support, and compliance.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const adminSecret = req.headers['x-admin-secret']
-  if (!adminSecret || adminSecret !== process.env.ADMIN_SECRET) {
-    return res.status(403).json({ success: false, error: 'Unauthorized: Elite Admin Access Required' })
-  }
-
   try {
+    const sessionUser = await getSessionUser(req as any)
+    if (!sessionUser) return res.status(401).json({ error: 'Authentication required' })
+
+    const roles = await getUserRoles(sessionUser.id)
+    const isAdmin = roles.some(r => ['superadmin', 'support', 'compliance'].includes(r))
+    
+    const adminSecret = req.headers['x-admin-secret']
+    if (!isAdmin || !adminSecret || adminSecret !== process.env.ADMIN_SECRET) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Administrative Access Required' })
+    }
+
+    // ─── ELITE SECURITY: AUDIT TRAIL ───
+    await auditLog({
+      adminId: sessionUser.id,
+      actionType: 'VIEW_STATS',
+      ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress
+    })
+
     const CACHE_KEY = 'admin:platform_stats';
     if (redis) {
       const cachedStats = await redis.get(CACHE_KEY);
       if (cachedStats) {
-        return res.json({ success: true, stats: cachedStats, cached: true });
+        return res.json({ success: true, stats: cachedStats, cached: true, role: roles.find(r => ['superadmin', 'support', 'compliance'].includes(r)) });
       }
     }
 

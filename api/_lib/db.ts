@@ -42,6 +42,33 @@ export default dbInstance;
 
 import { getSolPrice } from './price.js';
 import { decrypt } from './crypto.js';
+import { randomUUID } from 'crypto';
+
+/**
+ * Professional Audit Utility
+ * Records administrative actions to the immutable audit trail.
+ */
+export async function auditLog(input: {
+  adminId: string
+  actionType: string
+  targetId?: string | null
+  metadata?: any
+  ipAddress?: string | null
+}) {
+  try {
+    await db('admin_audit_logs').insert({
+      id: randomUUID(),
+      admin_id: input.adminId,
+      action_type: input.actionType,
+      target_id: input.targetId || null,
+      metadata_json: input.metadata ? JSON.stringify(input.metadata) : null,
+      ip_address: input.ipAddress || null,
+      timestamp: new Date()
+    })
+  } catch (err) {
+    console.error('🛡️ Audit Log Fault:', err)
+  }
+}
 
 /**
  * Professional Ledger Utility
@@ -322,8 +349,36 @@ async function initSchemaInternal() {
         table.timestamps(true, true);
       });
       console.log('✨ Roles table provisioned.');
-      await db('roles').insert({ id: '00000000-0000-4000-8000-000000000001', name: 'user' }).onConflict('name').ignore();
-      await db('roles').insert({ id: '00000000-0000-4000-8000-000000000002', name: 'admin' }).onConflict('name').ignore();
+    }
+
+    // Professional RBAC Seeding
+    const roleSpecs = [
+      { id: '00000000-0000-4000-8000-000000000001', name: 'user' },
+      { id: '00000000-0000-4000-8000-000000000002', name: 'admin' },
+      { id: '00000000-0000-4000-8000-000000000003', name: 'superadmin' },
+      { id: '00000000-0000-4000-8000-000000000004', name: 'support' },
+      { id: '00000000-0000-4000-8000-000000000005', name: 'compliance' }
+    ];
+
+    for (const spec of roleSpecs) {
+      await db('roles').insert(spec).onConflict('name').ignore();
+    }
+
+    if (!(await db.schema.hasTable('admin_audit_logs'))) {
+      await db.schema.createTable('admin_audit_logs', (table) => {
+        if (db.client.config.client === 'pg') {
+           table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        } else {
+           table.uuid('id').primary();
+        }
+        table.string('admin_id').references('id').inTable('user').onDelete('SET NULL');
+        table.string('action_type').notNullable(); // e.g. 'VIEW_STATS', 'FORCE_SETTLE'
+        table.string('target_id').nullable();
+        table.text('metadata_json').nullable();
+        table.string('ip_address').nullable();
+        table.dateTime('timestamp').defaultTo(db.fn.now());
+      });
+      console.log('🛡️ initSchema: Created admin_audit_logs table.');
     }
 
     if (!(await db.schema.hasTable('user_roles'))) {

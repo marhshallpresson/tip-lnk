@@ -1,20 +1,35 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { db } from "../../_lib/db.js"
+import { db, auditLog } from "../../_lib/db.js"
+import { getSessionUser, getUserRoles } from "../../_lib/session.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Admin Ledger
+ * Elite RBAC: Accessible to superadmin and compliance.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const adminSecret = req.headers['x-admin-secret']
-  if (!adminSecret || adminSecret !== process.env.ADMIN_SECRET) {
-    return res.status(403).json({ success: false, error: 'Unauthorized: Elite Admin Access Required' })
-  }
-
   try {
+    const sessionUser = await getSessionUser(req as any)
+    if (!sessionUser) return res.status(401).json({ error: 'Authentication required' })
+
+    const roles = await getUserRoles(sessionUser.id)
+    const canAccess = roles.some(r => ['superadmin', 'compliance'].includes(r))
+    
+    const adminSecret = req.headers['x-admin-secret']
+    if (!canAccess || !adminSecret || adminSecret !== process.env.ADMIN_SECRET) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Compliance Access Required' })
+    }
+
+    // ─── ELITE SECURITY: AUDIT TRAIL ───
+    await auditLog({
+      adminId: sessionUser.id,
+      actionType: 'VIEW_LEDGER',
+      ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress
+    })
+
     const ledger = await db('tips')
-      .select('*')
+      .select('signature', 'timestamp', 'sender', 'recipient', 'amount', 'tokenSymbol', 'status', 'method', 'metadata')
       .orderBy('timestamp', 'desc')
       .limit(100)
 
