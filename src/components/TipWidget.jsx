@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
 import { getPhantomDeepLink, getSolanaPayUri, hasSolanaProvider, isMobile } from '../utils/deepLinks';
+import ErrorBoundary from './ErrorBoundary';
 import { 
   ShieldCheck, 
   Zap, 
@@ -13,12 +14,13 @@ import {
   Wallet,
   CheckCircle2,
   ChevronDown,
-  ArrowRight
+  ArrowRight,
+  Repeat
 } from 'lucide-react';
 
 const PRESET_AMOUNTS = [1, 5, 10, 25, 50];
 
-export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'dark', accent = '#00D265' }) {
+function TipWidgetContent({ fixedRecipient = null, onSuccess, theme = 'dark', accent = '#00D265' }) {
   const { publicKey } = useWallet();
   const { profile: viewerProfile, addTip } = useApp();
   const { setShowWalletModal } = useAuth();
@@ -29,6 +31,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
   const [amount, setAmount] = useState('5');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'crypto'
+  const [isRecurring, setIsRecurring] = useState(false);
   const [showTokenMenu, setShowTokenMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [fiatQuote, setFiatQuote] = useState(null);
@@ -42,9 +45,12 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
     selectedToken,
     setSelectedToken,
     calculateRoute,
+    calculateRecurringRoute,
     route,
+    recurringRoute,
     processing,
     executeTip,
+    executeSubscription,
     txResult,
     setTxResult,
     reset,
@@ -81,8 +87,13 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
     if (paymentMethod !== 'crypto') return;
     const parsed = Number(amount);
     if (!resolvedAddress || !selectedToken?.symbol || !Number.isFinite(parsed) || parsed <= 0) return;
-    calculateRoute(selectedToken.symbol, parsed, note);
-  }, [paymentMethod, amount, selectedToken, resolvedAddress, note, calculateRoute]);
+    
+    if (isRecurring) {
+        calculateRecurringRoute(selectedToken.symbol, parsed);
+    } else {
+        calculateRoute(selectedToken.symbol, parsed, note);
+    }
+  }, [paymentMethod, isRecurring, amount, selectedToken, resolvedAddress, note, calculateRoute, calculateRecurringRoute]);
 
   // Sync fiat quote for card
   useEffect(() => {
@@ -119,6 +130,14 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
             return;
         }
         try {
+            if (isRecurring) {
+                const subResult = await executeSubscription(viewerProfile?.displayName || 'Anonymous');
+                if (subResult?.success) {
+                    onSuccess?.({ success: true, method: 'recurring', signature: subResult.signature });
+                }
+                return;
+            }
+
             // Enhanced Crypto Flow: Handle mobile deep linking and desktop execution
             if (isMobile() && !hasSolanaProvider()) {
                 const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken?.mint || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
@@ -384,28 +403,44 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
           </div>
 
           {paymentMethod === 'crypto' && (
-              <div className="relative">
-                  <button
-                    onClick={() => setShowTokenMenu(!showTokenMenu)}
-                    className="w-full h-11 rounded-xl border border-white/5 bg-white/5 px-4 flex items-center justify-between text-xs font-bold text-white/60 hover:bg-white/[0.07] transition-all"
+              <div className="space-y-3">
+                  <div className="relative">
+                    <button
+                        onClick={() => setShowTokenMenu(!showTokenMenu)}
+                        className="w-full h-11 rounded-xl border border-white/5 bg-white/5 px-4 flex items-center justify-between text-xs font-bold text-white/60 hover:bg-white/[0.07] transition-all"
+                    >
+                        <span className="flex items-center gap-2">
+                            {selectedToken?.symbol || 'Select Asset'}
+                            {selectedToken?.balance !== undefined && <span className="text-[10px] text-white/20 font-normal">Bal: {selectedToken.balance.toFixed(2)}</span>}
+                        </span>
+                        <ChevronDown size={14} className={`transition-transform ${showTokenMenu ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showTokenMenu && (
+                        <div className="absolute top-full left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-48 overflow-y-auto">
+                            <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="w-full bg-white/5 border-none rounded-lg px-3 py-2 text-xs text-white mb-2 outline-none" />
+                            {tokensLoading ? <Loader2 size={16} className="animate-spin mx-auto my-4 text-white/20" /> : filteredTokens.slice(0, 50).map(t => (
+                                <button key={t.mint} onClick={() => { setSelectedToken(t); setShowTokenMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between group">
+                                    <span className="text-xs font-bold text-white/70 group-hover:text-white">{t.symbol}</span>
+                                    <span className="text-[10px] text-white/20">{t.balance?.toFixed(2)}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                  </div>
+
+                  {/* Recurring Toggle */}
+                  <button 
+                    onClick={() => setIsRecurring(!isRecurring)}
+                    className={`w-full h-11 rounded-xl border flex items-center justify-between px-4 transition-all ${isRecurring ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-white/5 border-white/5 text-white/30 hover:text-white/50'}`}
                   >
-                    <span className="flex items-center gap-2">
-                        {selectedToken?.symbol || 'Select Asset'}
-                        {selectedToken?.balance !== undefined && <span className="text-[10px] text-white/20 font-normal">Bal: {selectedToken.balance.toFixed(2)}</span>}
-                    </span>
-                    <ChevronDown size={14} className={`transition-transform ${showTokenMenu ? 'rotate-180' : ''}`} />
+                      <div className="flex items-center gap-2">
+                        <Repeat size={14} className={isRecurring ? 'animate-spin-slow' : ''} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Monthly Subscription</span>
+                      </div>
+                      <div className={`w-8 h-5 rounded-full relative transition-all ${isRecurring ? 'bg-brand-500' : 'bg-white/10'}`}>
+                          <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${isRecurring ? 'left-4' : 'left-1'}`} />
+                      </div>
                   </button>
-                  {showTokenMenu && (
-                    <div className="absolute top-full left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-48 overflow-y-auto">
-                        <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="w-full bg-white/5 border-none rounded-lg px-3 py-2 text-xs text-white mb-2 outline-none" />
-                        {tokensLoading ? <Loader2 size={16} className="animate-spin mx-auto my-4 text-white/20" /> : filteredTokens.slice(0, 50).map(t => (
-                            <button key={t.mint} onClick={() => { setSelectedToken(t); setShowTokenMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between group">
-                                <span className="text-xs font-bold text-white/70 group-hover:text-white">{t.symbol}</span>
-                                <span className="text-[10px] text-white/20">{t.balance?.toFixed(2)}</span>
-                            </button>
-                        ))}
-                    </div>
-                  )}
               </div>
           )}
       </div>
@@ -419,7 +454,7 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
           {processing || quoteLoading ? (
               <Loader2 size={24} className="animate-spin" />
           ) : (
-              <>Send ${Number(amount || 0).toFixed(2)} <ArrowRight size={20} /></>
+              <>{isRecurring ? 'Subscribe' : 'Send'} ${Number(amount || 0).toFixed(2)} <ArrowRight size={20} /></>
           )}
       </button>
 
@@ -443,4 +478,12 @@ export default function TipWidget({ fixedRecipient = null, onSuccess, theme = 'd
       </div>
     </div>
   );
+}
+
+export default function TipWidget(props) {
+    return (
+        <ErrorBoundary>
+            <TipWidgetContent {...props} />
+        </ErrorBoundary>
+    );
 }

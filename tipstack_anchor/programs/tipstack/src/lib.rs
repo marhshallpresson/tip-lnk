@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("AUMYjmiZZ7drVv6VzVo23BFKPwXLBmMQf2w8aQW731r6");
 
 #[program]
 pub mod tipstack {

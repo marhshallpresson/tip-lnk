@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-tipstack = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+tipstack = "AUMYjmiZZ7drVv6VzVo23BFKPwXLBmMQf2w8aQW731r6"
 
 [registry]
 url = "https://api.apr.dev"

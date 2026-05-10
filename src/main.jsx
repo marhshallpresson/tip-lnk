@@ -1,27 +1,28 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 import { Buffer } from 'buffer';
-import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
-import { SolanaWalletConnectors } from '@dynamic-labs/solana';
-import App from './App';
-import './index.css';
-import '@solana/wallet-adapter-react-ui/styles.css';
 
-// Polyfill for Solana Wallet Standard / Dynamic SDK compatibility
+// ─── ELITE SECURITY: GLOBAL POLYFILLS ───
+// Must be executed BEFORE any other library initialization.
 if (typeof window !== 'undefined') {
+  // 1. Buffer Stability
+  if (!window.Buffer) {
+    window.Buffer = Buffer;
+  }
+
+  // 2. globalThis Shim
+  if (typeof window['global'] === 'undefined') {
+    window['global'] = window;
+  }
+
+  // 3. Solana Wallet Standard (Dynamic SDK Compatibility)
   try {
     const nav = window.navigator;
     if (nav) {
-      // Dynamic SDK hard-checks Array.isArray(navigator.wallets)
-      // Some extensions inject a standard 'Wallets' object which is NOT an array.
-      if (nav.wallets && !Array.isArray(nav.wallets)) {
-        console.warn('Dynamic Fix: navigator.wallets is defined but not an array. Forcing Proxy wrapper...');
+      // Ensure 'wallets' is an array as expected by Dynamic SDK
+      if (nav['wallets'] && !Array.isArray(nav['wallets'])) {
+        console.warn('🛡️ Auth Stability: Wrapping navigator.wallets for standard compatibility.');
+        const originalWallets = nav.wallets;
         try {
-          const originalWallets = nav.wallets;
-          // Create an actual array to pass Array.isArray()
           const arrayProxy = Object.assign([], {
-            // Forward common methods if they exist
             on: typeof originalWallets.on === 'function' ? originalWallets.on.bind(originalWallets) : undefined,
             get: typeof originalWallets.get === 'function' ? originalWallets.get.bind(originalWallets) : undefined,
             register: typeof originalWallets.register === 'function' ? originalWallets.register.bind(originalWallets) : undefined,
@@ -33,29 +34,35 @@ if (typeof window !== 'undefined') {
             enumerable: true,
             writable: true
           });
-        } catch (redefineErr) {
-          console.error('Failed to redefine navigator.wallets:', redefineErr);
+        } catch (e) {
+          console.debug('navigator.wallets wrap skipped:', e);
         }
-      }
-      
-      if (typeof nav.wallets === 'undefined') {
-        Object.defineProperty(nav, 'wallets', {
-          value: [],
-          configurable: true,
-          enumerable: true,
-          writable: true
-        });
+      } else if (typeof nav.wallets === 'undefined') {
+        try {
+          Object.defineProperty(nav, 'wallets', {
+            value: [],
+            configurable: true,
+            enumerable: true,
+            writable: true
+          });
+        } catch (e) {
+          nav.wallets = []; // Fallback for simple assignment
+        }
       }
     }
   } catch (e) {
-    console.debug('navigator.wallets polyfill skipped:', e);
+    console.debug('Auth polyfills skipped:', e);
   }
 }
 
-// Manual Buffer polyfill for production stability
-if (typeof window !== 'undefined' && !window.Buffer) {
-  window.Buffer = Buffer;
-}
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
+import { SolanaWalletConnectors } from '@dynamic-labs/solana';
+import App from './App';
+import './index.css';
+import '@solana/wallet-adapter-react-ui/styles.css';
 
 const dynamicSettings = {
   environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,

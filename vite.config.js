@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,6 +16,7 @@ export default defineConfig(({ command }) => {
   plugins: [
     react(),
     wasm(),
+    topLevelAwait(),
     nodePolyfills({
       include: ['buffer', 'crypto', 'stream', 'util', 'string_decoder', 'process', 'events'],
       globals: {
@@ -24,8 +26,10 @@ export default defineConfig(({ command }) => {
       },
     }),
   ],
+  // ─── ELITE SECURITY: SAFE DEFINES ───
+  // We avoid defining 'global' or 'process' here to let nodePolyfills handle them safely.
+  // Defining them as strings can break libraries that try to use Object.defineProperty on them.
   define: {
-    'global': 'globalThis',
     'process.env.NODE_ENV': JSON.stringify(nodeEnv),
   },
   esbuild: command === 'build' ? {

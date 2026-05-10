@@ -36,14 +36,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           "Content-Type": "application/json",
           ...(process.env.JUPITER_API_KEY ? { "x-api-key": process.env.JUPITER_API_KEY } : {}),
         },
-        timeout: 15000,
+        timeout: 20000, // Increased timeout for heavy congestion
       }
     )
 
     const data = response.data || {}
     const signature = data.signature || data.txid || data.txId || data.transactionId || data.result?.signature
     if (!signature) {
-      return res.status(502).json({ success: false, error: "Jupiter execution did not return a signature", details: data })
+      return res.status(502).json({ success: false, error: "Jupiter execution did not return a signature", details: data, retryable: true })
     }
 
     return res.status(200).json({
@@ -54,7 +54,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       result: data,
     })
   } catch (error: any) {
+    const status = error.response?.status
+    const isRetryable = status === 429 || status >= 500
+    
     console.error("Jupiter execution error:", error.response?.data || error.message)
-    return res.status(502).json({ success: false, error: "Jupiter execution failed" })
+    return res.status(status || 502).json({ 
+      success: false, 
+      error: "Jupiter execution failed", 
+      message: error.response?.data?.message || error.message,
+      retryable: isRetryable 
+    })
   }
 }
