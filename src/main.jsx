@@ -13,15 +13,31 @@ if (typeof window !== 'undefined') {
   try {
     const nav = window.navigator;
     if (nav) {
-      // If it exists but is not an array, we need to handle it
-      // Some extensions inject it as an object that doesn't pass Array.isArray
+      // Dynamic SDK hard-checks Array.isArray(navigator.wallets)
+      // Some extensions inject a standard 'Wallets' object which is NOT an array.
       if (nav.wallets && !Array.isArray(nav.wallets)) {
-        console.warn('Dynamic Fix: navigator.wallets is defined but not an array. Polyfilling...');
-        // We don't overwrite it if it's iterable (standard), 
-        // but if Dynamic SDK specifically checks Array.isArray, this is where it fails.
+        console.warn('Dynamic Fix: navigator.wallets is defined but not an array. Forcing Proxy wrapper...');
+        try {
+          const originalWallets = nav.wallets;
+          // Create an actual array to pass Array.isArray()
+          const arrayProxy = Object.assign([], {
+            // Forward common methods if they exist
+            on: typeof originalWallets.on === 'function' ? originalWallets.on.bind(originalWallets) : undefined,
+            get: typeof originalWallets.get === 'function' ? originalWallets.get.bind(originalWallets) : undefined,
+            register: typeof originalWallets.register === 'function' ? originalWallets.register.bind(originalWallets) : undefined,
+          });
+          
+          Object.defineProperty(nav, 'wallets', {
+            value: arrayProxy,
+            configurable: true,
+            enumerable: true,
+            writable: true
+          });
+        } catch (redefineErr) {
+          console.error('Failed to redefine navigator.wallets:', redefineErr);
+        }
       }
       
-      // Safety: ensure it's at least an empty array if undefined to prevent crashes
       if (typeof nav.wallets === 'undefined') {
         Object.defineProperty(nav, 'wallets', {
           value: [],
