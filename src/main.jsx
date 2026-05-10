@@ -17,36 +17,33 @@ if (typeof window !== 'undefined') {
   try {
     const nav = window.navigator;
     if (nav) {
-      // Ensure 'wallets' is an array as expected by Dynamic SDK
-      if (nav['wallets'] && !Array.isArray(nav['wallets'])) {
-        console.warn('🛡️ Auth Stability: Wrapping navigator.wallets for standard compatibility.');
-        const originalWallets = nav.wallets;
-        try {
-          const arrayProxy = Object.assign([], {
-            on: typeof originalWallets.on === 'function' ? originalWallets.on.bind(originalWallets) : undefined,
-            get: typeof originalWallets.get === 'function' ? originalWallets.get.bind(originalWallets) : undefined,
-            register: typeof originalWallets.register === 'function' ? originalWallets.register.bind(originalWallets) : undefined,
-          });
-          
-          Object.defineProperty(nav, 'wallets', {
-            value: arrayProxy,
-            configurable: true,
-            enumerable: true,
-            writable: true
-          });
-        } catch (e) {
-          console.debug('navigator.wallets wrap skipped:', e);
-        }
-      } else if (typeof nav.wallets === 'undefined') {
-        try {
-          Object.defineProperty(nav, 'wallets', {
-            value: [],
-            configurable: true,
-            enumerable: true,
-            writable: true
-          });
-        } catch (e) {
-          nav.wallets = []; // Fallback for simple assignment
+      // ─── ELITE SECURITY: RESILIENT PROPERTY DEFINITION ───
+      // We only attempt to redefine 'wallets' if we can prove it's configurable or missing.
+      const descriptor = Object.getOwnPropertyDescriptor(nav, 'wallets');
+      
+      if (!descriptor || descriptor.configurable) {
+        if (nav['wallets'] && !Array.isArray(nav['wallets'])) {
+            console.warn('🛡️ Auth Stability: Wrapping navigator.wallets for standard compatibility.');
+            const originalWallets = nav['wallets'];
+            const arrayProxy = Object.assign([], {
+                on: typeof originalWallets.on === 'function' ? originalWallets.on.bind(originalWallets) : undefined,
+                get: typeof originalWallets.get === 'function' ? originalWallets.get.bind(originalWallets) : undefined,
+                register: typeof originalWallets.register === 'function' ? originalWallets.register.bind(originalWallets) : undefined,
+            });
+            
+            Object.defineProperty(nav, 'wallets', {
+                value: arrayProxy,
+                configurable: true,
+                enumerable: true,
+                writable: true
+            });
+        } else if (typeof nav['wallets'] === 'undefined') {
+            Object.defineProperty(nav, 'wallets', {
+                value: [],
+                configurable: true,
+                enumerable: true,
+                writable: true
+            });
         }
       }
     }

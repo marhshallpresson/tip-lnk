@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node"
 import axios from "axios"
 import { VersionedTransaction } from "@solana/web3.js"
 import { rateLimit } from "../../_ratelimit.js"
+import { emitTorqueEvent } from "../../_lib/torque.js"
 
 const stringValue = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 
