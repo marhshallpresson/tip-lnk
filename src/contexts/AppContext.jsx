@@ -96,8 +96,23 @@ export function AppProvider({ children }) {
                     isDiscordVerified: !!dbProfile.discordHandle,
                   };
                 }
+
+                // Carry over name from auth if profile name is empty
+                if (!newState.profile.displayName && authUser?.name) {
+                  newState.profile.displayName = authUser.name;
+                }
+
                 return newState;
             });
+            } else if (authUser?.name) {
+              // No DB profile yet, but we have auth name
+              setState(prev => ({
+                ...prev,
+                profile: {
+                  ...prev.profile,
+                  displayName: authUser.name
+                }
+              }));
             }
             setDbSynced(true);
         } catch (err) {
@@ -107,7 +122,7 @@ export function AppProvider({ children }) {
       }
     };
     syncWithDb();
-  }, [pubkeyStr, dbSynced]);
+  }, [pubkeyStr, dbSynced, authUser]);
 
   useEffect(() => {
     const fetchTips = async () => {

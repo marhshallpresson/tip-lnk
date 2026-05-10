@@ -37,7 +37,7 @@ function ScrollToTop() {
 
 function AppContent() {
   const { role, onboardingStep, update } = useApp();
-  const { showWalletModal, setShowWalletModal, user: authUser, loading: authLoading, loginWithDynamic } = useAuth();
+  const { showWalletModal, setShowWalletModal, user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
   const { user: dynamicUser } = useDynamicContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,10 +53,10 @@ function AppContent() {
     processedDynamicTokenRef.current = dynamicJwt;
     dynamicLoginInFlightRef.current = true;
 
-    loginWithDynamic(dynamicJwt)
+    syncWithDynamic(dynamicJwt)
       .then((result) => {
         if (!result.success) {
-          console.error('Dynamic login exchange failed:', result.error);
+          console.error('Dynamic identity sync failed:', result.error);
           return;
         }
 
@@ -71,13 +71,13 @@ function AppContent() {
         navigate(target, { replace: true });
       })
       .catch((err) => {
-        console.error('Dynamic login exchange failed:', err);
+        console.error('Dynamic identity sync error:', err);
       })
       .finally(() => {
         sessionStorage.removeItem('auth_origin');
         dynamicLoginInFlightRef.current = false;
       });
-  }, [dynamicUser, authUser, authLoading, loginWithDynamic, navigate, setShowWalletModal]);
+  }, [dynamicUser, authUser, authLoading, syncWithDynamic, navigate, setShowWalletModal]);
 
   const handleGetStarted = () => {
     if (role === 'guest') {

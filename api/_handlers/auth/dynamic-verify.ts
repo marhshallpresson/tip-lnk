@@ -185,6 +185,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         dynamic_last_verified_credential_id: stringValue((payload as Record<string, unknown>).lastVerifiedCredentialId) || null,
       }
 
+      // ─── ELITE IDENTITY SYNC: SOCIAL HANDLES ───
+      const twitterHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.id).includes('twitter'))?.oauthUsername as string;
+      const discordHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.id).includes('discord'))?.oauthUsername as string;
+
       if (!targetUser) {
         const userId = randomUUID()
         await trx("user").insert({
@@ -194,6 +198,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           emailVerifiedAt: now,
           walletAddressHash: walletAddressHash || null,
           encryptedWalletAddress: encryptedWalletAddress || null,
+          twitterHandle: twitterHandle || null,
+          discordHandle: discordHandle || null,
           profileData: JSON.stringify(dynamicProfile),
           lastLoginAt: now,
           created_at: now,
@@ -215,6 +221,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         email,
         name: targetUser.name || name,
         emailVerifiedAt: targetUser.emailVerifiedAt || now,
+        twitterHandle: targetUser.twitterHandle || twitterHandle || null,
+        discordHandle: targetUser.discordHandle || discordHandle || null,
         profileData: JSON.stringify(profileData),
         lastLoginAt: now,
         updated_at: now,

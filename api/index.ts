@@ -5,22 +5,14 @@ import { verifyCsrfToken } from './_lib/csrf.js'
 import { patchResponse } from './_handlers/auth/_utils.js'
 
 import { default as authMe } from './_handlers/auth/me.js'
-import { default as authLogin } from './_handlers/auth/login.js'
-import { default as authRegister } from './_handlers/auth/register.js'
 import { default as authLogout } from './_handlers/auth/logout.js'
 import { default as authCsrf } from './_handlers/auth/csrf.js'
-import { default as authWalletLogin } from './_handlers/auth/wallet-login.js'
 import { default as authAdminLogin } from './_handlers/auth/admin-login.js'
 import { default as authExchange } from './_handlers/auth/exchange.js'
 import { default as authLinkEmailStart } from './_handlers/auth/link-email/start.js'
 import { default as authLinkEmailVerify } from './_handlers/auth/link-email/verify.js'
-import { default as authResetPasswordStart } from './_handlers/auth/reset-password-start.js'
-import { default as authResetPasswordVerify } from './_handlers/auth/reset-password-verify.js'
 import { default as authTwitterCallback } from './_handlers/auth/twitter/callback.js'
 import { default as authDiscordCallback } from './_handlers/auth/discord/callback.js'
-import { default as authCheck } from './_handlers/auth/check.js'
-import { default as authOtpStart } from './_handlers/auth/otp-start.js'
-import { default as authOtpVerify } from './_handlers/auth/otp-verify.js'
 import { default as authDynamicVerify } from './_handlers/auth/dynamic-verify.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
@@ -71,22 +63,14 @@ import { default as sdkEvents } from './_handlers/sdk/events.js'
 
 const ROUTES: Record<string, Function> = {
   'auth/me': authMe,
-  'auth/login': authLogin,
-  'auth/register': authRegister,
   'auth/logout': authLogout,
   'auth/csrf': authCsrf,
-  'auth/wallet-login': authWalletLogin,
   'auth/admin-login': authAdminLogin,
   'auth/exchange': authExchange,
   'auth/link-email/start': authLinkEmailStart,
   'auth/link-email/verify': authLinkEmailVerify,
-  'auth/reset-password-start': authResetPasswordStart,
-  'auth/reset-password-verify': authResetPasswordVerify,
   'auth/twitter/callback': authTwitterCallback,
   'auth/discord/callback': authDiscordCallback,
-  'auth/check': authCheck,
-  'auth/otp/start': authOtpStart,
-  'auth/otp/verify': authOtpVerify,
   'auth/dynamic-verify': authDynamicVerify,
 
   'solana/profile': solanaProfile,

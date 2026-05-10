@@ -159,21 +159,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithDynamic = async (dynamicJwt) => {
+  const syncWithDynamic = async (dynamicJwt) => {
+    if (!dynamicJwt) return { success: false };
+    
     try {
+      setLoading(true);
       setError(null);
       const { data, ok } = await api.post('/auth/dynamic-verify', { dynamicJwt });
+      
       if (ok && data.success) {
         api.setAccessToken(data.auth.accessToken);
         localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
         setUser(data.user);
         return { success: true, user: data.user };
       }
-      setError(data.error || 'Dynamic login failed');
-      return { success: false, error: data.error || 'Dynamic login failed' };
+      
+      const errorMsg = data.error || 'Identity synchronization failed.';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     } catch (err) {
-      setError('An unexpected error occurred');
+      console.error('🛡️ Auth Sync Error:', err);
+      setError('A network error occurred during authentication.');
       return { success: false, error: 'Network error' };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -181,14 +190,8 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     error,
-    login,
-    register,
     logout,
-    loginWithWallet,
-    loginWithDynamic,
-    checkEmailStatus,
-    initLoginOtp,
-    verifyLoginOtp,
+    syncWithDynamic,
     refreshUser: fetchMe,
     showWalletModal,
     setShowWalletModal

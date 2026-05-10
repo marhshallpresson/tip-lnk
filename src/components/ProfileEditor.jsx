@@ -5,6 +5,7 @@ import { Upload, User, RefreshCw, ChevronRight, ChevronLeft, Pencil } from 'luci
 export default function ProfileEditor({ onComplete, onBack }) {
   const { profile, updateProfile } = useApp();
   const [isUploading, setIsUploading] = useState(false);
+  const [displayName, setDisplayName] = useState(profile.displayName || '');
   const [bio, setBio] = useState(profile.bio || '');
   const [roleTitle, setRoleTitle] = useState(profile.roleTitle || '');
   const fileInputRef = useRef(null);
@@ -40,6 +41,7 @@ export default function ProfileEditor({ onComplete, onBack }) {
 
   const handleSave = () => {
     updateProfile({
+      displayName: displayName.trim(),
       bio: bio.trim(),
       roleTitle: roleTitle.trim()
     });
@@ -110,7 +112,21 @@ export default function ProfileEditor({ onComplete, onBack }) {
         <div className="flex-1 space-y-6">
           <div>
             <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2 ml-1">
-              Public Display Name / Role
+              Display Name
+            </label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="e.g. John Doe"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all"
+              maxLength={50}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2 ml-1">
+              Role / Headline
             </label>
             <input
               type="text"
