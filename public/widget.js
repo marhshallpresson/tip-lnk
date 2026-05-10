@@ -20,8 +20,15 @@
       // Listen for messages from the iframe
       window.addEventListener('message', (event) => {
         if (!event.origin.startsWith(BASE_URL)) return;
+        
         if (event.data === 'tipstack-close') {
           this.closeModal();
+        }
+
+        if (event.data?.type === 'tipstack-success') {
+          console.log('âœ… TipStack: Payment successful!');
+          // You could trigger confetti here if a library is present
+          setTimeout(() => this.closeModal(), 5000);
         }
       });
     }

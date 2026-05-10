@@ -5,6 +5,7 @@ import { decrypt } from "../../../_lib/crypto.js"
 import { createCustomer, createFiatWallet } from "../../../_lib/fossa.js"
 import { rateLimit } from "../../../_ratelimit.js"
 import { getCryptoFiatQuote } from "../../../_lib/crypto-fiat-rates.js"
+import { emitTorqueEvent } from "../../../_lib/torque.js"
 
 const parseProfileData = (value: any) => {
   if (!value) return {}
@@ -206,6 +207,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .onConflict('intent_id')
         .merge()
+
+      // â”€â”€â”€ ELITE GROWTH: TORQUE EVENT â”€â”€â”€
+      await emitTorqueEvent({
+        event_type: 'tip_initiated',
+        metadata: {
+          creator_id: creator.id,
+          amount_usd: normalizedAmount,
+          token_symbol: 'USD',
+          source: 'backend',
+          provider: 'fossapay',
+          intent_id: intentId
+        }
+      }).catch(err => console.error('[Torque] Intent event failed:', err.message));
 
       return res.json({
         success: true,

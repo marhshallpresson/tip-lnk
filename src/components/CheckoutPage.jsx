@@ -121,12 +121,15 @@ export default function CheckoutPage() {
              }} 
              theme={theme}
              accent={accent}
-             onSuccess={() => {
-                console.log('✅ Tip successful!');
-                if (isEmbed) setTimeout(handleClose, 4000);
+             onSuccess={(result) => {
+                console.log('âœ… Tip successful!', result);
+                if (isEmbed) {
+                  window.parent.postMessage({ type: 'tipstack-success', result }, '*');
+                }
              }}
            />
         </div>
+
 
         {/* Support Callout */}
         <div className="mt-12 p-6 bg-white/5 border border-white/10 rounded-[32px] text-center space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>

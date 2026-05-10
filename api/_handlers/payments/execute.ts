@@ -46,6 +46,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ success: false, error: "Jupiter execution did not return a signature", details: data, retryable: true })
     }
 
+    // â”€â”€â”€ ELITE GROWTH: TORQUE EVENT â”€â”€â”€
+    // Track successful crypto tips for creator rewards and marketing analytics.
+    const outAmount = data.outputAmount || data.outAmount || req.body?.expectedOutAmount || 0;
+    
+    emitTorqueEvent({
+      event_type: 'tip_completed',
+      metadata: {
+        tx_signature: signature,
+        amount_usd: Number(outAmount),
+        token_symbol: req.body?.inputTokenSymbol || 'CRYPTO',
+        source: 'backend',
+        provider: 'jupiter-ultra'
+      }
+    }).catch(err => console.error('[Torque] Crypto event failed:', err.message));
+
     return res.status(200).json({
       success: true,
       provider,
