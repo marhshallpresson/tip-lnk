@@ -37,8 +37,8 @@ function ScrollToTop() {
 
 function AppContent() {
   const { role, onboardingStep, update } = useApp();
-  const { showWalletModal, setShowWalletModal, user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
-  const { user: dynamicUser } = useDynamicContext();
+  const { user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
+  const { user: dynamicUser, setShowAuthFlow } = useDynamicContext();
   const navigate = useNavigate();
   const location = useLocation();
   const dynamicLoginInFlightRef = useRef(false);
@@ -67,7 +67,6 @@ function AppContent() {
         const completedOnboarding = Boolean(result.user?.onboardingComplete || result.user?.onboarding_complete);
         const target = completedOnboarding ? (origin === '/' ? '/dashboard' : origin) : '/onboarding';
 
-        setShowWalletModal(false);
         navigate(target, { replace: true });
       })
       .catch((err) => {
@@ -77,11 +76,12 @@ function AppContent() {
         sessionStorage.removeItem('auth_origin');
         dynamicLoginInFlightRef.current = false;
       });
-  }, [dynamicUser, authUser, authLoading, syncWithDynamic, navigate, setShowWalletModal]);
+  }, [dynamicUser, authUser, authLoading, syncWithDynamic, navigate]);
 
   const handleGetStarted = () => {
     if (role === 'guest') {
-      setShowWalletModal(true);
+      sessionStorage.setItem('auth_origin', '/dashboard');
+      setShowAuthFlow(true);
     } else {
       navigate('/dashboard');
     }
@@ -185,17 +185,6 @@ function AppContent() {
           </Routes>
         </Suspense>
       </main>
-
-      <WalletModal 
-        isOpen={showWalletModal} 
-        onClose={() => setShowWalletModal(false)} 
-        onConnected={(addr, isAuth) => {
-          setShowWalletModal(false);
-          if (addr || isAuth) {
-             if (location.pathname === '/') navigate('/dashboard');
-          }
-        }}
-      />
     </div>
   );
 }

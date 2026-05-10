@@ -229,27 +229,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (apiErr: any) {
       console.error('Fossa Pay Service Error:', apiErr.message)
 
-      if (process.env.NODE_ENV === 'production') {
-        return res.status(502).json({
-          success: false,
-          error: 'Fiat payment provider unavailable'
-        })
-      }
-      
-      // Fallback to mock session behavior
-      await db('fiat_payment_intents')
-        .insert({
-          ...baseIntentRecord,
-          provider_session_id: `mock_${intentId}`
-        })
-        .onConflict('intent_id')
-        .merge()
-
-      return res.json({
-        success: true,
-        intentId,
-        status: 'requires_action',
-        checkoutUrl: `https://checkout.fossapay.com/mock-pay/${intentId}?dest=${payoutAddress}&amt=${normalizedAmount}`
+      return res.status(502).json({
+        success: false,
+        error: 'Fiat payment provider unavailable',
+        message: 'The FossaPay integration is currently unresponsive. Please try again later or use crypto.'
       })
     }
 

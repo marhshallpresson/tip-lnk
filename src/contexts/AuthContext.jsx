@@ -7,7 +7,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showWalletModal, setShowWalletModal] = useState(false);
 
   // Initialize from localStorage on mount
   useEffect(() => {
@@ -193,8 +192,6 @@ export const AuthProvider = ({ children }) => {
     logout,
     syncWithDynamic,
     refreshUser: fetchMe,
-    showWalletModal,
-    setShowWalletModal
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
