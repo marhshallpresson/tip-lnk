@@ -38,21 +38,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // SECURITY PATCH: Validate originUrl against Whitelisted Origins
     const whitelisted = creator.whitelisted_origins ? JSON.parse(creator.whitelisted_origins) : [];
     const isLocal = originUrl.includes('localhost') || originUrl.includes('127.0.0.1');
-    const isWhitelisted = whitelisted.includes(originUrl) || isLocal;
+    const isWhitelisted = whitelisted.includes(new URL(originUrl).origin) || isLocal;
 
     if (!isWhitelisted) {
-      console.warn(`🛡️ SDK Security: Unauthorized embed attempt from ${originUrl} for creator ${creator.id}`);
+      console.warn(`🛡️ SDK Security: Unauthorized embed attempt from ${originUrl}`);
       return res.status(403).json({ 
         error: 'Unauthorized Origin', 
-        message: 'This domain is not authorized to embed this TipLnk widget. Please add it in your creator dashboard.' 
-      })
+        message: 'This domain is not authorized. Add it in your creator dashboard.' 
+      });
     }
 
     const sessionToken = `sdk_sess_${randomUUID()}`
 
     // SECURITY PATCH: Enforce CSP and Frame-Ancestors to prevent Clickjacking
-    res.setHeader('Content-Security-Policy', `frame-ancestors 'self' ${originUrl}`);
-    res.setHeader('X-Frame-Options', `ALLOW-FROM ${originUrl}`);
+    const origin = new URL(originUrl).origin;
+    res.setHeader('Content-Security-Policy', `frame-ancestors 'self' ${origin}`);
+    res.setHeader('X-Frame-Options', `ALLOW-FROM ${origin}`);
 
     await emitTorqueEvent({
       event_type: 'embed_loaded',
