@@ -26,9 +26,9 @@
         }
 
         if (event.data?.type === 'tipstack-success') {
-          console.log('âœ… TipStack: Payment successful!');
-          // You could trigger confetti here if a library is present
-          setTimeout(() => this.closeModal(), 5000);
+          console.log('✅ TipStack: Payment successful!', event.data.result);
+          document.dispatchEvent(new CustomEvent('tipstack:success', { detail: event.data.result }));
+          setTimeout(() => this.closeModal(), 4000);
         }
       });
     }

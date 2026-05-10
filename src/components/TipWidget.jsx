@@ -20,7 +20,7 @@ import {
 
 const PRESET_AMOUNTS = [1, 5, 10, 25, 50];
 
-function TipWidgetContent({ fixedRecipient = null, onSuccess, theme = 'dark', accent = '#00D265' }) {
+function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () => {}, theme = 'dark', accent = '#00D265' }) {
   const { publicKey } = useWallet();
   const { profile: viewerProfile, addTip } = useApp();
   const { setShowWalletModal } = useAuth();
@@ -299,47 +299,31 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, theme = 'dark', ac
   }
 
   if (txResult?.status === 'confirmed') {
-      return (
-          <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-10 text-center animate-scale-in max-w-[380px] mx-auto shadow-2xl relative overflow-hidden">
-              {/* Torque Pulse Glow */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-500/20 blur-[80px] rounded-full animate-pulse-slow" />
-              
-              <div className="relative z-10">
-                <div className="w-20 h-20 rounded-3xl bg-brand-500/10 flex items-center justify-center mx-auto mb-6 border border-brand-500/20 shadow-inner">
-                    <CheckCircle2 size={40} className="text-brand-500 animate-bounce-short" />
-                </div>
-                
-                <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Support Delivered!</h3>
-                <p className="text-white/40 text-sm mb-8 leading-relaxed">Your tip of <span className="text-white font-bold">${Number(amount).toFixed(2)}</span> was processed instantly via Solana.</p>
-                
-                {/* Torque Reward Box */}
-                <div className="bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4 mb-8 text-left flex items-start gap-3 group hover:bg-brand-500/10 transition-colors cursor-default">
-                    <div className="w-10 h-10 rounded-xl bg-brand-500 flex-shrink-0 flex items-center justify-center text-black">
-                        <Zap size={20} fill="currentColor" />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-0.5">Torque Reward Earned</p>
-                        <p className="text-xs text-white/70 font-medium">You've earned 50xp for this contribution. Check your profile to claim perks.</p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                    <button 
-                        onClick={() => { reset(); setFiatPaymentInstructions(null); setAmount('5'); setNote(''); }} 
-                        className="btn-primary w-full py-4 text-sm font-black uppercase tracking-widest"
-                    >
-                        Send Another
-                    </button>
-                    <button 
-                        onClick={handleClose} 
-                        className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors"
-                    >
-                        Close Portal
-                    </button>
-                </div>
-              </div>
+    return (
+      <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-10 text-center animate-scale-in max-w-[380px] mx-auto shadow-2xl relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-500/20 blur-[80px] rounded-full animate-pulse-slow" />
+        <div className="relative z-10">
+          <div className="w-20 h-20 rounded-3xl bg-brand-500/10 flex items-center justify-center mx-auto mb-6 border border-brand-500/20 shadow-inner">
+            <CheckCircle2 size={40} className="text-brand-500 animate-bounce-short" />
           </div>
-      );
+          <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Support Delivered!</h3>
+          <p className="text-white/40 text-sm mb-8 leading-relaxed">Your tip of <span className="text-white font-bold">${Number(amount).toFixed(2)}</span> was processed instantly via Solana.</p>
+          <div className="bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4 mb-8 text-left flex items-start gap-3 group hover:bg-brand-500/10 transition-colors cursor-default">
+            <div className="w-10 h-10 rounded-xl bg-brand-500 flex-shrink-0 flex items-center justify-center text-black">
+              <Zap size={20} fill="currentColor" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-0.5">Torque Reward Earned</p>
+              <p className="text-xs text-white/70 font-medium">You've earned 50xp for this contribution. Check your profile to claim perks.</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => { reset(); setFiatPaymentInstructions(null); setAmount('5'); setNote(''); }} className="btn-primary w-full py-4 text-sm font-black uppercase tracking-widest">Send Another</button>
+            <button onClick={handleClose} className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors">Close Portal</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

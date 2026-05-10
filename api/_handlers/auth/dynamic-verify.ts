@@ -190,6 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const discordHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.id).includes('discord'))?.oauthUsername as string;
 
       if (!targetUser) {
+        console.log(`👤 Dynamic Auth: Creating new user record for ${email}`);
         const userId = randomUUID()
         await trx("user").insert({
           id: userId,
@@ -204,10 +205,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           lastLoginAt: now,
           created_at: now,
           updated_at: now,
+          onboardingComplete: false // New users must onboard
         })
         await ensureUserRole(trx, userId)
         return trx("user").where({ id: userId }).first()
       }
+
+      console.log(`👤 Dynamic Auth: Identified existing user ${targetUser.id} for ${email}`);
 
       const existingProfile = parseProfileData(targetUser.profileData)
       const sourceProfile = walletUser && walletUser.id !== targetUser.id ? parseProfileData(walletUser.profileData) : {}
@@ -226,6 +230,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         profileData: JSON.stringify(profileData),
         lastLoginAt: now,
         updated_at: now,
+      }
+
+      // If they were found, we ensure their onboarding is marked as complete 
+      // if they have essential profile data, or preserve their existing status.
+      // Elite Fix: Don't force them back to onboarding if they already had a name.
+      if (targetUser.name || targetUser.solDomain) {
+          updates.onboardingComplete = true;
       }
 
       if (primaryWallet && !targetUser.walletAddressHash && !targetUser.encryptedWalletAddress && !targetUser.walletAddress) {
