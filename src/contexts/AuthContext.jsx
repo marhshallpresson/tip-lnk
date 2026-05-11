@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../lib/api';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 const AuthContext = createContext();
 
@@ -50,7 +51,8 @@ export const AuthProvider = ({ children }) => {
     fetchMe();
   }, []);
 
-  const { handleLogout: dynamicLogout } = useDynamicContext();
+  const dynamicContext = useDynamicContext();
+  const dynamicLogout = dynamicContext?.handleLogout;
 
   const logout = async () => {
     try {
