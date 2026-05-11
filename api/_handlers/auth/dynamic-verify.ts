@@ -12,6 +12,7 @@ type DynamicCredential = {
   chain?: unknown
   email?: unknown
   format?: unknown
+  oauthProvider?: unknown
   oauthDisplayName?: unknown
   oauthEmails?: unknown
   oauthUsername?: unknown
@@ -240,9 +241,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updates.onboardingComplete = true;
       }
 
-      if (primaryWallet && !targetUser.walletAddressHash && !targetUser.encryptedWalletAddress && !targetUser.walletAddress) {
-        updates.walletAddressHash = walletAddressHash
-        updates.encryptedWalletAddress = encryptedWalletAddress
+      // ─── ELITE SECURITY: WALLET PRIVACY SYNC ───
+      // Always ensure the hashed and encrypted wallet fields are populated if Dynamic provides a wallet,
+      // bridging the gap for legacy users who only had plaintext walletAddress.
+      if (primaryWallet) {
+        if (!targetUser.walletAddressHash) updates.walletAddressHash = walletAddressHash;
+        if (!targetUser.encryptedWalletAddress) updates.encryptedWalletAddress = encryptedWalletAddress;
       }
 
       if (walletUser && walletUser.id !== targetUser.id && Boolean(walletUser.onboardingComplete) && !targetUser.onboardingComplete) {
