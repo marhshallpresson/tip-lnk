@@ -5,6 +5,7 @@ import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
 import { getPhantomDeepLink, getSolanaPayUri, hasSolanaProvider, isMobile } from '../utils/deepLinks';
 import ErrorBoundary from './ErrorBoundary';
+import QRCheckoutModal from './QRCheckoutModal';
 import { 
   ShieldCheck, 
   Zap, 
@@ -38,6 +39,9 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [fiatPaymentInstructions, setFiatPaymentInstructions] = useState(null);
   const [widgetError, setWidgetError] = useState('');
+  
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [activeIntentId, setActiveIntentId] = useState(null);
 
   const {
     tokens,
