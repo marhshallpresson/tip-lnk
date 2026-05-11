@@ -71,9 +71,21 @@ const dynamicSettings = {
   persistWalletSession: true,
   eventsCallbacks: {
     onSessionReject: () => {
-      console.warn('🛡️ Dynamic Session rejected/expired. Clearing local stale state.');
-      // When Dynamic fails to refresh its own session, we should clear our local token too
-      // so the user is prompted for a fresh login.
+      console.warn('🛡️ Dynamic Session rejected. Nuking local state to break loop.');
+      localStorage.removeItem('tipstack_auth_token');
+      localStorage.removeItem('dynamic_authentication_token');
+      localStorage.removeItem('dynamic_store');
+      localStorage.removeItem('dynamic_min_token');
+      localStorage.removeItem('dynamic_environment_id');
+      window.location.reload();
+    },
+    onAuthFailure: (error) => {
+      console.error('🛡️ Dynamic Auth failed:', error);
+      localStorage.removeItem('dynamic_authentication_token');
+      localStorage.removeItem('dynamic_store');
+    },
+    onLogout: () => {
+      console.log('🛡️ Dynamic Session Terminated.');
       localStorage.removeItem('tipstack_auth_token');
     },
     onAuthSuccess: () => {
