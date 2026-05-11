@@ -14,6 +14,7 @@ import { default as authLinkEmailVerify } from './_handlers/auth/link-email/veri
 import { default as authTwitterCallback } from './_handlers/auth/twitter/callback.js'
 import { default as authDiscordCallback } from './_handlers/auth/discord/callback.js'
 import { default as authDynamicVerify } from './_handlers/auth/dynamic-verify.js'
+import { default as authDynamicSync } from './_handlers/auth/dynamic-sync.js'
 
 import { default as solanaProfile } from './_handlers/solana/index.js'
 import { default as solanaProfileGet } from './_handlers/solana/profile/get.js'
@@ -73,6 +74,7 @@ const ROUTES: Record<string, Function> = {
   'auth/twitter/callback': authTwitterCallback,
   'auth/discord/callback': authDiscordCallback,
   'auth/dynamic-verify': authDynamicVerify,
+  'auth/dynamic-sync': authDynamicSync,
 
   'solana/profile': solanaProfile,
   'solana/profile/get': solanaProfileGet,
