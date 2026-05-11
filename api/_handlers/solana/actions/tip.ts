@@ -118,7 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json(payload)
     }
 
-    const isProd = import.meta.env.MODE === 'production';
+    const isProd = process.env.NODE_ENV === 'production';
     const creatorYieldEnabled = user.yield_enabled === true;
 
     if (req.method === 'POST') {
