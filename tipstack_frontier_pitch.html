@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tipstack.fun — Frontier Hackathon Pitch</title>
+  <style>
+    /* === DESIGN SYSTEM TOKENS === */
+    :root {
+      /* Teal + Ivory Palette (Consumer Payments Vibe) */
+      --c-bg: #0a0a0c;
+      --c-bg-alt: #0f1d1b;
+      --c-bg-card: #141418;
+      --c-surface: #1a2a27;
+      --c-border: rgba(255,255,255,0.06);
+
+      --c-primary: #10b981; /* Teal Accent */
+      --c-primary-dim: rgba(16,185,129,0.12);
+      --c-accent: #f59e0b; /* Ivory/Amber Accent */
+      --c-accent-dim: rgba(245,158,11,0.10);
+      --c-danger: #ef4444;
+      --c-warning: #f59e0b;
+
+      --c-text: #ffffff;
+      --c-text-secondary: rgba(255,255,255,0.7);
+      --c-text-muted: rgba(255,255,255,0.4);
+
+      /* Typography scale (16:9 optimized) */
+      --f-hero: 84px;
+      --f-h1: 64px;
+      --f-h2: 44px;
+      --f-h3: 32px;
+      --f-body: 26px;
+      --f-small: 20px;
+      --f-caption: 16px;
+
+      --font-display: 'Space Grotesk', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --s-md: 32px;
+      --s-lg: 48px;
+      --s-xl: 64px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-enter: 0.6s;
+    }
+
+    /* === RESET & BASE === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: var(--c-bg); color: var(--c-text); font-family: var(--font-display); }
+
+    .deck { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 60px 100px; opacity: 0; pointer-events: none;
+      transition: opacity 0.5s var(--ease-out);
+      background: var(--c-bg);
+    }
+    .slide.active { opacity: 1; pointer-events: auto; }
+
+    .slide.active .animate-in { animation: slideUp var(--duration-enter) var(--ease-out) both; }
+    .slide.active .animate-in:nth-child(1) { animation-delay: 0.1s; }
+    .slide.active .animate-in:nth-child(2) { animation-delay: 0.2s; }
+    .slide.active .animate-in:nth-child(3) { animation-delay: 0.3s; }
+    .slide.active .animate-in:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === TYPOGRAPHY === */
+    .hero { font-size: var(--f-hero); font-weight: 800; letter-spacing: -2px; line-height: 1.1; }
+    .h1 { font-size: var(--f-h1); font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; }
+    .h2 { font-size: var(--f-h2); font-weight: 700; letter-spacing: -1px; }
+    .h3 { font-size: var(--f-h3); font-weight: 600; line-height: 1.3; }
+    .body { font-size: var(--f-body); color: var(--c-text-secondary); line-height: 1.5; }
+    .caption { font-size: var(--f-caption); font-weight: 600; color: var(--c-primary); letter-spacing: 2px; text-transform: uppercase; }
+    
+    .text-emphasis { color: var(--c-primary); }
+    .text-accent { color: var(--c-accent); }
+
+    /* === COMPONENTS === */
+    .divider { width: 60px; height: 4px; background: var(--c-primary); margin: 24px 0; border-radius: 2px; }
+    .card { background: var(--c-bg-card); border: 1px solid var(--c-border); border-radius: 20px; padding: 40px; }
+    .card-glow { border-color: var(--c-primary-dim); box-shadow: 0 0 40px rgba(16,185,129,0.05); }
+    
+    .metric-value { font-size: 72px; font-weight: 800; color: var(--c-accent); line-height: 1; }
+    .metric-label { font-size: var(--f-small); color: var(--c-text-muted); margin-top: 8px; font-weight: 500; }
+
+    .bullet-list { list-style: none; }
+    .bullet-list li { 
+      padding: 16px 0; padding-left: 32px; position: relative; 
+      font-size: var(--f-body); color: var(--c-text-secondary);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .bullet-list li::before { 
+      content: '→'; position: absolute; left: 0; color: var(--c-primary); font-weight: bold;
+    }
+
+    .badge { display: inline-block; padding: 6px 16px; border-radius: 100px; font-size: 14px; font-weight: 700; text-transform: uppercase; }
+    .badge-primary { background: var(--c-primary-dim); color: var(--c-primary); }
+
+    /* === NAVIGATION === */
+    .nav-bar {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 24px; align-items: center; z-index: 100;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(12px);
+      padding: 12px 24px; border-radius: 100px; border: 1px solid var(--c-border);
+    }
+    .nav-btn { background: none; border: none; color: var(--c-text-muted); cursor: pointer; font-weight: 600; }
+    .nav-btn:hover { color: var(--c-text); }
+    .nav-counter { font-family: var(--font-mono); font-size: 14px; color: var(--c-text-muted); }
+
+    /* === PRESENTER NOTES === */
+    .notes {
+      display: none; position: fixed; bottom: 90px; left: 50px; right: 50px;
+      background: rgba(0,0,0,0.95); border: 1px solid var(--c-border);
+      border-radius: 12px; padding: 24px; font-size: 18px; color: #ccc; z-index: 200;
+    }
+    .notes.visible { display: block; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px; }
+
+    @media print {
+      .slide { position: relative; opacity: 1; page-break-after: always; height: 100vh; display: flex !important; }
+      .nav-bar, .notes { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- SLIDE 1: TITLE -->
+    <div class="slide active" style="text-align: center; align-items: center;">
+      <h1 class="hero animate-in">Tipstack<span class="text-emphasis">.fun</span></h1>
+      <p class="h3 animate-in" style="margin-top: 24px; color: var(--c-text-secondary); max-width: 800px;">
+        The Stripe of Web3 Africa: Instant Local Payouts for the Global Creator Economy.
+      </p>
+      <div class="animate-in" style="margin-top: 48px; display: flex; gap: 16px;">
+        <span class="badge badge-primary">Frontier Hackathon</span>
+        <span class="badge badge-primary" style="background: var(--c-accent-dim); color: var(--c-accent);">Payments Track</span>
+      </div>
+      <div class="notes">
+        "Open strong: 'Tipstack does for African creators what Stripe can't—it turns their bio link into a borderless bank account. Fans pay globally, creators settle locally in 3 minutes.'"
+      </div>
+    </div>
+
+    <!-- SLIDE 2: THE PROBLEM -->
+    <div class="slide">
+      <span class="caption animate-in">THE PROBLEM</span>
+      <h1 class="h1 animate-in" style="margin-top: 16px;">Your Passport <span class="text-emphasis">Dictates Your Revenue.</span></h1>
+      <div class="divider animate-in"></div>
+      <div class="grid-3 animate-in" style="margin-top: 32px;">
+        <div class="card">
+          <h3 class="text-emphasis" style="font-size: 48px; margin-bottom: 12px;">45%</h3>
+          <p class="h3">Fees Extracted</p>
+          <p class="body" style="font-size: 18px; margin-top: 8px;">Between Apple, Stripe, and predatory FX spreads, creators lose nearly half.</p>
+        </div>
+        <div class="card">
+          <h3 class="text-danger" style="font-size: 48px; margin-bottom: 12px;">X</h3>
+          <p class="h3">Geoblocked</p>
+          <p class="body" style="font-size: 18px; margin-top: 8px;">Platforms like Stripe are suspending thousands of African creators overnight.</p>
+        </div>
+        <div class="card">
+          <h3 class="text-accent" style="font-size: 48px; margin-bottom: 12px;">T+3</h3>
+          <p class="h3">Settlement Lag</p>
+          <p class="body" style="font-size: 18px; margin-top: 8px;">Even when they can get paid, "instant" usually means 3-7 days to a local bank.</p>
+        </div>
+      </div>
+      <div class="notes">
+        "Speak to the anger: 'I spent 5 years watching creators build millions of followers only to be told they live in the wrong country to earn a living. It's not just friction; it's exclusion.'"
+      </div>
+    </div>
+
+    <!-- SLIDE 3: WHY NOW -->
+    <div class="slide bg-alt">
+      <span class="caption animate-in">WHY NOW</span>
+      <h1 class="h1 animate-in" style="margin-top: 16px;">The Infrastructure <span class="text-emphasis">Caught Up.</span></h1>
+      <div class="divider animate-in"></div>
+      <div class="grid-2 animate-in" style="margin-top: 32px;">
+        <div class="card card-glow">
+          <p class="caption">LEGACY RETREAT</p>
+          <p class="h3" style="margin-top: 12px;">Stripe & X Withdrawals</p>
+          <p class="body" style="font-size: 18px; margin-top: 8px;">Recent aggressive compliance pullbacks have left thousands of creators with zero monetization options.</p>
+        </div>
+        <div class="card card-glow">
+          <p class="caption">SOLANA MATURITY</p>
+          <p class="h3" style="margin-top: 12px;">Native USDC + Fiat APIs</p>
+          <p class="body" style="font-size: 18px; margin-top: 8px;">In 2026, Solana USDC liquidity and partners like Fossa Pay finally allow for programmatic dollar-to-fiat routing.</p>
+        </div>
+      </div>
+      <div class="notes">
+        "Why 2026? Because the Web2 gatekeepers are closing their doors, while Solana's stablecoin rails have reached institutional maturity."
+      </div>
+    </div>
+
+    <!-- SLIDE 4: THE SOLUTION -->
+    <div class="slide">
+      <span class="caption animate-in">THE SOLUTION</span>
+      <h1 class="h1 animate-in" style="margin-top: 16px;">The <span class="text-emphasis">3-Minute</span> Payout.</h1>
+      <div class="divider animate-in"></div>
+      <div class="grid-3 animate-in" style="margin-top: 32px;">
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;">⚡</div>
+          <p class="h3">Link in Bio</p>
+          <p class="body" style="font-size: 18px;">One link to receive Cards or Crypto from anywhere on earth.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;">🛡️</div>
+          <p class="h3">Non-Custodial</p>
+          <p class="body" style="font-size: 18px;">Built on audited Anchor contracts. Funds are never held by Tipstack.</p>
+        </div>
+        <div class="card" style="text-align: center; border-color: var(--c-primary);">
+          <div style="font-size: 48px; margin-bottom: 16px;">🏦</div>
+          <p class="h3">Instant Fiat</p>
+          <p class="body" style="font-size: 18px;">Direct bridge from Solana USDC to local bank accounts in under 3 mins.</p>
+        </div>
+      </div>
+      <div class="notes">
+        "This is the magic moment: 'A creator gets a notification, and 180 seconds later, the cash is in their local account. That is the Tipstack promise.'"
+      </div>
+    </div>
+
+    <!-- SLIDE 5: WHY SOLANA -->
+    <div class="slide bg-alt">
+      <span class="caption animate-in">WHY SOLANA</span>
+      <h1 class="h1 animate-in" style="margin-top: 16px;">A Mathematical <span class="text-emphasis">Necessity.</span></h1>
+      <div class="divider animate-in"></div>
+      <div class="grid-2 animate-in" style="margin-top: 32px;">
+        <div class="card">
+          <p class="caption" style="color: var(--c-danger);">WITHOUT SOLANA</p>
+          <ul class="bullet-list" style="margin-top: 16px;">
+            <li>$0.50 fee on $1.00 tip (Web2)</li>
+            <li>Geographic Blacklists</li>
+            <li>Centralized Custody Risk</li>
+          </ul>
+        </div>
+        <div class="card-glow">
+          <p class="caption">WITH SOLANA</p>
+          <ul class="bullet-list" style="margin-top: 16px;">
+            <li>$0.00025 Micro-Tip Fee</li>
+            <li>Permissionless Routing</li>
+            <li>Self-Custody (Creator Choice)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="notes">
+        "Brutal pragmatism for judges: 'If I rip out Solana, the unit economics die. You can't tip $1.00 if the processor takes $0.30. Solana is the ONLY rail that makes micro-tips viable.'"
+      </div>
+    </div>
+
+    <!-- SLIDE 6: TRACTION -->
+    <div class="slide">
+      <span class="caption animate-in">TRACTION & PROOF</span>
+      <h1 class="h1 animate-in" style="margin-top: 16px;">Proof of <span class="text-emphasis">Delivery.</span></h1>
+      <div class="divider animate-in"></div>
+      <div class="grid-3 animate-in" style="margin-top: 32px;">
+        <div class="card" style="text-align: center;">
+          <h3 class="text-accent" style="font-size: 54px; font-weight: 800;">100+</h3>
+          <p class="h3">Creator Waitlist</p>
+          <p class="body" style="font-size: 16px;">Secured in Lagos after the first technical demo.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <h3 class="text-emphasis" style="font-size: 54px; font-weight: 800;">&lt;3m</h3>
+          <p class="h3">USDC → Bank</p>
+          <p class="body" style="font-size: 16px;">Live functional demo from Solana USDC to NGN Bank.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <h3 class="text-emphasis" style="font-size: 54px; font-weight: 800;">5%</h3>
+          <p class="h3">Platform Fee</p>
+          <p class="body" style="font-size: 16px;">95% Revenue retention for the creator. Non-negotiable.</p>
+        </div>
+      </div>
+      <div class="notes">
+        "Real metrics: 'We aren't just a whitepaper. We have 100 creators in Lagos waiting for this because they saw the USDC hit the bank in real-time.'"
+      </div>
+    </div>
+
+    <!-- SLIDE 7: THE ASK -->
+    <div class="slide bg-alt" style="text-align: center; align-items: center;">
+      <span class="caption animate-in">THE ASK</span>
+      <h1 class="hero animate-in" style="margin-top: 24px;">Frontier <span class="text-emphasis">Accelerator</span></h1>
+      <p class="h3 animate-in" style="color: var(--c-text-secondary); margin-top: 16px; max-width: 800px;">
+        Winning the Payments Track to unlock $250k Pre-seed & reach 10,000 African creators by Q1 2027.
+      </p>
+      <div class="divider animate-in" style="margin: 32px auto;"></div>
+      <div class="animate-in" style="max-width: 600px; text-align: left; width: 100%;">
+        <p class="caption" style="margin-bottom: 16px;">NEXT MILESTONES</p>
+        <p class="body" style="font-size: 20px;">• Q2 2026: Lagos Beta Launch (100 Creators)</p>
+        <p class="body" style="font-size: 20px; margin-top: 8px;">• Q3 2026: Expand to Ghana & Kenya (Multi-Partner Redundancy)</p>
+        <p class="body" style="font-size: 20px; margin-top: 8px;">• Q4 2026: Tipstack "Blinks" (Native X Integration)</p>
+      </div>
+      <div class="notes">
+        "Be precise: 'We want into the Colosseum Accelerator. We have the tech, we have the demand, and we have the team to scale Tipstack into the global settlement standard for emerging markets.'"
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="prev()">← Prev</button>
+    <span class="nav-counter"><span id="current">1</span> / <span id="total">7</span></span>
+    <button class="nav-btn" onclick="next()">Next →</button>
+  </div>
+
+  <script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+    const total = slides.length;
+    let notesVisible = false;
+
+    function show(i) {
+      slides.forEach(s => s.classList.remove('active'));
+      current = Math.max(0, Math.min(i, total - 1));
+      slides[current].classList.add('active');
+      document.getElementById('current').textContent = current + 1;
+      
+      document.querySelectorAll('.notes').forEach(n => n.classList.remove('visible'));
+      if (notesVisible) slides[current].querySelector('.notes').classList.add('visible');
+    }
+
+    function next() { show(current + 1); }
+    function prev() { show(current - 1); }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') next();
+      if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'n' || e.key === 'N') {
+        notesVisible = !notesVisible;
+        show(current);
+      }
+    });
+
+    show(0);
+  </script>
+</body>
+</html>
