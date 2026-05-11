@@ -54,6 +54,7 @@ import { default as creatorAnalytics } from './_handlers/creators/analytics.js'
 import { default as paymentsIntent } from './_handlers/payments/intent.js'
 import { default as paymentsExecute } from './_handlers/payments/execute.js'
 import { default as paymentsRecurring } from './_handlers/payments/recurring.js'
+import { default as paymentsStatus } from './_handlers/payments/status.js'
 import { default as paymentsFiatIntent } from './_handlers/payments/fiat/intent.js'
 import { default as paymentsFiatWebhook } from './_handlers/payments/fiat/webhook.js'
 import { default as paymentsFiatRate } from './_handlers/payments/fiat/rate.js'
@@ -113,6 +114,7 @@ const ROUTES: Record<string, Function> = {
 
   'payments/intent': paymentsIntent,
   'payments/execute': paymentsExecute,
+  'payments/status': paymentsStatus,
   'payments/fiat/intent': paymentsFiatIntent,
   'payments/fiat/webhook': paymentsFiatWebhook,
   'payments/fiat/rate': paymentsFiatRate,
@@ -182,7 +184,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       'solana/assets', 
       'solana/birdeye/portfolio',
       'solana/tips/get',
-      'solana/priority-fee'
+      'solana/priority-fee',
+      'payments/status'
     ].includes(routeKey) || (moduleName === 'solana' && ['price', 'assets', 'tips'].includes(action));
 
     if (isRealTime) {

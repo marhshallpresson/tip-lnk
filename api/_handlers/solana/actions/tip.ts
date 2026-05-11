@@ -10,6 +10,7 @@ import {
   PublicKey, 
   SystemProgram, 
   Transaction, 
+  TransactionInstruction,
   LAMPORTS_PER_SOL 
 } from "@solana/web3.js"
 import { 
@@ -206,6 +207,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       transaction.feePayer = sender
+
+      const intentId = req.query.intentId as string;
+      if (intentId) {
+          transaction.add(
+            new TransactionInstruction({
+              keys: [],
+              programId: new PublicKey('MemoSq4gqABmAn9k86z1px6A9HByG67UactJS1R848'),
+              data: Buffer.from(intentId),
+            })
+          )
+          console.log(`🛡️ Tracking: Attached intentId ${intentId} to Blink transaction`);
+      }
 
       const payload: ActionPostResponse = await createPostResponse({
         fields: {
