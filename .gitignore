@@ -21,3 +21,7 @@ dynamic-verify-recovered.ts
 *.md
 !README.md
 !DX-REPORT.md
+
+# Ignore all HTML files except index.html
+*.html
+!index.html
