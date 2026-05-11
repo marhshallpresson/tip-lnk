@@ -131,47 +131,69 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new Error('NO_ULTRA_KEY')
       }
 
-      const isGasless = creatorGaslessEnabled === true;
+        const isGasless = creatorGaslessEnabled === true;
 
-      console.log(`🚀 Jupiter Ultra: Fetching order for ${amount} ${inputTokenMint} -> ${outputMint} (Gasless: ${isGasless})`)
+        console.log(`🚀 Jupiter Ultra: Fetching order for ${amount} ${inputTokenMint} -> ${outputMint} (Gasless: ${isGasless})`)
 
-      const orderParams = new URLSearchParams({
-        inputMint: inputTokenMint,
-        outputMint: outputMint,
-        amount: normalizedAmount.toString(),
-        taker: sourceWalletAddress,
-        slippageBps: '50',
-        // Managed landing is required for gasless abstraction
-        managedLanding: isGasless ? 'true' : 'false'
-      })
+        const orderParams = new URLSearchParams({
+          inputMint: inputTokenMint,
+          outputMint: outputMint,
+          amount: normalizedAmount.toString(),
+          taker: sourceWalletAddress,
+          slippageBps: '50',
+          // Managed landing is required for gasless abstraction
+          managedLanding: isGasless ? 'true' : 'false'
+        })
 
-      const ultraResponse = await axios.get(`${JUP_ULTRA_API}/order?${orderParams}`, {
-        headers: { 'x-api-key': JUP_API_KEY },
-        timeout: 5000
-      })
-      
-      order = ultraResponse.data
-      
-      return res.json({
-        success: true,
-        intentId,
-        status: 'requires_action',
-        quote: {
-          outAmount: order.outAmount,
-          priceImpactPct: order.priceImpactPct
-        },
-        transaction: order.transaction, 
-        requestId: order.requestId,
-        executionMode: isGasless ? 'async' : 'sync', // Gasless usually requires async landing
-        lastValidBlockHeight: order.lastValidBlockHeight,
-        provider: 'jupiter-ultra',
-        isGasless,
-        settings: {
-          yieldEnabled: creatorYieldEnabled,
-          gaslessEnabled: creatorGaslessEnabled,
-          autoConvertUsdc: creatorAutoConvertUsdc !== false
+        const ultraResponse = await axios.get(`${JUP_ULTRA_API}/order?${orderParams}`, {
+          headers: { 'x-api-key': JUP_API_KEY },
+          timeout: 5000
+        })
+        
+        order = ultraResponse.data
+        
+        let finalTransaction = order.transaction;
+
+        // ─── ELITE DEFI: ATOMIC KAMINO YIELD ───
+        if (creatorYieldEnabled && outputMint === USDC_MINT) {
+           try {
+              const { attachKaminoYield } = await import("../../_lib/kamino.js");
+              const { rpcManager } = await import("../../_lib/rpc.js");
+              const connection = await rpcManager.getConnection();
+              
+              finalTransaction = await attachKaminoYield(
+                connection,
+                finalTransaction,
+                new PublicKey(payoutAddress),
+                order.outAmount, // Ultra's output amount
+                "USDC"
+              );
+              console.log('✅ Kamino instructions attached to Ultra transaction');
+           } catch (e: any) {
+              console.warn('⚠️ Kamino attachment failed:', e.message);
+           }
         }
-      })
+
+        return res.json({
+          success: true,
+          intentId,
+          status: 'requires_action',
+          quote: {
+            outAmount: order.outAmount,
+            priceImpactPct: order.priceImpactPct
+          },
+          transaction: finalTransaction, 
+          requestId: order.requestId,
+          executionMode: isGasless ? 'async' : 'sync', // Gasless usually requires async landing
+          lastValidBlockHeight: order.lastValidBlockHeight,
+          provider: 'jupiter-ultra',
+          isGasless,
+          settings: {
+            yieldEnabled: creatorYieldEnabled,
+            gaslessEnabled: creatorGaslessEnabled,
+            autoConvertUsdc: creatorAutoConvertUsdc !== false
+          }
+        })
 
     } catch (ultraErr: any) {
       if (ultraErr.message !== 'NO_ULTRA_KEY') {

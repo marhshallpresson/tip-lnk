@@ -125,27 +125,38 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
     }
 
     if (paymentMethod === 'crypto') {
+        // ─── CONNECTLESS FIRST: MOBILE DEEP LINKING ───
+        if (isMobile()) {
+            console.log('📱 Mobile detected. Triggering deep link flow...');
+            const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken?.mint || 'So11111111111111111111111111111111111111112');
+            
+            // If we have a provider, we stay in-app; otherwise, we route to universal linker
+            if (hasSolanaProvider()) {
+               window.location.href = uri;
+            } else {
+               // Universal Link to Phantom Browse (or Jupiter)
+               window.location.href = getPhantomDeepLink(window.location.href);
+            }
+            return;
+        }
+
+        // ─── CONNECTLESS FIRST: DESKTOP WALLET DISCOVERY ───
         if (!publicKey) {
+            console.log('🖥️ Desktop detected. No wallet connected. Opening discovery...');
+            // In a connectless flow, we can trigger the wallet modal, 
+            // but the user wants "No Connect" -> Send. 
+            // If they aren't connected on desktop, they MUST connect or use a Blink.
+            // We'll show the wallet modal as a fallback for desktop.
             setShowWalletModal(true);
             return;
         }
+
         try {
             if (isRecurring) {
                 const subResult = await executeSubscription(viewerProfile?.displayName || 'Anonymous');
                 if (subResult?.success) {
                     onSuccess?.({ success: true, method: 'recurring', signature: subResult.signature });
                 }
-                return;
-            }
-
-            // Enhanced Crypto Flow: Handle mobile deep linking and desktop execution
-            if (isMobile() && !hasSolanaProvider()) {
-                const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken?.mint || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
-                window.location.href = uri;
-                setTimeout(() => { 
-                    const deepLink = getPhantomDeepLink(window.location.href);
-                    if (deepLink) window.location.href = deepLink;
-                }, 1000);
                 return;
             }
             

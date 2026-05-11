@@ -118,6 +118,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json(payload)
     }
 
+    const isProd = import.meta.env.MODE === 'production';
+    const creatorYieldEnabled = user.yield_enabled === true;
+
     if (req.method === 'POST') {
       const { account } = req.body as ActionPostRequest
       const amountStr = req.query.amount as string
@@ -164,6 +167,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             mintData.decimals
           )
         )
+
+        // ─── ELITE DEFI: ATOMIC KAMINO YIELD ───
+        // If creator has yield enabled, we attach the deposit instructions to the Blink payload.
+        // This is "Connectless" because we don't know the sender's balance or identity 
+        // until they interact with the Blink.
+        if (creatorYieldEnabled && splToken === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
+          try {
+            const { getKaminoDepositInstructions } = await import("../../../_lib/kamino.js");
+            const connection = await rpcManager.getConnection();
+            const kaminoIxs = await getKaminoDepositInstructions(
+              connection,
+              recipient, // Deposit into creator's Kamino account
+              Math.floor(amount * Math.pow(10, mintData.decimals)).toString(),
+              "USDC"
+            );
+            transaction.add(...kaminoIxs);
+            console.log('✅ Kamino instructions attached to Blink');
+          } catch (e: any) {
+            console.warn('⚠️ Failed to attach Kamino instructions to Blink:', e.message);
+          }
+        }
+
         transaction.recentBlockhash = blockhash
       } else {
         const { blockhash } = await rpcManager.executeWithFailover(async (conn) => {
