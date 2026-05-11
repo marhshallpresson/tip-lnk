@@ -72,6 +72,8 @@ export function AuthCircuitBreaker() {
 const dynamicSettings = {
   environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
   appName: 'Tip Stack',
+  // Configure cookie-based auth proxy
+  apiBaseUrl: 'https://tipstack.fun/api/v0', 
   walletConnectors: [SolanaWalletConnectors],
   persistWalletSession: true,
   eventsCallbacks: {
