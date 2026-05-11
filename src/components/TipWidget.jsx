@@ -18,10 +18,9 @@ import {
   ArrowRight,
   Repeat
 } from 'lucide-react';
-import QRCheckoutModal from './QRCheckoutModal';
-import { 
-  ShieldCheck, 
-...
+
+const PRESET_AMOUNTS = [1, 5, 10, 25, 50];
+
 function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () => {}, theme = 'dark', accent = '#00D265' }) {
   const { publicKey } = useWallet();
   const { profile: viewerProfile, addTip } = useApp();
@@ -31,7 +30,6 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
   const [activeIntentId, setActiveIntentId] = useState(null);
 
   const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
-
   const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
   const [isResolving, setIsResolving] = useState(false);
   const [amount, setAmount] = useState('5');
@@ -44,9 +42,6 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [fiatPaymentInstructions, setFiatPaymentInstructions] = useState(null);
   const [widgetError, setWidgetError] = useState('');
-  
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [activeIntentId, setActiveIntentId] = useState(null);
 
   const {
     tokens,
@@ -139,24 +134,20 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
             console.log('📱 Mobile detected. Triggering deep link flow...');
             const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken?.mint || 'So11111111111111111111111111111111111111112');
             
-            // If we have a provider, we stay in-app; otherwise, we route to universal linker
             if (hasSolanaProvider()) {
                window.location.href = uri;
             } else {
-               // Universal Link to Phantom Browse (or Jupiter)
                window.location.href = getPhantomDeepLink(window.location.href);
             }
             return;
         }
 
-        // ─── CONNECTLESS FIRST: DESKTOP WALLET DISCOVERY ───
+        // ─── CONNECTLESS FIRST: DESKTOP QR FALLBACK ───
         if (!publicKey) {
-            console.log('🖥️ Desktop detected. No wallet connected. Opening discovery...');
-            // In a connectless flow, we can trigger the wallet modal, 
-            // but the user wants "No Connect" -> Send. 
-            // If they aren't connected on desktop, they MUST connect or use a Blink.
-            // We'll show the wallet modal as a fallback for desktop.
-            setShowWalletModal(true);
+            console.log('🖥️ Desktop detected. No wallet connected. Opening QR checkout...');
+            const intentId = `pi_${Math.random().toString(36).substring(2, 15)}`;
+            setActiveIntentId(intentId);
+            setShowQRModal(true);
             return;
         }
 
@@ -226,10 +217,8 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
                 });
             }
             
-            // Local state to show processing while popup is open
             setTxResult({ status: 'pending', signature: data.intentId, outAmount: Number(amount) });
             
-            // Poll for status
             const pollStatus = setInterval(async () => {
                 if (checkoutPopup && checkoutPopup.closed) {
                     clearInterval(pollStatus);
@@ -369,7 +358,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
           </div>
       </div>
 
-      {/* Amount Presets - Row Based as per reference */}
+      {/* Amount Presets */}
       <div className="grid grid-cols-5 gap-2 mb-6">
           {PRESET_AMOUNTS.map(val => (
               <button
@@ -386,7 +375,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
           ))}
       </div>
 
-      {/* Custom Amount Section with Naira Conversion */}
+      {/* Custom Amount Section */}
       <div className="space-y-4 mb-8">
           <div className="relative group">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 font-bold text-lg">$</span>
@@ -420,7 +409,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
           </div>
       </div>
 
-      {/* Payment Selection & Token Picker (Crypto Only) */}
+      {/* Payment Selection & Token Picker */}
       <div className="space-y-4 mb-8">
           <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
               <button 
@@ -462,25 +451,10 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
                         </div>
                     )}
                   </div>
-
-                  {/* Recurring Toggle */}
-                  <button 
-                    onClick={() => setIsRecurring(!isRecurring)}
-                    className={`w-full h-11 rounded-xl border flex items-center justify-between px-4 transition-all ${isRecurring ? 'bg-brand-500/10 border-brand-500 text-brand-500' : 'bg-white/5 border-white/5 text-white/30 hover:text-white/50'}`}
-                  >
-                      <div className="flex items-center gap-2">
-                        <Repeat size={14} className={isRecurring ? 'animate-spin-slow' : ''} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Monthly Subscription</span>
-                      </div>
-                      <div className={`w-8 h-5 rounded-full relative transition-all ${isRecurring ? 'bg-brand-500' : 'bg-white/10'}`}>
-                          <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${isRecurring ? 'left-4' : 'left-1'}`} />
-                      </div>
-                  </button>
               </div>
           )}
       </div>
 
-      {/* Main Action Button */}
       <button 
         onClick={handlePay}
         disabled={processing || quoteLoading || !amount || Number(amount) <= 0 || !resolvedAddress || (paymentMethod === 'card' && !fiatQuote)}
@@ -489,36 +463,28 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
           {processing || quoteLoading ? (
               <Loader2 size={24} className="animate-spin" />
           ) : (
-              <>{isRecurring ? 'Subscribe' : 'Send'} ${Number(amount || 0).toFixed(2)} <ArrowRight size={20} /></>
+              <>{'Send'} ${Number(amount || 0).toFixed(2)} <ArrowRight size={20} /></>
           )}
       </button>
+
+      <QRCheckoutModal 
+        isOpen={showQRModal} 
+        onClose={() => setShowQRModal(false)}
+        intentId={activeIntentId}
+        creatorId={resolvedAddress}
+        amount={amount}
+        tokenMint={selectedToken?.mint}
+        onSuccess={(data) => {
+            setShowQRModal(false);
+            setTxResult({ status: 'confirmed', signature: data.signature, outAmount: Number(amount) });
+        }}
+      />
 
       {(widgetError || tippingError) && (
           <div className="text-center text-red-500 text-[10px] mt-4 font-bold bg-red-500/5 p-2 rounded-lg border border-red-500/10">
             {widgetError || tippingError}
           </div>
       )}
-
-      {/* Footer Credentials */}
-      <div className="flex items-center justify-center gap-6 mt-6">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/20">
-              <ShieldCheck size={12} className="text-emerald-500/50" /> Private
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/20">
-              <Zap size={12} className="text-brand-500/50" /> Instant
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/20">
-              <CheckCircle2 size={12} className="text-brand-500/50" /> 0% fees
-          </div>
-      </div>
     </div>
   );
-}
-
-export default function TipWidget(props) {
-    return (
-        <ErrorBoundary>
-            <TipWidgetContent {...props} />
-        </ErrorBoundary>
-    );
 }
