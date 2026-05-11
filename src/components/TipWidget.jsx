@@ -18,15 +18,20 @@ import {
   ArrowRight,
   Repeat
 } from 'lucide-react';
-
-const PRESET_AMOUNTS = [1, 5, 10, 25, 50];
-
+import QRCheckoutModal from './QRCheckoutModal';
+import { 
+  ShieldCheck, 
+...
 function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () => {}, theme = 'dark', accent = '#00D265' }) {
   const { publicKey } = useWallet();
   const { profile: viewerProfile, addTip } = useApp();
   const { setShowWalletModal } = useAuth();
 
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [activeIntentId, setActiveIntentId] = useState(null);
+
   const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
+
   const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
   const [isResolving, setIsResolving] = useState(false);
   const [amount, setAmount] = useState('5');
