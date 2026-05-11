@@ -187,8 +187,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // ─── ELITE IDENTITY SYNC: SOCIAL HANDLES ───
-      const twitterHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.id).includes('twitter'))?.oauthUsername as string;
-      const discordHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.id).includes('discord'))?.oauthUsername as string;
+      const twitterHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.oauthProvider) === 'twitter')?.oauthUsername as string;
+      const discordHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.oauthProvider) === 'discord')?.oauthUsername as string;
 
       if (!targetUser) {
         console.log(`👤 Dynamic Auth: Creating new user record for ${email}`);

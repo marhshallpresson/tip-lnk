@@ -149,11 +149,12 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <DynamicContextProvider
       settings={dynamicSettings}
-      loadingTimeout={30000}
-      recoveryTimeout={20000}
+      loadingTimeout={3000000}
+      recoveryTimeout={20000000}
+      persistWalletSession={true}
     >
       <AuthCircuitBreaker />
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <BrowserRouter basename={import.meta.env.VITE_API_BASE_URL}>
         <App />
       </BrowserRouter>
     </DynamicContextProvider>

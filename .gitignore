@@ -25,3 +25,9 @@ dynamic-verify-recovered.ts
 # Ignore all HTML files except index.html
 *.html
 !index.html
+.env.example
+tests-e2e
+test-results/
+playwright-report/
+playwright.config.js
+search_*

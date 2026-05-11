@@ -44,7 +44,7 @@ export default function WalletConnect({ onConnected }) {
         </div>
         <div className="text-center">
             <h3 className="font-bold text-white uppercase tracking-tighter italic">Authenticated</h3>
-            <p className="text-surface-400 text-[10px] font-black uppercase tracking-widest mt-1">Ready for TipStack Operations</p>
+            <p className="text-surface-400 text-[10px] font-black uppercase tracking-widest mt-1">Ready for TipStack</p>
         </div>
       </div>
     );
