@@ -36,7 +36,7 @@ function ScrollToTop() {
 }
 
 function AppContent() {
-  const { role, onboardingStep, update } = useApp();
+  const { role, onboardingStep, update, updateProfile } = useApp();
   const { user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
   const { user: dynamicUser, setShowAuthFlow, sdkHasLoaded } = useDynamicContext();
   const navigate = useNavigate();
