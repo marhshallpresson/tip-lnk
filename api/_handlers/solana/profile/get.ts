@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
-import { db } from "../../../_lib/db.js"
+import { db, initSchema } from "../../../_lib/db.js"
 import { getSolPrice } from "../../../_lib/price.js"
 import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.js"
 import { hashAddress } from "../../../_lib/crypto.js"
@@ -26,7 +26,12 @@ const resolveBooleanSetting = (columnValue: any, legacyValue: any, fallback = fa
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  let wallet = req.query.wallet as string
+  // Ensure database schema is ready (prevents race conditions with migrations)
+  await initSchema().catch(err => console.error('Database Init Warning:', err.message));
+
+  let walletRaw = req.query.wallet;
+  let wallet = Array.isArray(walletRaw) ? walletRaw[0] : (walletRaw as string);
+
   if (!wallet) {
     const parts = req.url?.split('?')[0].split('/').filter(Boolean) || []
     wallet = parts[parts.length - 1]
@@ -49,9 +54,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const cacheKey = `profile:${wallet}`;
     if (redis) {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-            return res.json(cached);
+        try {
+            const cached = await redis.get(cacheKey);
+            if (cached) {
+                // ELITE HARDENING: Ensure we return parsed JSON object, not string literal
+                const data = typeof cached === 'string' ? JSON.parse(cached) : cached;
+                return res.json(data);
+            }
+        } catch (cacheErr) {
+            console.warn('Redis Cache Read Error:', cacheErr);
         }
     }
 
@@ -70,9 +81,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!user) {
+        // SECURITY: Only hash if wallet looks like an address to avoid overhead/errors on strings
+        const addressForHash = (wallet.length >= 32 && wallet.length <= 44) ? hashAddress(wallet) : 'invalid_hash';
         user = await db('user')
             .where({ walletAddress: wallet })
-            .orWhere({ walletAddressHash: hashAddress(wallet) })
+            .orWhere({ walletAddressHash: addressForHash })
             .first()
     }
 
@@ -94,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     image: `https://tipstack.fun/api/og/${wallet}`
                 }
             };
-            if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 });
+            if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 }).catch(() => null);
             return res.json(responseData)
         }
     }
@@ -123,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let rawData: any = {}
     try {
-      rawData = JSON.parse(user.profileData || '{}')
+      rawData = typeof user.profileData === 'string' ? JSON.parse(user.profileData || '{}') : (user.profileData || {})
     } catch {
       rawData = {}
     }
@@ -155,7 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         card: 'summary_large_image'
     }
 
-    const responseData = { success: true, profile: { ...profile, id: user.id }, metadata };
+    const responseData: any = { success: true, profile: { ...profile, id: user.id }, metadata };
     
     // Use recipient_id or legacy address for history
     const tips = await db('tips')
@@ -165,23 +178,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .limit(20)
     
     const solPrice = await getSolPrice().catch(() => 150)
-    responseData.profile.tipsReceived = tips.map(tip => ({
+    responseData.profile.tipsReceived = (tips || []).map((tip: any) => ({
       signature: tip.signature,
       timestamp: tip.timestamp,
-      sender: `${tip.sender.slice(0, 4)}...`, // Masked
-      amount: Number(tip.amount),
-      tokenSymbol: tip.tokenSymbol,
-      message: tip.message,
-      amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount) : Number(tip.amount) * solPrice
+      sender: tip.sender ? `${String(tip.sender).slice(0, 4)}...` : 'Unknown', // Masked & Hardened
+      amount: Number(tip.amount || 0),
+      tokenSymbol: tip.tokenSymbol || 'SOL',
+      message: tip.message || '',
+      amountUSDC: tip.tokenSymbol === 'USDC' ? Number(tip.amount || 0) : Number(tip.amount || 0) * solPrice
     }))
 
     if (redis) {
-        await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 });
+        await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 }).catch(() => null);
     }
 
     return res.json(responseData)
   } catch (err: any) {
     console.error('Profile Fetch Error:', err.message)
-    return res.status(500).json({ success: false, error: 'Failed to fetch or provision profile' })
+    return res.status(500).json({ success: false, error: 'Failed to fetch or provision profile', details: err.message })
   }
 }

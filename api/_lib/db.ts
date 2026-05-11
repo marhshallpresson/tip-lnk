@@ -159,7 +159,7 @@ async function initSchemaInternal() {
         table.string('googleSub');
         table.string('twitterHandle').unique();
         table.string('discordHandle').unique();
-        table.string('walletAddress').unique(); // Deprecated: move to encrypted
+        table.string('walletAddress').unique(); 
         table.string('encryptedWalletAddress');
         table.string('walletAddressHash').unique().index();
         table.string('solDomain').unique();
@@ -173,11 +173,15 @@ async function initSchemaInternal() {
         table.string('location');
         table.dateTime('emailVerifiedAt');
         table.text('profileData');
+        table.text('whitelisted_origins'); 
+        table.decimal('totalTipsUSDC', 20, 8).defaultTo(0);
         table.dateTime('lastLoginAt');
         table.dateTime('deletedAt');
         table.timestamps(true, true);
       });
     } else {
+        // ... (rest of user migrations)
+
         const hasSolDomain = await db.schema.hasColumn('user', 'solDomain');
         if (!hasSolDomain) {
             await db.schema.table('user', (table) => {
@@ -277,10 +281,12 @@ async function initSchemaInternal() {
         table.dateTime('timestamp').notNullable();
         table.string('sender').notNullable().index();
         table.string('sender_id').references('id').inTable('user').onDelete('SET NULL');
+        table.string('sender_hash').index();
         table.string('sender_name');
         table.text('message');
         table.string('recipient').notNullable().index();
         table.string('recipient_id').references('id').inTable('user').onDelete('SET NULL');
+        table.string('recipient_hash').index();
         table.decimal('amount', 20, 8).notNullable();
         table.decimal('fee_amount', 20, 8).defaultTo(0);
         table.string('treasury_address');
@@ -293,6 +299,7 @@ async function initSchemaInternal() {
       });
       await db.raw('CREATE INDEX IF NOT EXISTS idx_tips_timestamp ON "tips" (timestamp DESC);');
     }
+
 
     if (await db.schema.hasTable('tips')) {
       const hasTipMetadata = await db.schema.hasColumn('tips', 'metadata');

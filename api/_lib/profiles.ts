@@ -1,5 +1,6 @@
-import { db } from "./db.js"
+import { db, initSchema } from "./db.js"
 import { resolveSnsDomain } from "./helius.js"
+import { hashAddress } from "./crypto.js"
 
 export interface ProfileMetadata {
   title: string
@@ -16,6 +17,9 @@ export interface ProfileData {
 
 export async function fetchProfileByWalletOrHandle(wallet: string): Promise<ProfileData | null> {
   try {
+    // Ensure database schema is ready
+    await initSchema().catch(() => null);
+
     let resolvedId = wallet
     let isInternalId = false
 
@@ -34,6 +38,11 @@ export async function fetchProfileByWalletOrHandle(wallet: string): Promise<Prof
 
     if (!user) {
       user = await db('user').where({ walletAddress: wallet }).first()
+    }
+
+    if (!user) {
+      const addressForHash = (wallet.length >= 32 && wallet.length <= 44) ? hashAddress(wallet) : 'invalid_hash';
+      user = await db('user').where({ walletAddressHash: addressForHash }).first()
     }
 
     if (!user && wallet.includes('.sol')) {
@@ -68,7 +77,13 @@ export async function fetchProfileByWalletOrHandle(wallet: string): Promise<Prof
 
     if (!user) return null
 
-    const rawData = JSON.parse(user.profileData || '{}')
+    let rawData: any = {}
+    try {
+      rawData = typeof user.profileData === 'string' ? JSON.parse(user.profileData || '{}') : (user.profileData || {})
+    } catch {
+      rawData = {}
+    }
+    
     const profile = rawData.profile ? { ...rawData.profile } : { ...rawData }
     
     profile.walletAddress = user.walletAddress
@@ -96,3 +111,4 @@ export async function fetchProfileByWalletOrHandle(wallet: string): Promise<Prof
     return null
   }
 }
+

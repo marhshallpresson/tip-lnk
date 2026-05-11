@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "node build-vite.mjs",
     "preview": "vite preview",
-    "migrate": "node scripts/apply-privacy-migration.cjs"
+    "migrate": "tsx scripts/migrate-domains.ts"
   },
   "dependencies": {
     "@bonfida/spl-name-service": "2.5.4",

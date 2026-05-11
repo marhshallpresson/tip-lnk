@@ -119,7 +119,7 @@ createRoot(document.getElementById('root')).render(
       persistWalletSession={true}
     >
       <AuthCircuitBreaker />
-      <BrowserRouter basename={import.meta.env.VITE_API_BASE_URL}>
+      <BrowserRouter>
         <App />
       </BrowserRouter>
     </DynamicContextProvider>
