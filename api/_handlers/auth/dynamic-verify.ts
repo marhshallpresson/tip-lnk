@@ -212,6 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       console.log(`👤 Dynamic Auth: Identified existing user ${targetUser.id} for ${email}`);
+      console.log(`🔍 Existing Profile Data for ${targetUser.id}:`, targetUser.profileData);
 
       const existingProfile = parseProfileData(targetUser.profileData)
       const sourceProfile = walletUser && walletUser.id !== targetUser.id ? parseProfileData(walletUser.profileData) : {}
@@ -232,10 +233,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updated_at: now,
       }
 
-      // If they were found, we ensure their onboarding is marked as complete 
-      // if they have essential profile data, or preserve their existing status.
-      // Elite Fix: Don't force them back to onboarding if they already had a name.
-      if (targetUser.name || targetUser.solDomain) {
+      // IDENTITY HEURISTICS: 
+      // Automatically finalize onboarding for existing users with sufficient identity data.
+      if (targetUser.name || targetUser.solDomain || targetUser.onboardingComplete) {
+          console.log(`✅ Identity Heuristic: Marking onboarding as complete for ${targetUser.id} due to existing identity data.`);
           updates.onboardingComplete = true;
       }
 
