@@ -5,6 +5,19 @@ window.global = window;
 // ─── ELITE SECURITY: EARLY-BOOT SESSION PURGE ───
 // Force clear dead tokens BEFORE SDK initializes to prevent initialization loops.
 const envId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID;
+const purgeDynamicSession = (reason) => {
+    if (!envId) return false;
+    let purged = false;
+    Object.keys(localStorage).forEach(k => {
+        if ((k.includes('session') || k.includes('dynamic')) && k.includes(envId)) {
+            localStorage.removeItem(k);
+            purged = true;
+        }
+    });
+    if (purged) console.log(`[Auth] Purged dynamic session keys (${reason})`);
+    return purged;
+};
+
 if (envId) {
     const keys = Object.keys(localStorage);
     keys.forEach(k => {
@@ -24,6 +37,36 @@ if (envId) {
             }
         }
     });
+}
+
+// Server-rejected session recovery: if Dynamic's /refresh returns 401, the
+// local session is dead even if its clock-side expiration hasn't passed.
+// Purge and reload exactly once so the SDK boots clean instead of looping
+// into /revoke and WaaS wallet creation (both of which also 401).
+const RELOAD_FLAG = 'tipstack_auth_recovered';
+const originalFetch = window.fetch.bind(window);
+window.fetch = async (input, init) => {
+    const response = await originalFetch(input, init);
+    try {
+        const url = typeof input === 'string' ? input : (input?.url || '');
+        if (
+            response.status === 401 &&
+            url.includes('dynamicauth.com') &&
+            url.includes('/refresh') &&
+            !sessionStorage.getItem(RELOAD_FLAG)
+        ) {
+            sessionStorage.setItem(RELOAD_FLAG, '1');
+            purgeDynamicSession('refresh-401');
+            console.log('[Auth] Reloading to recover from rejected session');
+            window.location.reload();
+        }
+    } catch {}
+    return response;
+};
+if (sessionStorage.getItem(RELOAD_FLAG)) {
+    // Clear the guard a tick after load so future genuine 401s can re-trigger
+    // recovery in a later session.
+    setTimeout(() => sessionStorage.removeItem(RELOAD_FLAG), 5000);
 }
 
 import { StrictMode, useEffect, useRef } from 'react';
