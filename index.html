@@ -31,20 +31,42 @@
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "FinancialService",
-      "name": "Tip Stack",
-      "description": "Creator Reward Platformproviding non-custodial tipping, instant global settlement, and DeFi yield for digital creators.",
-      "url": "https://tipstack.fun/",
-      "logo": "https://tipstack.fun/favicon.svg",
-      "sameAs": [
-        "https://x.com/usetiplink",
-        "https://github.com/marshallpresson/tip-lnk"
-      ],
-      "potentialAction": {
-        "@type": "ReserveAction",
-        "target": "https://tipstack.fun/",
-        "name": "Claim Creator Handle"
-      }
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Tip Stack",
+          "applicationCategory": "FinancialApplication",
+          "operatingSystem": "Web",
+          "description": "Creator Reward Platform providing non-custodial tipping, instant global settlement, and DeFi yield for digital creators.",
+          "url": "https://tipstack.fun/",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I accept USDC payments on Solana?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "TipStack allows you to accept instant USDC payments on Solana by linking your wallet, generating a unique tipping link, and receiving settlements directly into your non-custodial wallet with automated yield."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is TipStack non-custodial?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. TipStack is a non-custodial engine, meaning your assets are settled directly to your own wallet without third-party holding."
+              }
+            }
+          ]
+        }
+      ]
     }
   </script>
 
