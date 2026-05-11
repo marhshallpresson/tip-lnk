@@ -357,7 +357,8 @@ async function initSchemaInternal() {
       { id: '00000000-0000-4000-8000-000000000002', name: 'admin' },
       { id: '00000000-0000-4000-8000-000000000003', name: 'superadmin' },
       { id: '00000000-0000-4000-8000-000000000004', name: 'support' },
-      { id: '00000000-0000-4000-8000-000000000005', name: 'compliance' }
+      { id: '00000000-0000-4000-8000-000000000005', name: 'compliance' },
+      { id: '00000000-0000-4000-8000-000000000006', name: 'creator' }
     ];
 
     for (const spec of roleSpecs) {
