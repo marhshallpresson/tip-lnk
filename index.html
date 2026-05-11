@@ -3,6 +3,15 @@
 
 <head>
   <meta charset="UTF-8" />
+  <script>
+    if (!window.navigator.wallets) {
+      Object.defineProperty(window.navigator, 'wallets', {
+        value: [],
+        writable: true,
+        configurable: true
+      });
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Primary Meta Tags -->
