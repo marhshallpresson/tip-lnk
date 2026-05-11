@@ -116,8 +116,7 @@ const dynamicSettings = {
   environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
   appName: 'Tip Stack',
   walletConnectors: [SolanaWalletConnectors],
-  persistWalletSession: true,
-  eventsCallbacks: {
+  persistWalletSession: true,  eventsCallbacks: {
     onAuthSuccess: ({ authToken, user, primaryWallet }) => {
       // Only fires when scope is "authenticated" and token is real
       // Safe to trigger post-auth logic here
