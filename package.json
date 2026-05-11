@@ -10,7 +10,7 @@
     "migrate": "tsx scripts/migrate-domains.ts"
   },
   "dependencies": {
-    "@bonfida/spl-name-service": "2.5.4",
+    "@bonfida/spl-name-service": "3.0.21",
     "@coral-xyz/anchor": "^0.32.1",
     "@dynamic-labs/ethereum": "^4.80.0",
     "@dynamic-labs/sdk-react-core": "^4.80.0",
@@ -23,7 +23,7 @@
     "@solana/spl-token": "^0.4.14",
     "@solana/wallet-adapter-react": "0.15.39",
     "@solana/wallet-adapter-react-ui": "0.9.39",
-    "@solana/wallet-adapter-wallets": "0.19.33",
+    "@solana/wallet-adapter-wallets": "0.19.38",
     "@solana/web3.js": "1.98.4",
     "@supabase/supabase-js": "2.103.3",
     "@upstash/ratelimit": "^2.0.8",
