@@ -15,13 +15,14 @@ export const getPhantomDeepLink = (url) => {
 };
 
 export const getSolflareDeepLink = (url) => {
+  const ref = 'https://tipstack.fun';
   try {
     const target = new URL(url);
     target.searchParams.set('autoConnect', 'true');
-    return `https://solflare.com/ul/v1/browse/${encodeURIComponent(target.toString())}`;
+    return `https://solflare.com/ul/v1/browse?url=${encodeURIComponent(target.toString())}&ref=${encodeURIComponent(ref)}`;
   } catch (e) {
     const cleanUrl = url.split('#')[0].split('?')[0];
-    return `https://solflare.com/ul/v1/browse/${encodeURIComponent(cleanUrl)}`;
+    return `https://solflare.com/ul/v1/browse?url=${encodeURIComponent(cleanUrl)}&ref=${encodeURIComponent(ref)}`;
   }
 };
 
