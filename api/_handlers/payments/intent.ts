@@ -32,16 +32,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sourceWalletAddress
     } = req.body
 
-    // ─── ELITE DIAGNOSTICS: PAYLOAD VALIDATION ───
-    if (!sourceWalletAddress || !inputTokenMint) {
-      console.error('🛡️ Payment Intent Fault: Missing wallet or token', {
-        body: req.body,
-        headers: req.headers
-      });
-      return res.status(400).json({ 
-        error: 'Source wallet and input token required for crypto payments',
-        details: { receivedSource: !!sourceWalletAddress, receivedMint: !!inputTokenMint }
+    if (!creatorId || !amount) {
+      return res.status(400).json({ error: 'Creator ID and amount required' })
+    }
+
+    const normalizedAmount = Number(amount)
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number' })
+    }
+
+    // Resolve creator: ID, Handle, or Domain (Zero-Knowledge reference)
+    const creator = await db('user')
+      .where({ id: creatorId.replace('auth_', '') })
+      .orWhere({ twitterHandle: creatorId.replace(/^@/, '') })
+      .orWhere({ discordHandle: creatorId.replace(/^@/, '') })
+      .orWhere({ solDomain: creatorId })
+      .orWhere({ walletAddress: creatorId }) // Legacy support
+      .first()
+
+    if (!creator) {
+      return res.status(404).json({ 
+        error: 'Creator not found',
+        actionMessage: 'Please check the creator handle or wallet address and try again.',
+        retryable: true
       })
+    }
+
+    // Decrypt the cloaked payout address with better error handling
+    let payoutAddress = creator.walletAddress;
+    if (!payoutAddress && creator.encryptedWalletAddress) {
+        try {
+            payoutAddress = decrypt(creator.encryptedWalletAddress);
+        } catch (e) {
+            console.error('Decryption error:', e);
+            return res.status(500).json({ 
+              error: 'Failed to retrieve creator payout details',
+              actionMessage: 'The creator account may need to be re-configured. Please contact support.',
+              retryable: false
+            })
+        }
+    }
+
+    if (!payoutAddress) {
+      return res.status(404).json({ 
+        error: 'Creator missing payout address',
+        actionMessage: 'This creator has not set up their payout wallet yet. Please ask them to complete their profile setup.',
+        retryable: false,
+        supportUrl: 'https://tipstack.fun/docs/creators/setup'
+      })
+    }
+
+    const intentId = `pi_${randomUUID().replace(/-/g, '')}`
+
+    if (!sourceWalletAddress || !inputTokenMint) {
+      return res.status(400).json({ error: 'Source wallet and input token required for crypto payments' })
     }
 
     try {
