@@ -1,55 +1,29 @@
 import { Buffer } from 'buffer';
+window.Buffer = Buffer;
+window.global = window;
 
-// ─── ELITE SECURITY: GLOBAL POLYFILLS ───
-// Must be executed BEFORE any other library initialization.
-if (typeof window !== 'undefined') {
-  // 1. Buffer Stability
-  if (!window.Buffer) {
-    window.Buffer = Buffer;
-  }
-
-  // 2. globalThis Shim
-  if (typeof window['global'] === 'undefined') {
-    window['global'] = window;
-  }
-
-  // 3. Solana Wallet Standard (Dynamic SDK Compatibility)
-  try {
-    const nav = window.navigator;
-    if (nav) {
-      // ─── ELITE SECURITY: RESILIENT PROPERTY DEFINITION ───
-      // We only attempt to redefine 'wallets' if we can prove it's configurable or missing.
-      const descriptor = Object.getOwnPropertyDescriptor(nav, 'wallets');
-      
-      if (!descriptor || descriptor.configurable) {
-        if (nav['wallets'] && !Array.isArray(nav['wallets'])) {
-            console.warn('🛡️ Auth Stability: Wrapping navigator.wallets for standard compatibility.');
-            const originalWallets = nav['wallets'];
-            const arrayProxy = Object.assign([], {
-                on: typeof originalWallets.on === 'function' ? originalWallets.on.bind(originalWallets) : undefined,
-                get: typeof originalWallets.get === 'function' ? originalWallets.get.bind(originalWallets) : undefined,
-                register: typeof originalWallets.register === 'function' ? originalWallets.register.bind(originalWallets) : undefined,
-            });
-            
-            Object.defineProperty(nav, 'wallets', {
-                value: arrayProxy,
-                configurable: true,
-                enumerable: true,
-                writable: true
-            });
-        } else if (typeof nav['wallets'] === 'undefined') {
-            Object.defineProperty(nav, 'wallets', {
-                value: [],
-                configurable: true,
-                enumerable: true,
-                writable: true
-            });
+// ─── ELITE SECURITY: EARLY-BOOT SESSION PURGE ───
+// Force clear dead tokens BEFORE SDK initializes to prevent initialization loops.
+const envId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID;
+if (envId) {
+    const keys = Object.keys(localStorage);
+    keys.forEach(k => {
+        if ((k.includes('session') || k.includes('dynamic')) && k.includes(envId)) {
+            try {
+                const item = localStorage.getItem(k);
+                if (item) {
+                    const session = JSON.parse(item);
+                    const expiration = session?.value?.sessionExpiration;
+                    if (!session?.value?.token || (expiration && expiration < Date.now())) {
+                        localStorage.removeItem(k);
+                        console.log(`[Auth] Purged stale session: ${k}`);
+                    }
+                }
+            } catch(e) {
+                localStorage.removeItem(k);
+            }
         }
-      }
-    }
-  } catch (e) {
-    console.debug('Auth polyfills skipped:', e);
-  }
+    });
 }
 
 import { StrictMode, useEffect, useRef } from 'react';
