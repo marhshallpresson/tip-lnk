@@ -65,6 +65,21 @@ const dynamicSettings = {
   environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
   appName: 'Tip Stack',
   walletConnectors: [SolanaWalletConnectors],
+  // ─── ELITE SECURITY: DYNAMIC SESSION RE-HYDRATION ───
+  // Forces the SDK to re-hydrate the wallet session on reload and handle expired tokens gracefully
+  // instead of silently failing and logging 401 Unauthorized errors in the console.
+  persistWalletSession: true,
+  eventsCallbacks: {
+    onSessionReject: () => {
+      console.warn('🛡️ Dynamic Session rejected/expired. Clearing local stale state.');
+      // When Dynamic fails to refresh its own session, we should clear our local token too
+      // so the user is prompted for a fresh login.
+      localStorage.removeItem('tipstack_auth_token');
+    },
+    onAuthSuccess: () => {
+      console.log('🛡️ Dynamic Auth successful.');
+    }
+  }
 };
 
 createRoot(document.getElementById('root')).render(
