@@ -488,3 +488,11 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
     </div>
   );
 }
+
+export default function TipWidget(props) {
+  return (
+    <ErrorBoundary>
+      <TipWidgetContent {...props} />
+    </ErrorBoundary>
+  );
+}
