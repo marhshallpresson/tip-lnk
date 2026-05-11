@@ -38,14 +38,14 @@ function ScrollToTop() {
 function AppContent() {
   const { role, onboardingStep, update } = useApp();
   const { user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
-  const { user: dynamicUser, setShowAuthFlow } = useDynamicContext();
+  const { user: dynamicUser, setShowAuthFlow, sdkHasLoaded } = useDynamicContext();
   const navigate = useNavigate();
   const location = useLocation();
   const dynamicLoginInFlightRef = useRef(false);
   const processedDynamicTokenRef = useRef(null);
 
   useEffect(() => {
-    if (!dynamicUser || authUser || authLoading || dynamicLoginInFlightRef.current) return;
+    if (!sdkHasLoaded || !dynamicUser || authUser || authLoading || dynamicLoginInFlightRef.current) return;
 
     const dynamicJwt = getAuthToken();
     if (!dynamicJwt || processedDynamicTokenRef.current === dynamicJwt) return;
@@ -98,10 +98,10 @@ function AppContent() {
   }, [onboardingStep, update]);
 
   const finishOnboarding = useCallback(() => {
-    update({ onboardingComplete: true });
+    updateProfile({ onboardingComplete: true });
     localStorage.setItem('onboarding_just_finished', 'true');
     navigate('/dashboard');
-  }, [update, navigate]);
+  }, [updateProfile, navigate]);
 
   return (
     <div className="min-h-screen bg-surface-950 text-white flex flex-col relative overflow-hidden">

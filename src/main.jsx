@@ -52,44 +52,79 @@ if (typeof window !== 'undefined') {
   }
 }
 
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
+import { DynamicContextProvider, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { SolanaWalletConnectors } from '@dynamic-labs/solana';
 import App from './App';
 import './index.css';
 import '@solana/wallet-adapter-react-ui/styles.css';
 
+export function AuthCircuitBreaker() {
+  const { sdkHasLoaded } = useDynamicContext();
+  const hasChecked = useRef(false);
+
+  useEffect(() => {
+    if (!sdkHasLoaded || hasChecked.current) return;
+    hasChecked.current = true;
+
+    const envId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID;
+    const sessionKey = Object.keys(localStorage).find(k => 
+      k.includes('session') && k.includes(envId)
+    );
+    
+    if (sessionKey) {
+      try {
+        const session = JSON.parse(localStorage.getItem(sessionKey) || '{}');
+        const token = session?.value?.token;
+        const expiration = session?.value?.sessionExpiration;
+        const now = Date.now();
+
+        if (!token || (expiration && expiration < now)) {
+          // Dead session — clear it so SDK stops retrying refresh
+          localStorage.removeItem(sessionKey);
+          console.log('[Auth] Cleared expired/empty session to stop refresh loop');
+        }
+      } catch (e) {
+        console.error('[Auth] Failed to parse session:', e);
+      }
+    }
+  }, [sdkHasLoaded]);
+
+  return null;
+}
+
 const dynamicSettings = {
   environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
   appName: 'Tip Stack',
   walletConnectors: [SolanaWalletConnectors],
-  // ─── ELITE SECURITY: DYNAMIC SESSION RE-HYDRATION ───
-  // Forces the SDK to re-hydrate the wallet session on reload and handle expired tokens gracefully
-  // instead of silently failing and logging 401 Unauthorized errors in the console.
   persistWalletSession: true,
   eventsCallbacks: {
-    onSessionReject: () => {
-      console.warn('🛡️ Dynamic Session rejected. Nuking local state to break loop.');
-      localStorage.removeItem('tipstack_auth_token');
-      localStorage.removeItem('dynamic_authentication_token');
-      localStorage.removeItem('dynamic_store');
-      localStorage.removeItem('dynamic_min_token');
-      localStorage.removeItem('dynamic_environment_id');
-      window.location.reload();
+    onAuthSuccess: ({ authToken, user, primaryWallet }) => {
+      // Only fires when scope is "authenticated" and token is real
+      // Safe to trigger post-auth logic here
+      console.log('[Auth] Full auth complete:', user?.id);
     },
-    onAuthFailure: (error) => {
-      console.error('🛡️ Dynamic Auth failed:', error);
-      localStorage.removeItem('dynamic_authentication_token');
-      localStorage.removeItem('dynamic_store');
+    onAuthFlowClose: () => {
+      // User closed modal mid-flow (still in userDataForm scope)
+      // Do NOT make any API calls here
+      console.log('[Auth] Flow closed before completion');
     },
     onLogout: () => {
-      console.log('🛡️ Dynamic Session Terminated.');
+      // Clear any app-level auth state
       localStorage.removeItem('tipstack_auth_token');
     },
-    onAuthSuccess: () => {
-      console.log('🛡️ Dynamic Auth successful.');
+    onSessionConnect: ({ authToken }) => {
+      console.log('[Auth] Session restored successfully');
+    },
+    onSessionReject: () => {
+      // Stale/expired session — clear it and let user re-auth
+      console.log('[Auth] Session rejected, clearing state');
+      const keys = Object.keys(localStorage).filter(k => 
+        k.includes('dynamic') && k.includes('session')
+      );
+      keys.forEach(k => localStorage.removeItem(k));
     }
   }
 };
@@ -101,6 +136,7 @@ createRoot(document.getElementById('root')).render(
       loadingTimeout={30000}
       recoveryTimeout={20000}
     >
+      <AuthCircuitBreaker />
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <App />
       </BrowserRouter>
