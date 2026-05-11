@@ -223,12 +223,21 @@ export function useTipping(creatorAddress) {
         
         console.log('🔗 API Base URL:', API_BASE_URL);
         
+        // ─── ELITE IDENTITY SYNC: WALLET ADDRESS RESOLUTION ───
+        // Fall back to Dynamic primaryWallet if standard wallet-adapter is disconnected
+        const walletAddress = publicKey?.toBase58() || primaryWallet?.address;
+
+        if (!walletAddress) {
+          console.warn('⚠️ Payment Intent Fault: No wallet address available for routing.');
+          return;
+        }
+
         const payload = {
           creatorId: creatorAddress,
           inputTokenMint: token.mint,
           amount: toLamports(parseFloat(tokenAmount), token.decimals).toString(),
           paymentMethod: 'external_wallet',
-          sourceWalletAddress: publicKey?.toBase58() || '',
+          sourceWalletAddress: walletAddress,
           memo: note
         };
 
