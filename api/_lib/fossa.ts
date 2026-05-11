@@ -134,8 +134,13 @@ export async function createCheckoutSession(amount: number, creatorId: string, m
       walletName: `TipStack ${walletReference}`,
       walletReference,
     }, idempotencyKey);
-  } catch (error) {
-    logger.error('Fossa Pay: Error creating checkout session', { error });
+  } catch (error: any) {
+    logger.error('Fossa Pay: Error creating checkout session', { 
+        error: error.message, 
+        base: FOSSA_BASE_URL, 
+        keyPrefix: FOSSA_API_KEY?.slice(0, 4) + '****',
+        response: error.response?.data
+    });
     throw error;
   }
 }
