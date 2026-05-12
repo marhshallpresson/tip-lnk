@@ -39,8 +39,8 @@ export type SessionCreateResult = {
 }
 
 export const getCookieOptions = (req: Request) => {
-  const isLocalhost = Boolean(req.hostname === 'localhost')
-  return {
+  const isLocalhost = Boolean(req.hostname === 'localhost' || req.hostname === '127.0.0.1')
+  const options: any = {
     httpOnly: true,
     secure: !isLocalhost,
     sameSite: 'lax' as any,
@@ -48,6 +48,10 @@ export const getCookieOptions = (req: Request) => {
     signed: true,
     maxAge: SESSION_DURATION_MS,
   }
+  if (!isLocalhost) {
+    options.domain = '.tipstack.com'
+  }
+  return options
 }
 
 export const createSession = async (
@@ -117,60 +121,24 @@ export const getUserRoles = async (userId: string) => {
 }
 
 export const getSessionUser = async (req: Request): Promise<SessionUser | null> => {
-  const sids: (string | undefined)[] = []
-  
-  sids.push((req.signedCookies || {})[SESSION_COOKIE_NAME])
-  
-  sids.push((req.cookies || {})[SESSION_COOKIE_NAME])
-  
-  const cookieHeader = req.headers.cookie || ''
-  if (cookieHeader) {
-    const cookies = cookieHeader.split(';').reduce((acc: any, curr) => {
-      const parts = curr.trim().split('=')
-      const key = parts[0]
-      const value = parts.slice(1).join('=')
-      if (key && value) {
-        try {
-          acc[key] = decodeURIComponent(value)
-        } catch (e) {
-          acc[key] = value
-        }
-      }
-      return acc
-    }, {})
-    sids.push(cookies[SESSION_COOKIE_NAME])
-  }
+  const validateSession = async (sid: string | undefined): Promise<SessionUser | null> => {
+    if (!sid || typeof sid !== 'string' || sid.length < 20) return null
+    
+    // SID Cleaning
+    let cleanSid = sid;
+    if (cleanSid.startsWith('s:')) {
+      cleanSid = cleanSid.slice(2).split('.')[0]
+    }
 
-  const bearer = extractBearerToken(req)
-  if (bearer) {
     try {
-      const payload = await verifySessionToken(bearer)
-      if (payload?.sid) sids.push(payload.sid)
-    } catch (e) {}
-  }
-
-  const uniqueSids = [...new Set(
-    sids
-      .filter(s => typeof s === 'string' && s.length > 20)
-      .map(s => {
-        const str = s as string;
-        if (str.startsWith('s:')) {
-          return str.slice(2).split('.')[0]
-        }
-        return str
-      })
-  )]
-
-  for (const sid of uniqueSids) {
-    try {
-      const session = await db('session').where({ id: sid }).first()
+      const session = await db('session').where({ id: cleanSid }).first()
       if (!session || session.revokedAt || new Date(session.expiresAt).getTime() < Date.now()) {
-          continue;
+          return null;
       }
 
       const user = await db('user').where({ id: session.userId }).first()
       if (!user || user.deletedAt) {
-          continue;
+          return null;
       }
 
       const roles = await getUserRoles(user.id)
@@ -199,15 +167,56 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
           emailVerifiedAt: user.emailVerifiedAt,
           onboardingComplete: Boolean(user.onboardingComplete),
           onboarding_complete: Boolean(user.onboardingComplete),
-          sessionId: sid,
+          sessionId: cleanSid,
           walletAddress,
           encryptedWalletAddress: user.encryptedWalletAddress,
           walletAddressHash: user.walletAddressHash,
           profileData
       }
     } catch (e) {
-      console.error('🛡️ Auth: session SID lookup failed:', sid, e);
+      console.error('🛡️ Auth: session SID lookup failed:', cleanSid, e);
+      return null
     }
+  }
+
+  // Tier 1: Bearer Token
+  const bearer = extractBearerToken(req)
+  if (bearer) {
+    try {
+      const payload = await verifySessionToken(bearer)
+      const user = await validateSession(payload?.sid)
+      if (user) return user
+    } catch (e) {}
+  }
+
+  // Tier 2: Signed Cookie
+  const signedSid = (req.signedCookies || {})[SESSION_COOKIE_NAME]
+  const signedUser = await validateSession(signedSid)
+  if (signedUser) return signedUser
+
+  // Tier 3: Plain Cookie
+  const plainSid = (req.cookies || {})[SESSION_COOKIE_NAME]
+  const plainUser = await validateSession(plainSid)
+  if (plainUser) return plainUser
+
+  // Fallback: Manual Cookie Parsing (Tier 3 fallback)
+  const cookieHeader = req.headers.cookie || ''
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';').reduce((acc: any, curr) => {
+      const parts = curr.trim().split('=')
+      const key = parts[0]
+      const value = parts.slice(1).join('=')
+      if (key && value) {
+        try {
+          acc[key] = decodeURIComponent(value)
+        } catch (e) {
+          acc[key] = value
+        }
+      }
+      return acc
+    }, {})
+    const manualUser = await validateSession(cookies[SESSION_COOKIE_NAME])
+    if (manualUser) return manualUser
   }
 
   return null
