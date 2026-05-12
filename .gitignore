@@ -32,3 +32,6 @@ playwright-report/
 playwright.config.js
 *.json
 debug.log
+tipstack-video
+*.test.ts
+*.test.jsx

@@ -79,7 +79,20 @@ class ApiClient {
         console.warn('Unauthorized request, clearing token.');
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data = null;
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = {
+            success: false,
+            error: response.ok ? 'Invalid JSON response' : (response.statusText || 'Request failed'),
+            details: responseText,
+          };
+        }
+      }
+
       return { data, status: response.status, ok: response.ok };
     } catch (error) {
       console.error(`API Request Error [${endpoint}]:`, error);

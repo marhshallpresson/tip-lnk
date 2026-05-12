@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { randomUUID } from "crypto"
-import { db, initSchema } from "../../../_lib/db.js"
+import { db } from "../../../_lib/db.js"
 import { getSolPrice } from "../../../_lib/price.js"
 import { aggregateSocialMetrics, resolveSnsDomain } from "../../../_lib/helius.js"
 import { hashAddress } from "../../../_lib/crypto.js"
@@ -19,15 +19,49 @@ const resolveBooleanSetting = (columnValue: any, legacyValue: any, fallback = fa
   return fallback
 }
 
+const normalizeIdentifier = (value: string) => {
+  try {
+    return decodeURIComponent(value || '').trim().replace(/^@/, '')
+  } catch {
+    return String(value || '').trim().replace(/^@/, '')
+  }
+}
+
+const buildExternalProfileResponse = (wallet: string, maskedAddress?: string) => {
+  const displayName = wallet.endsWith('.sol') ? wallet.replace(/\.sol$/, '') : wallet
+  return {
+    success: true,
+    profile: {
+      id: wallet,
+      displayName,
+      solDomain: wallet,
+      walletAddress: maskedAddress || null,
+      isExternal: true,
+      onboardingComplete: false,
+      tipsReceived: [],
+    },
+    metadata: {
+      title: `Tip ${displayName} on Tip Stack`,
+      description: `Support ${displayName} with direct SOL and USDC tips. Secure and instant.`,
+      image: `https://tipstack.fun/api/og/${wallet}`,
+      card: 'summary_large_image'
+    }
+  }
+}
+
+const withTimeout = async <T>(promise: Promise<T>, ms = 800): Promise<T | null> => {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ])
+}
+
 /**
  * PHASE 2: SCALABLE BACKEND
  * Cached Profile Fetching with Redis
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
-
-  // Ensure database schema is ready (prevents race conditions with migrations)
-  await initSchema().catch(err => console.error('Database Init Warning:', err.message));
 
   let walletRaw = req.query.wallet;
   let wallet = Array.isArray(walletRaw) ? walletRaw[0] : (walletRaw as string);
@@ -42,6 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    wallet = normalizeIdentifier(wallet)
     let resolvedId = wallet;
     let isInternalId = false;
 
@@ -52,10 +87,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isInternalId = true;
     }
 
+    if (wallet.endsWith('.tipstack.sol')) {
+      return res.json(buildExternalProfileResponse(wallet))
+    }
+
     const cacheKey = `profile:${wallet}`;
     if (redis) {
         try {
-            const cached = await redis.get(cacheKey);
+            const cached = await withTimeout(redis.get(cacheKey));
             if (cached) {
                 // ELITE HARDENING: Ensure we return parsed JSON object, not string literal
                 const data = typeof cached === 'string' ? JSON.parse(cached) : cached;
@@ -74,8 +113,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!user) {
         user = await db('user')
-            .where({ twitterHandle: wallet.replace(/^@/, '') })
-            .orWhere({ discordHandle: wallet.replace(/^@/, '') })
+            .where({ twitterHandle: wallet })
+            .orWhere({ discordHandle: wallet })
             .orWhere({ solDomain: wallet })
             .first()
     }
@@ -93,21 +132,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const onChainWallet = await resolveSnsDomain(wallet)
         if (onChainWallet) {
             const maskedAddress = `${onChainWallet.slice(0, 4)}...${onChainWallet.slice(-4)}`;
-            const responseData = { 
-                success: true, 
-                profile: { 
-                    displayName: wallet.replace('.sol', ''),
-                    solDomain: wallet,
-                    walletAddress: maskedAddress, // MASKED
-                    isExternal: true
-                },
-                metadata: {
-                    title: `Tip ${wallet.replace('.sol', '')} on Tip Stack`,
-                    description: `Support this creator with direct SOL and USDC tips. Secure and instant.`,
-                    image: `https://tipstack.fun/api/og/${wallet}`
-                }
-            };
-            if (redis) await redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 }).catch(() => null);
+            const responseData = buildExternalProfileResponse(wallet, maskedAddress);
+            if (redis) await withTimeout(redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 })).catch(() => null);
             return res.json(responseData)
         }
     }
@@ -144,6 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profile = rawData.profile ? { ...rawData.profile } : { ...rawData }
     
     const socialMetrics = await aggregateSocialMetrics(user.twitterHandle, user.discordHandle)
+      .catch(() => ({ totalFollowers: 0, metrics: {} }))
     
     profile.socialMetrics = socialMetrics
     profile.twitterHandle = user.twitterHandle
@@ -171,9 +198,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const responseData: any = { success: true, profile: { ...profile, id: user.id }, metadata };
     
     // Use recipient_id or legacy address for history
-    const tips = await db('tips')
-      .where({ recipient_id: user.id })
-      .orWhere({ recipient_hash: user.walletAddressHash })
+    const tipsQuery = db('tips').where({ recipient_id: user.id })
+    if (user.walletAddressHash) {
+      tipsQuery.orWhere({ recipient_hash: user.walletAddressHash })
+    }
+    const tips = await tipsQuery
       .orderBy('timestamp', 'desc')
       .limit(20)
     
@@ -189,7 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }))
 
     if (redis) {
-        await redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 }).catch(() => null);
+        await withTimeout(redis.set(cacheKey, JSON.stringify(responseData), { ex: 60 })).catch(() => null);
     }
 
     return res.json(responseData)

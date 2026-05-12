@@ -139,9 +139,6 @@ export function initSchema() {
   return schemaInitPromise;
 }
 
-initSchema().catch(err => {
-});
-
 /**
  * Production Schema Initialization
  * Automatically creates and hardens tables on your Supabase instance.

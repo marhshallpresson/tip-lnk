@@ -35,4 +35,21 @@ describe('application router boot', () => {
 
     expect(basenameAttribute).toBeUndefined();
   });
+
+  it('uses the Dynamic v4 settings surface without manual session purging', () => {
+    const source = readFileSync(new URL('./main.jsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('events:');
+    expect(source).toContain('suppressEndUserConsoleWarning: true');
+    expect(source).toContain("const dynamicLogLevel = import.meta.env.PROD ? 'MUTE' : 'ERROR'");
+    expect(source).toContain('suppressDynamicConsoleNoise');
+    expect(source).toContain('Logger.setLogLevel(dynamicLogLevel)');
+    expect(source).toContain('emitErrors={false}');
+    expect(source).not.toContain('eventsCallbacks');
+    expect(source).not.toContain('AuthCircuitBreaker');
+    expect(source).not.toContain('purgeDynamicSession');
+    expect(source).not.toContain('loadingTimeout=');
+    expect(source).not.toContain('recoveryTimeout=');
+    expect(source).not.toContain('onSessionReject');
+  });
 });
