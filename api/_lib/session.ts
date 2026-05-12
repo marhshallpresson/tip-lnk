@@ -122,7 +122,10 @@ export const getUserRoles = async (userId: string) => {
 
 export const getSessionUser = async (req: Request): Promise<SessionUser | null> => {
   const validateSession = async (sid: string | undefined): Promise<SessionUser | null> => {
-    if (!sid || typeof sid !== 'string' || sid.length < 20) return null
+    if (!sid || typeof sid !== 'string' || sid.length < 20) {
+      console.log('🛡️ session debug: invalid sid format', sid);
+      return null
+    }
     
     // SID Cleaning
     let cleanSid = sid;
@@ -132,12 +135,22 @@ export const getSessionUser = async (req: Request): Promise<SessionUser | null> 
 
     try {
       const session = await db('session').where({ id: cleanSid }).first()
-      if (!session || session.revokedAt || new Date(session.expiresAt).getTime() < Date.now()) {
-          return null;
+      if (!session) {
+        console.log('🛡️ session debug: session not found', cleanSid);
+        return null;
+      }
+      if (session.revokedAt) {
+        console.log('🛡️ session debug: session revoked', cleanSid);
+        return null;
+      }
+      if (new Date(session.expiresAt).getTime() < Date.now()) {
+        console.log('🛡️ session debug: session expired', cleanSid, session.expiresAt);
+        return null;
       }
 
       const user = await db('user').where({ id: session.userId }).first()
       if (!user || user.deletedAt) {
+          console.log('🛡️ session debug: user not found or deleted', session.userId);
           return null;
       }
 

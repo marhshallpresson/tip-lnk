@@ -34,6 +34,7 @@ const config = process.env.DATABASE_URL
       useNullAsDefault: true
     };
 
+console.log('🛡️ db debug: using client', config.client, 'path', config.connection?.filename || 'remote');
 const dbInstance = knex(config);
 
 export const db = dbInstance;

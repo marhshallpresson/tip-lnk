@@ -72,7 +72,12 @@ const dynamicSettings = {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <DynamicContextProvider settings={dynamicSettings} emitErrors={false}>
+    <DynamicContextProvider 
+      settings={dynamicSettings} 
+      emitErrors={false}
+      loadingTimeout={30000} 
+      recoveryTimeout={60000}
+    >
       <BrowserRouter>
         <App />
       </BrowserRouter>

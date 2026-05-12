@@ -109,8 +109,20 @@ export const AuthProvider = ({ children }) => {
 
   // Bridge API unauthorized handler to Dynamic session sync
   useEffect(() => {
-    const { authToken, isAuthenticated } = dynamicContext || {};
+    const { authToken, isAuthenticated, sdkHasLoaded } = dynamicContext || {};
     
+    // ΓööΓöÇΓöÇ ELITE SESSION HEALING: AUTO-LOGOUT ΓööΓöÇΓöÇ
+    // If Dynamic SDK confirms the user is NOT authenticated, but we still think we are,
+    // we must terminate the local session to prevent 401 noise and stale UI.
+    if (sdkHasLoaded && !isAuthenticated && user && !loading) {
+      console.warn('≡ƒ¢í∩╕Å Dynamic identity lost. Cleaning up TipStack session...');
+      // Use local cleanup to avoid infinite redirection loops
+      api.setAccessToken(null);
+      localStorage.removeItem('tipstack_auth_token');
+      setUser(null);
+      return;
+    }
+
     api.setUnauthorizedHandler(async () => {
       if (isAuthenticated && authToken) {
         console.warn('≡ƒ¢í∩╕Å API 401 detected: Attempting silent session re-sync...');
@@ -121,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => api.setUnauthorizedHandler(null);
-  }, [dynamicContext, syncWithDynamic]);
+  }, [dynamicContext, syncWithDynamic, user, loading]);
 
   const value = {
     user,
