@@ -58,6 +58,27 @@ const dynamicSettings = {
   suppressEndUserConsoleWarning: true,
   persistWalletSession: true,
   logLevel: dynamicLogLevel,
+  overrides: {
+    evmNetworks: [],
+  },
+  walletBook: {
+    wallets: {
+      phantom: { showInList: true },
+      solflare: { showInList: true }
+    }
+  },
+  waas: {
+    enabled: false,
+    upgradeEnabled: false
+  },
+  session: {
+    storageType: 'localStorage'
+  },
+  security: {
+    emailVerification: { required: false, sendConfirmation: true },
+    socialRecovery: { enabled: true, providers: ['google', 'twitter'] },
+    session: { timeout: 3600000, refreshInterval: 300000, storageType: 'localStorage' }
+  },
   events: {
     onAuthSuccess: ({ user }) => {
       console.log('[Auth] Full auth complete:', user?.id);

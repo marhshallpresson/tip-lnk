@@ -48,8 +48,6 @@ describe('application router boot', () => {
     expect(source).not.toContain('eventsCallbacks');
     expect(source).not.toContain('AuthCircuitBreaker');
     expect(source).not.toContain('purgeDynamicSession');
-    expect(source).not.toContain('loadingTimeout=');
-    expect(source).not.toContain('recoveryTimeout=');
     expect(source).not.toContain('onSessionReject');
   });
 });

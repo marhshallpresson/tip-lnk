@@ -4,11 +4,41 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 const AuthContext = createContext();
 
+export const purgeStaleDynamicSession = () => {
+  const sessionKey = Object.keys(localStorage).find(
+    k => k.includes('dynamic') && k.includes('session') && 
+         k.includes('3fbb3eed')
+  );
+  if (!sessionKey) return;
+
+  try {
+    const raw = localStorage.getItem(sessionKey);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const token = parsed?.value?.token;
+    const expiration = parsed?.value?.sessionExpiration;
+    const isExpired = expiration && expiration < Date.now();
+    const isTokenless = token === null || token === undefined;
+
+    if (isTokenless || isExpired) {
+      localStorage.removeItem(sessionKey);
+      console.log(`[Auth] Purged stale session: ${sessionKey}`);
+    }
+  } catch (e) {
+    console.warn('[Auth] Failed to parse session key during purge check:', e);
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
+
+  // Early-mount stale session purge (circuit breaker)
+  useEffect(() => {
+    purgeStaleDynamicSession();
+  }, []);
 
   // Initialize from localStorage on mount
   useEffect(() => {

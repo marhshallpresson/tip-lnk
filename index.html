@@ -10,6 +10,16 @@
         writable: true,
         configurable: true
       });
+    } else if (!Array.isArray(window.navigator.wallets)) {
+      try {
+        Object.defineProperty(window.navigator, 'wallets', {
+          value: [],
+          writable: true,
+          configurable: true
+        });
+      } catch (e) {
+        window.navigator.wallets = [];
+      }
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
