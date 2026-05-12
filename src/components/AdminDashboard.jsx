@@ -1,3 +1,4 @@
+import AdminFiatPanel from './AdminFiatPanel';
 import { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +22,8 @@ import {
   ArrowRight,
   CheckCircle,
   Clock,
-  ChevronRight
+  ChevronRight,
+  CreditCard
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -219,6 +221,7 @@ export default function AdminDashboard() {
              { id: 'overview', label: 'Stats', icon: TrendingUp },
              { id: 'crm', label: 'Creators', icon: Users },
              { id: 'ledger', label: 'Ledger', icon: Database },
+             { id: 'fiat', label: 'Fiat', icon: CreditCard },
              { id: 'audit', label: 'Audit', icon: Lock }
            ].map(tab => (
              <button
@@ -437,6 +440,9 @@ export default function AdminDashboard() {
              </div>
           </div>
       )}
+
+      {/* ─── Fiat Payment Monitor ─── */}
+      {view === 'fiat' && <AdminFiatPanel />}
 
       {/* ─── Audit Trail View (Restricted to Compliance/Superadmin) ─── */}
       {view === 'audit' && (

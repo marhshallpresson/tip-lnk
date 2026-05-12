@@ -56,6 +56,7 @@ const dynamicSettings = {
   appName: 'Tip Stack',
   walletConnectors: [SolanaWalletConnectors],
   suppressEndUserConsoleWarning: true,
+  persistWalletSession: true,
   logLevel: dynamicLogLevel,
   events: {
     onAuthSuccess: ({ user }) => {

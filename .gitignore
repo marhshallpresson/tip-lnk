@@ -35,3 +35,6 @@ debug.log
 tipstack-video
 *.test.ts
 *.test.jsx
+install_solana.bat
+.gitignore
+rustup-init.exe
