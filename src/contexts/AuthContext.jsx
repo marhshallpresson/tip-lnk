@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
@@ -73,14 +73,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const syncWithDynamic = async (dynamicJwt) => {
+  const syncWithDynamic = useCallback(async (dynamicJwt) => {
     if (!dynamicJwt) return { success: false };
     
     try {
       setLoading(true);
       setError(null);
 
-      // ─── ELITE SECURITY: CLEAR STALE SESSIONS ───
+      // ΓööΓöÇΓöÇ ELITE SECURITY: CLEAR STALE SESSIONS ΓööΓöÇΓöÇ
       // Before syncing a new Dynamic identity, we MUST clear any old local session
       // to avoid 401 errors from the API instance trying to use an expired token.
       api.setAccessToken(null);
@@ -99,13 +99,29 @@ export const AuthProvider = ({ children }) => {
       setError(errorMsg);
       return { success: false, error: errorMsg };
     } catch (err) {
-      console.error('🛡️ Auth Sync Error:', err);
+      console.error('≡ƒ¢í∩╕Å Auth Sync Error:', err);
       setError('A network error occurred during authentication.');
       return { success: false, error: 'Network error' };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Bridge API unauthorized handler to Dynamic session sync
+  useEffect(() => {
+    const { authToken, isAuthenticated } = dynamicContext || {};
+    
+    api.setUnauthorizedHandler(async () => {
+      if (isAuthenticated && authToken) {
+        console.warn('≡ƒ¢í∩╕Å API 401 detected: Attempting silent session re-sync...');
+        const result = await syncWithDynamic(authToken);
+        return result.success;
+      }
+      return false;
+    });
+
+    return () => api.setUnauthorizedHandler(null);
+  }, [dynamicContext, syncWithDynamic]);
 
   const value = {
     user,
