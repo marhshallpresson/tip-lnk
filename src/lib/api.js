@@ -51,7 +51,7 @@ class ApiClient {
     return null;
   }
 
-  async request(endpoint, options = {}) {
+  async request(endpoint, options = {}, isRetry = false) {
     let { method = 'GET', body, headers = {}, ...rest } = options;
 
     if (!this.csrfToken && method !== 'GET') {
@@ -81,6 +81,13 @@ class ApiClient {
       });
 
       if (response.status === 401) {
+        if (!isRetry && this.onUnauthorized) {
+          console.warn('Unauthorized, attempting silent refresh...');
+          const refreshed = await this.onUnauthorized();
+          if (refreshed) {
+            return this.request(endpoint, options, true);
+          }
+        }
         console.warn('Unauthorized request, clearing token.');
       }
 
