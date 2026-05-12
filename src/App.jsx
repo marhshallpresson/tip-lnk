@@ -21,7 +21,7 @@ import ResetPassword from './components/ResetPassword';
 import api from './lib/api';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { getAuthToken, useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 const TermsOfService = lazy(() => import('./components/legal/TermsOfService.jsx'));
 const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy.jsx'));
@@ -38,7 +38,7 @@ function ScrollToTop() {
 function AppContent() {
   const { role, onboardingStep, update, updateProfile } = useApp();
   const { user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
-  const { user: dynamicUser, setShowAuthFlow, sdkHasLoaded } = useDynamicContext();
+  const { user: dynamicUser, setShowAuthFlow, sdkHasLoaded, authToken } = useDynamicContext();
   const navigate = useNavigate();
   const location = useLocation();
   const dynamicLoginInFlightRef = useRef(false);
@@ -47,13 +47,12 @@ function AppContent() {
   useEffect(() => {
     if (!sdkHasLoaded || !dynamicUser || authUser || authLoading || dynamicLoginInFlightRef.current) return;
 
-    const dynamicJwt = getAuthToken();
-    if (!dynamicJwt || processedDynamicTokenRef.current === dynamicJwt) return;
+    if (!authToken || processedDynamicTokenRef.current === authToken) return;
 
-    processedDynamicTokenRef.current = dynamicJwt;
+    processedDynamicTokenRef.current = authToken;
     dynamicLoginInFlightRef.current = true;
 
-    syncWithDynamic(dynamicJwt)
+    syncWithDynamic(authToken)
       .then((result) => {
         if (!result.success) {
           console.error('Dynamic identity sync failed:', result.error);
@@ -76,7 +75,7 @@ function AppContent() {
         sessionStorage.removeItem('auth_origin');
         dynamicLoginInFlightRef.current = false;
       });
-  }, [dynamicUser, authUser, authLoading, syncWithDynamic, navigate]);
+  }, [dynamicUser, authUser, authLoading, syncWithDynamic, navigate, authToken]);
 
   const handleGetStarted = () => {
     if (role === 'guest') {
