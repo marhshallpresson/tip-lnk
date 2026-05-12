@@ -13,6 +13,7 @@ const LEGACY_TOKEN_KEY = 'tipstack_access_token';
 class ApiClient {
   constructor() {
     this.csrfToken = null;
+    this.onUnauthorized = null;
     const token = localStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY);
     this.accessToken = token || null;
     if (token) {
@@ -30,6 +31,10 @@ class ApiClient {
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(LEGACY_TOKEN_KEY);
     }
+  }
+
+  setUnauthorizedHandler(handler) {
+    this.onUnauthorized = handler;
   }
 
   async getCsrfToken() {
