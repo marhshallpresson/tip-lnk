@@ -32,6 +32,8 @@ if (!basePath) {
 const apiServerDistPath = path.resolve(import.meta.dirname, "../api-server/dist/index.mjs");
 
 function startApiServerPlugin() {
+  // Only active in development — in production the api-server runs as its own service.
+  if (process.env.NODE_ENV === "production") return { name: "start-api-server" };
   let apiProcess: ChildProcess | null = null;
   return {
     name: "start-api-server",

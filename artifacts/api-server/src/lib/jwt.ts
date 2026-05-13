@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from 'jose'
 
 const JWT_SECRET = process.env.SESSION_TOKEN_SECRET || process.env.SESSION_SECRET || process.env.SESSION_COOKIE_SECRET || process.env.JWT_SECRET
 if (!JWT_SECRET) {
-  throw new Error('SESSION_TOKEN_SECRET, SESSION_SECRET, SESSION_COOKIE_SECRET, or JWT_SECRET must be configured.')
+  throw new Error('SESSION_TOKEN_SECRET, SESSION_SECRET, SESSION_COOKIE_SECRET, or JWT_SECRET must be set.')
 }
 
 const secret = new TextEncoder().encode(JWT_SECRET)
@@ -15,9 +15,6 @@ export type SessionTokenPayload = {
   uid?: string
 }
 
-/**
- * Professional Hardened JWT Signer
- */
 export async function signSessionToken(payload: SessionTokenPayload, expiresAt: Date) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -28,10 +25,6 @@ export async function signSessionToken(payload: SessionTokenPayload, expiresAt: 
     .sign(secret)
 }
 
-/**
- * Professional Hardened JWT Verifier
- * Enforces algorithm, audience, issuer, and internal versioning.
- */
 export async function verifySessionToken(token: string): Promise<SessionTokenPayload | null> {
   try {
     const { payload } = await jwtVerify(token, secret, {
@@ -40,21 +33,10 @@ export async function verifySessionToken(token: string): Promise<SessionTokenPay
       issuer: ISSUER,
       clockTolerance: 30,
     })
-    
     const sessionPayload = payload as unknown as SessionTokenPayload
-    
-    if (sessionPayload.v !== 1) {
-        console.warn('🛡️ JWT: Unsupported token version detected:', sessionPayload.v)
-        return null
-    }
-
+    if (sessionPayload.v !== 1) return null
     return sessionPayload
-  } catch (err: any) {
-    if (err.code === 'ERR_JWT_EXPIRED') {
-        console.debug('🛡️ JWT: Token expired.')
-    } else {
-        console.warn('🛡️ JWT: Verification failed:', err.message)
-    }
+  } catch {
     return null
   }
 }

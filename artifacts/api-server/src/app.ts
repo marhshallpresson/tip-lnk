@@ -7,7 +7,10 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-const COOKIE_SECRET = process.env.SESSION_COOKIE_SECRET || process.env.SESSION_TOKEN_SECRET || process.env.SESSION_SECRET || process.env.JWT_SECRET || "dev-secret-change-me";
+const COOKIE_SECRET = process.env.SESSION_COOKIE_SECRET || process.env.SESSION_TOKEN_SECRET || process.env.SESSION_SECRET || process.env.JWT_SECRET;
+if (!COOKIE_SECRET) {
+  throw new Error("One of SESSION_COOKIE_SECRET, SESSION_TOKEN_SECRET, SESSION_SECRET, or JWT_SECRET must be set.");
+}
 
 app.use(cookieParser(COOKIE_SECRET));
 app.use(
