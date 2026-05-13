@@ -58,8 +58,8 @@
     }
   ],
   "functions": {
-    "src/api/index.ts": {
-      "includeFiles": "src/api/handlers/**, src/api/lib/**"
+    "api/index.ts": {
+      "includeFiles": "api/handlers/**, api/lib/**"
     }
   }
 }
