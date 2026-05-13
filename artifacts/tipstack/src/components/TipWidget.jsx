@@ -1,0 +1,498 @@
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useWallet } from '../contexts/WalletContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
+import { useTipping } from '../hooks/useTipping';
+import { getPhantomDeepLink, getSolanaPayUri, hasSolanaProvider, isMobile } from '../utils/deepLinks';
+import ErrorBoundary from './ErrorBoundary';
+import QRCheckoutModal from './QRCheckoutModal';
+import { 
+  ShieldCheck, 
+  Zap, 
+  Lock, 
+  Loader2, 
+  CreditCard, 
+  Wallet,
+  CheckCircle2,
+  ChevronDown,
+  ArrowRight,
+  Repeat
+} from 'lucide-react';
+
+const PRESET_AMOUNTS = [1, 5, 10, 25, 50];
+
+function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () => {}, theme = 'dark', accent = '#00D265' }) {
+  const { publicKey } = useWallet();
+  const { profile: viewerProfile, addTip } = useApp();
+  const { setShowWalletModal } = useAuth();
+
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [activeIntentId, setActiveIntentId] = useState(null);
+
+  const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
+  const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
+  const [isResolving, setIsResolving] = useState(false);
+  const [amount, setAmount] = useState('5');
+  const [note, setNote] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'crypto'
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [showTokenMenu, setShowTokenMenu] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [fiatQuote, setFiatQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [fiatPaymentInstructions, setFiatPaymentInstructions] = useState(null);
+  const [widgetError, setWidgetError] = useState('');
+
+  const {
+    tokens,
+    tokensLoading,
+    selectedToken,
+    setSelectedToken,
+    calculateRoute,
+    calculateRecurringRoute,
+    route,
+    recurringRoute,
+    processing,
+    executeTip,
+    executeSubscription,
+    txResult,
+    setTxResult,
+    reset,
+    error: tippingError
+  } = useTipping(resolvedAddress);
+
+  // Sync recipient for public widget
+  useEffect(() => {
+    if (fixedRecipient) {
+      setResolvedAddress(fixedRecipient.address);
+      setRecipientInput(fixedRecipient.username || '');
+      return;
+    }
+    const resolveHandle = async () => {
+      if (!recipientInput) { setResolvedAddress(null); return; }
+      setIsResolving(true);
+      try {
+        const isProd = import.meta.env.MODE === 'production';
+        const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+        const handle = recipientInput.startsWith('@') ? recipientInput : `@${recipientInput}`;
+        const res = await fetch(`${base}/api/deep-link/resolve?handle=${encodeURIComponent(handle)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setResolvedAddress(data?.id || null);
+        }
+      } catch { setResolvedAddress(null); } finally { setIsResolving(false); }
+    };
+    const timeout = setTimeout(resolveHandle, 200);
+    return () => clearTimeout(timeout);
+  }, [recipientInput, fixedRecipient]);
+
+  // Sync route calculation for crypto
+  useEffect(() => {
+    if (paymentMethod !== 'crypto') return;
+    const parsed = Number(amount);
+    if (!resolvedAddress || !selectedToken?.symbol || !Number.isFinite(parsed) || parsed <= 0) return;
+    
+    if (isRecurring) {
+        calculateRecurringRoute(selectedToken.symbol, parsed);
+    } else {
+        calculateRoute(selectedToken.symbol, parsed, note);
+    }
+  }, [paymentMethod, isRecurring, amount, selectedToken, resolvedAddress, note, calculateRoute, calculateRecurringRoute]);
+
+  // Sync fiat quote for card
+  useEffect(() => {
+    const fetchRate = async () => {
+      const parsed = Number(amount);
+      if (paymentMethod !== 'card' || !Number.isFinite(parsed) || parsed <= 0) {
+        setFiatQuote(null);
+        return;
+      }
+      setQuoteLoading(true);
+      try {
+        const isProd = import.meta.env.MODE === 'production';
+        const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+        const res = await fetch(`${base}/api/payments/fiat/rate?amount=${parsed}`);
+        const data = await res.json();
+        if (res.ok && data?.success) setFiatQuote(data);
+        else setFiatQuote(null);
+      } catch { setFiatQuote(null); } finally { setQuoteLoading(false); }
+    };
+    const timeout = setTimeout(fetchRate, 500);
+    return () => clearTimeout(timeout);
+  }, [amount, paymentMethod]);
+
+  const handlePay = async () => {
+    setWidgetError('');
+    if (!resolvedAddress || !amount || Number(amount) <= 0) {
+      setWidgetError('Please enter a valid amount and ensure recipient is resolved.');
+      return;
+    }
+
+    if (paymentMethod === 'crypto') {
+        // ─── CONNECTLESS FIRST: MOBILE DEEP LINKING ───
+        if (isMobile()) {
+            console.log('📱 Mobile detected. Triggering deep link flow...');
+            const uri = getSolanaPayUri(resolvedAddress, amount, selectedToken?.mint || 'So11111111111111111111111111111111111111112');
+            
+            if (hasSolanaProvider()) {
+               window.location.href = uri;
+            } else {
+               window.location.href = getPhantomDeepLink(window.location.href);
+            }
+            return;
+        }
+
+        // ─── CONNECTLESS FIRST: DESKTOP QR FALLBACK ───
+        if (!publicKey) {
+            console.log('🖥️ Desktop detected. No wallet connected. Opening QR checkout...');
+            const intentId = `pi_${Math.random().toString(36).substring(2, 15)}`;
+            setActiveIntentId(intentId);
+            setShowQRModal(true);
+            return;
+        }
+
+        try {
+            if (isRecurring) {
+                const subResult = await executeSubscription(viewerProfile?.displayName || 'Anonymous');
+                if (subResult?.success) {
+                    onSuccess?.({ success: true, method: 'recurring', signature: subResult.signature });
+                }
+                return;
+            }
+            
+            const result = await executeTip(viewerProfile?.displayName || 'Anonymous', note);
+            if (result?.success) {
+                addTip({
+                    recipientId: resolvedAddress,
+                    recipient: recipientInput,
+                    inputToken: selectedToken?.symbol || 'SOL',
+                    inputAmount: amount,
+                    amountUSDC: result.outAmount,
+                    note,
+                    txSignature: result.signature,
+                    timestamp: new Date()
+                }, true);
+                onSuccess?.(result);
+            }
+        } catch (err) { 
+            console.error('Crypto execution fault:', err);
+            setWidgetError(err?.message || 'Crypto payment failed. Please try again.'); 
+        }
+    } else {
+        // Enhanced Fiat Flow: Intent creation + monitoring
+        try {
+            setFiatPaymentInstructions(null);
+            const isProd = import.meta.env.MODE === 'production';
+            const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
+            const response = await fetch(`${base}/api/payments/fiat/intent`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'X-Requested-With': 'TipStackWidget'
+                },
+                body: JSON.stringify({
+                    creatorId: resolvedAddress,
+                    amount: Number(amount),
+                    senderName: viewerProfile?.displayName || 'Anonymous',
+                    memo: note
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok || (!data?.checkoutUrl && !data?.paymentInstructions)) {
+                throw new Error(data?.error || 'Failed to initialize card payment session.');
+            }
+
+            const instructions = data.paymentInstructions || null;
+            let checkoutPopup = null;
+            if (data.checkoutUrl) {
+                checkoutPopup = window.open(data.checkoutUrl, 'tipstack_pay', 'width=520,height=760,status=no,location=no');
+            } else if (instructions) {
+                setFiatPaymentInstructions({
+                    ...instructions,
+                    amountUsd: Number(amount),
+                    amountNgn: fiatQuote?.amountNgn,
+                    rate: fiatQuote?.rate,
+                    intentId: data.intentId
+                });
+            }
+            
+            setTxResult({ status: 'pending', signature: data.intentId, outAmount: Number(amount) });
+            
+            const pollStatus = setInterval(async () => {
+                if (checkoutPopup && checkoutPopup.closed) {
+                    clearInterval(pollStatus);
+                }
+                try {
+                    const sRes = await fetch(`${base}/api/payments/fiat/status?intentId=${data.intentId}`);
+                    const sData = await sRes.json();
+                    if (sData?.success && sData.status === 'completed') {
+                        clearInterval(pollStatus);
+                        setFiatPaymentInstructions(null);
+                        setTxResult({ status: 'confirmed', signature: data.intentId, outAmount: Number(amount) });
+                        addTip({
+                            recipientId: resolvedAddress,
+                            recipient: recipientInput,
+                            inputToken: 'FIAT_USD',
+                            inputAmount: amount,
+                            amountUSDC: Number(amount),
+                            note,
+                            txSignature: data.intentId,
+                            timestamp: new Date()
+                        }, true);
+                        onSuccess?.({ success: true, method: 'fiat' });
+                    }
+                } catch (e) { /* ignore poll errors */ }
+            }, 3000);
+
+        } catch (err) { 
+            console.error('Fiat execution fault:', err);
+            setWidgetError(err?.message || 'Card payment initialization failed.'); 
+        }
+    }
+  };
+
+  const filteredTokens = useMemo(() => {
+    if (!searchTerm) return tokens;
+    const term = searchTerm.toLowerCase();
+    return tokens.filter((t) => t.symbol.toLowerCase().includes(term) || (t.name || '').toLowerCase().includes(term));
+  }, [tokens, searchTerm]);
+
+  const isPresetActive = (val) => Number(amount) === val;
+
+  if (txResult?.status === 'pending' && fiatPaymentInstructions) {
+      return (
+          <div className="bg-[#121214] border border-white/5 rounded-[28px] p-6 max-w-[380px] mx-auto shadow-2xl">
+              <div className="flex items-center gap-3 mb-5">
+                  <div className="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20">
+                      <CreditCard size={20} className="text-brand-500" />
+                  </div>
+                  <div>
+                      <h3 className="text-white font-bold text-base">Bank Transfer</h3>
+                      <p className="text-white/40 text-xs">Transfer exactly this amount to continue.</p>
+                  </div>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4">
+                      <span className="text-white/40">Amount</span>
+                      <span className="text-white font-black">
+                        {fiatPaymentInstructions.amountNgn
+                          ? `₦${Number(fiatPaymentInstructions.amountNgn).toLocaleString()}`
+                          : `$${Number(fiatPaymentInstructions.amountUsd || 0).toFixed(2)}`}
+                      </span>
+                  </div>
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4">
+                      <span className="text-white/40">Bank</span>
+                      <span className="text-white font-bold text-right">{fiatPaymentInstructions.bankName || 'FossaPay Bank'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(fiatPaymentInstructions.accountNumber || '')}
+                    className="w-full rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4 text-left"
+                  >
+                      <span className="text-white/40">Account</span>
+                      <span className="text-white font-mono font-black">{fiatPaymentInstructions.accountNumber || 'Pending'}</span>
+                  </button>
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-4 flex items-center justify-between gap-4">
+                      <span className="text-white/40">Reference</span>
+                      <span className="text-white font-mono text-xs text-right">{fiatPaymentInstructions.reference || fiatPaymentInstructions.intentId}</span>
+                  </div>
+              </div>
+
+              <div className="mt-5 h-14 rounded-[18px] bg-brand-500/10 text-brand-500 font-black flex items-center justify-center gap-2">
+                  <Loader2 size={18} className="animate-spin" /> Waiting for confirmation
+              </div>
+          </div>
+      );
+  }
+
+  if (txResult?.status === 'confirmed') {
+    return (
+      <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-10 text-center animate-scale-in max-w-[380px] mx-auto shadow-2xl relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-500/20 blur-[80px] rounded-full animate-pulse-slow" />
+        <div className="relative z-10">
+          <div className="w-20 h-20 rounded-3xl bg-brand-500/10 flex items-center justify-center mx-auto mb-6 border border-brand-500/20 shadow-inner">
+            <CheckCircle2 size={40} className="text-brand-500 animate-bounce-short" />
+          </div>
+          <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Support Delivered!</h3>
+          <p className="text-white/40 text-sm mb-8 leading-relaxed">Your tip of <span className="text-white font-bold">${Number(amount).toFixed(2)}</span> was processed instantly via Solana.</p>
+          <div className="bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4 mb-8 text-left flex items-start gap-3 group hover:bg-brand-500/10 transition-colors cursor-default">
+            <div className="w-10 h-10 rounded-xl bg-brand-500 flex-shrink-0 flex items-center justify-center text-black">
+              <Zap size={20} fill="currentColor" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-brand-500 mb-0.5">Torque Reward Earned</p>
+              <p className="text-xs text-white/70 font-medium">You've earned 50xp for this contribution. Check your profile to claim perks.</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => { reset(); setFiatPaymentInstructions(null); setAmount('5'); setNote(''); }} className="btn-primary w-full py-4 text-sm font-black uppercase tracking-widest">Send Another</button>
+            <button onClick={handleClose} className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors">Close Portal</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-6 w-full max-w-[380px] mx-auto shadow-2xl relative overflow-hidden font-sans">
+      
+      {/* Header Info */}
+      <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20 overflow-hidden">
+             {fixedRecipient?.avatarUrl ? (
+                 <img src={fixedRecipient.avatarUrl} alt="" className="w-full h-full object-cover" />
+             ) : (
+                 <div className="w-full h-full flex items-center justify-center text-xl font-black text-brand-500 bg-brand-500/5">
+                    {recipientInput[0]?.toUpperCase() || 'T'}
+                 </div>
+             )}
+          </div>
+          <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                  <h3 className="font-bold text-white text-base tracking-tight">@{recipientInput || 'creator'}</h3>
+                  <ShieldCheck size={14} className="text-brand-500" fill="currentColor" stroke="none" />
+              </div>
+              <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Verified Creator</p>
+          </div>
+      </div>
+
+      {/* Amount Presets */}
+      <div className="grid grid-cols-5 gap-2 mb-6">
+          {PRESET_AMOUNTS.map(val => (
+              <button
+                key={val}
+                onClick={() => setAmount(val.toString())}
+                className={`h-11 rounded-xl font-bold text-xs transition-all border ${
+                    isPresetActive(val) 
+                    ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-[1.02]' 
+                    : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                  ${val}
+              </button>
+          ))}
+      </div>
+
+      {/* Custom Amount Section */}
+      <div className="space-y-4 mb-8">
+          <div className="relative group">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 font-bold text-lg">$</span>
+              <input 
+                type="number" 
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl pl-10 pr-24 text-white font-bold text-xl focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
+                placeholder="0.00"
+              />
+              {paymentMethod === 'card' && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
+                      <div className="text-[10px] font-black text-brand-500 bg-brand-500/10 px-2.5 py-1.5 rounded-lg border border-brand-500/20 shadow-sm animate-fade-in whitespace-nowrap">
+                         {quoteLoading ? <Loader2 size={10} className="animate-spin" /> : (fiatQuote ? `~₦${Number(fiatQuote.amountNgn || 0).toLocaleString()}` : 'Rate unavailable')}
+                      </div>
+                  </div>
+              )}
+          </div>
+
+          <div className="relative group">
+              <input 
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Add a private note..."
+                className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl px-4 text-sm text-white/70 placeholder:text-white/20 focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-500/20 shadow-sm">
+                  <Lock size={10} fill="currentColor" /> ENCRYPTED
+              </div>
+          </div>
+      </div>
+
+      {/* Payment Selection & Token Picker */}
+      <div className="space-y-4 mb-8">
+          <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
+              <button 
+                onClick={() => setPaymentMethod('card')}
+                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+              >
+                  <CreditCard size={12} /> Card (NGN)
+              </button>
+              <button 
+                onClick={() => setPaymentMethod('crypto')}
+                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'crypto' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+              >
+                  <Wallet size={12} /> Crypto (SOL)
+              </button>
+          </div>
+
+          {paymentMethod === 'crypto' && (
+              <div className="space-y-3">
+                  <div className="relative">
+                    <button
+                        onClick={() => setShowTokenMenu(!showTokenMenu)}
+                        className="w-full h-11 rounded-xl border border-white/5 bg-white/5 px-4 flex items-center justify-between text-xs font-bold text-white/60 hover:bg-white/[0.07] transition-all"
+                    >
+                        <span className="flex items-center gap-2">
+                            {selectedToken?.symbol || 'Select Asset'}
+                            {selectedToken?.balance !== undefined && <span className="text-[10px] text-white/20 font-normal">Bal: {selectedToken.balance.toFixed(2)}</span>}
+                        </span>
+                        <ChevronDown size={14} className={`transition-transform ${showTokenMenu ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showTokenMenu && (
+                        <div className="absolute top-full left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-48 overflow-y-auto">
+                            <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="w-full bg-white/5 border-none rounded-lg px-3 py-2 text-xs text-white mb-2 outline-none" />
+                            {tokensLoading ? <Loader2 size={16} className="animate-spin mx-auto my-4 text-white/20" /> : filteredTokens.slice(0, 50).map(t => (
+                                <button key={t.mint} onClick={() => { setSelectedToken(t); setShowTokenMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between group">
+                                    <span className="text-xs font-bold text-white/70 group-hover:text-white">{t.symbol}</span>
+                                    <span className="text-[10px] text-white/20">{t.balance?.toFixed(2)}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                  </div>
+              </div>
+          )}
+      </div>
+
+      <button 
+        onClick={handlePay}
+        disabled={processing || quoteLoading || !amount || Number(amount) <= 0 || !resolvedAddress || (paymentMethod === 'card' && !fiatQuote)}
+        className="w-full h-16 rounded-[22px] bg-gradient-to-r from-[#FFB800] to-[#FF9500] text-black font-black text-lg shadow-[0_8px_30px_rgba(255,184,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none"
+      >
+          {processing || quoteLoading ? (
+              <Loader2 size={24} className="animate-spin" />
+          ) : (
+              <>{'Send'} ${Number(amount || 0).toFixed(2)} <ArrowRight size={20} /></>
+          )}
+      </button>
+
+      <QRCheckoutModal 
+        isOpen={showQRModal} 
+        onClose={() => setShowQRModal(false)}
+        intentId={activeIntentId}
+        creatorId={resolvedAddress}
+        amount={amount}
+        tokenMint={selectedToken?.mint}
+        onSuccess={(data) => {
+            setShowQRModal(false);
+            setTxResult({ status: 'confirmed', signature: data.signature, outAmount: Number(amount) });
+        }}
+      />
+
+      {(widgetError || tippingError) && (
+          <div className="text-center text-red-500 text-[10px] mt-4 font-bold bg-red-500/5 p-2 rounded-lg border border-red-500/10">
+            {widgetError || tippingError}
+          </div>
+      )}
+    </div>
+  );
+}
+
+export default function TipWidget(props) {
+  return (
+    <ErrorBoundary>
+      <TipWidgetContent {...props} />
+    </ErrorBoundary>
+  );
+}

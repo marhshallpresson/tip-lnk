@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "TipStack"
+version = "1.0.0"
+id = "artifacts/tipstack"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24013
+
+[services.development]
+run = "pnpm --filter @workspace/tipstack run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tipstack", "run", "build" ]
+publicDir = "artifacts/tipstack/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24013"
+BASE_PATH = "/"

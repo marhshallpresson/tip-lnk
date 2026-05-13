@@ -1,0 +1,154 @@
+import { useState, useEffect } from 'react';
+import { useWallet } from '../contexts/WalletContext';
+import { 
+  TrendingUp, 
+  ArrowUpRight, 
+  ShieldCheck, 
+  Lock,
+  ExternalLink,
+  ChevronRight,
+  Loader2,
+  Trophy
+} from 'lucide-react';
+
+import { useKamino } from '../hooks/useKamino';
+
+export default function KaminoPanel() {
+  const { connected, publicKey } = useWallet();
+  const { 
+    vaults, 
+    positions, 
+    selectedVault, 
+    setSelectedVault,
+    totalDeposited,
+    totalEarnings,
+    totalValue,
+    loading: kaminoLoading
+  } = useKamino(connected);
+
+  if (!connected) {
+    return (
+      <div className="bg-[#111111] border border-white/5 rounded-[24px] p-10 text-center">
+        <Lock size={32} className="mx-auto mb-4 text-white/10" />
+        <h3 className="text-xl font-bold mb-2 text-white">Portfolio Locked</h3>
+        <p className="text-white/40 text-sm mb-6 max-w-xs mx-auto">Connect your wallet to enable automated yield strategies via Kamino.</p>
+        <button className="btn-secondary !py-2 !px-4 text-xs font-bold uppercase tracking-widest mx-auto">Connect Wallet</button>
+      </div>
+    );
+  }
+
+  if (kaminoLoading && vaults.length === 0) {
+    return (
+      <div className="bg-[#111111] border border-white/5 rounded-[24px] p-24 flex flex-col items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-brand-500 mb-4" />
+        <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px]">Analyzing Kamino Vaults...</p>
+      </div>
+    );
+  }
+
+  const currentApy = selectedVault ? `${selectedVault.apy}%` : "0.00%";
+  const strategyName = selectedVault ? `${selectedVault.token} Supply` : "Select a Strategy";
+
+  return (
+    <div className="animate-fade-in space-y-6">
+      {/* Hero Yield Card */}
+      <div className="bg-gradient-to-br from-brand-500/10 via-[#111111] to-[#0a0a0a] border border-brand-500/20 rounded-[32px] p-8 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Trophy size={120} className="text-brand-500" />
+        </div>
+        
+        <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-6 text-white">
+                <div className="px-3 py-1 bg-brand-500 text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-brand-500/20">
+                    Kamino Active
+                </div>
+                <div className="px-3 py-1 bg-white/5 text-white/60 text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10">
+                    {strategyName}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+                <div>
+                    <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Current Protocol APY</p>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-6xl font-black italic tracking-tighter text-brand-500">{currentApy}</span>
+                        <span className="text-white/20 text-xl font-bold italic lowercase tracking-tight">apy</span>
+                    </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <TrendingUp size={12} className="text-brand-500" /> Total Yield Earned
+                    </p>
+                    <p className="text-2xl font-black tracking-tight text-white">${totalEarnings.toFixed(4)} {selectedVault?.token || 'USDC'}</p>
+                    <p className="text-[10px] text-white/30 mt-1 italic">Real-time interest from K-Lend reserves.</p>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* Security & Strategy Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-[#111111] border border-white/5 p-6 rounded-2xl hover:border-white/10 transition-colors text-white">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center text-accent-cyan border border-accent-cyan/10">
+                    <ShieldCheck size={20} />
+                </div>
+                <p className="text-xs font-bold uppercase tracking-widest text-white/60">Risk Profile</p>
+            </div>
+            <p className="text-xl font-black tracking-tight">Tier 1 Protocol</p>
+            <p className="text-[10px] text-white/40 mt-1 leading-relaxed">Audited by Trail of Bits. $1B+ TVL security.</p>
+        </div>
+
+        {/* --- KAMINO AUTOMATED REBALANCING (DEEP INTEGRATION) --- */}
+        <div className="bg-[#111111] border border-brand-500/20 p-6 rounded-2xl hover:border-brand-500/40 transition-colors group cursor-pointer text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 blur-3xl -mr-16 -mt-16" />
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-500 border border-brand-500/10">
+                    <RefreshCw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
+                </div>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-500">Yield Compounding</p>
+            </div>
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-xl font-black tracking-tight">Mode: Auto</p>
+                    <p className="text-[10px] text-white/40 mt-1">Interest compounds every slot (~400ms).</p>
+                </div>
+                <div className="px-2 py-1 bg-brand-500/10 rounded border border-brand-500/20 text-[8px] font-black text-brand-500 uppercase">
+                    Mainnet
+                </div>
+            </div>
+        </div>
+      </div>
+      
+      {/* Vault Selection List */}
+      <div className="bg-[#111111] border border-white/5 rounded-[24px] p-6">
+          <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-4">Available Strategies</h4>
+          <div className="space-y-2">
+              {vaults.map(v => (
+                  <button 
+                    key={v.id}
+                    onClick={() => setSelectedVault(v)}
+                    className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${
+                        selectedVault?.id === v.id 
+                        ? 'bg-brand-500/5 border-brand-500/50' 
+                        : 'bg-white/[0.02] border-white/5 hover:border-white/10'
+                    }`}
+                  >
+                      <div className="flex items-center gap-3 text-white">
+                          <span className="text-xl">{v.logo}</span>
+                          <div className="text-left">
+                              <p className="text-sm font-bold">{v.token} Reserve</p>
+                              <p className="text-[10px] text-white/40 font-medium">TVL: ${(v.tvl / 1e6).toFixed(1)}M</p>
+                          </div>
+                      </div>
+                      <div className="text-right">
+                          <p className="text-brand-500 font-black italic">{v.apy}% APY</p>
+                          {selectedVault?.id === v.id && <div className="text-[8px] font-bold uppercase text-brand-500">Selected</div>}
+                      </div>
+                  </button>
+              ))}
+          </div>
+      </div>
+    </div>
+  );
+}
