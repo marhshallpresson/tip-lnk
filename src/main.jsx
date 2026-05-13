@@ -67,13 +67,6 @@ const dynamicSettings = {
       solflare: { showInList: true }
     }
   },
-  waas: {
-    enabled: false,
-    upgradeEnabled: false
-  },
-  session: {
-    storageType: 'localStorage'
-  },
   security: {
     emailVerification: { required: false, sendConfirmation: true },
     socialRecovery: { enabled: true, providers: ['google', 'twitter'] },

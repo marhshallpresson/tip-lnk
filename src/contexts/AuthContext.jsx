@@ -15,14 +15,15 @@ export const purgeStaleDynamicSession = () => {
     const raw = localStorage.getItem(sessionKey);
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    const token = parsed?.value?.token;
     const expiration = parsed?.value?.sessionExpiration;
+    
+    // CONSERVATIVE PURGE: Only delete if the expiration is definitively in the past.
+    // We allow token: null if the expiration is in the future to avoid breaking OAuth redirects.
     const isExpired = expiration && expiration < Date.now();
-    const isTokenless = token === null || token === undefined;
 
-    if (isTokenless || isExpired) {
+    if (isExpired) {
       localStorage.removeItem(sessionKey);
-      console.log(`[Auth] Purged stale session: ${sessionKey}`);
+      console.log(`[Auth] Purged stale session (expired): ${sessionKey}`);
     }
   } catch (e) {
     console.warn('[Auth] Failed to parse session key during purge check:', e);
