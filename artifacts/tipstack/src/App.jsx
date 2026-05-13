@@ -21,7 +21,7 @@ import ResetPassword from './components/ResetPassword';
 import api from './lib/api';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { useDynamicContext, useIsLoggedIn } from '@dynamic-labs/sdk-react-core';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 const TermsOfService = lazy(() => import('./components/legal/TermsOfService.jsx'));
 const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy.jsx'));
@@ -37,47 +37,36 @@ function ScrollToTop() {
 
 function AppContent() {
   const { role, onboardingStep, update, updateProfile } = useApp();
-  const { user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
-  const { setShowAuthFlow, sdkHasLoaded, authToken } = useDynamicContext();
-  const isLoggedIn = useIsLoggedIn();
+  const { user: authUser, loading: authLoading } = useAuth();
+  const { setShowAuthFlow } = useDynamicContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const dynamicLoginInFlightRef = useRef(false);
-  const processedDynamicTokenRef = useRef(null);
 
+  // Navigate after a successful sync completes.
+  // AuthContext owns all sync triggers (onAuthSuccess event, authFlowClose fallback,
+  // and page-reload restore). We watch authUser here purely for navigation side effects.
+  const prevAuthUserRef = useRef(null);
   useEffect(() => {
-    if (!sdkHasLoaded || !isLoggedIn || authUser || authLoading || dynamicLoginInFlightRef.current) return;
-    if (!authToken || processedDynamicTokenRef.current === authToken) return;
+    if (authLoading) return;
+    const wasLoggedOut = !prevAuthUserRef.current;
+    const isNowLoggedIn = Boolean(authUser);
+    prevAuthUserRef.current = authUser;
 
-    processedDynamicTokenRef.current = authToken;
-    dynamicLoginInFlightRef.current = true;
+    if (!wasLoggedOut || !isNowLoggedIn) return;
 
-    syncWithDynamic(authToken)
-      .then((result) => {
-        if (!result.success) {
-          console.error('[Auth] Dynamic identity sync failed:', result.error);
-          return;
-        }
-
-        const storedOrigin = sessionStorage.getItem('auth_origin');
-        const origin =
-          storedOrigin && storedOrigin.startsWith('/') && !storedOrigin.startsWith('//')
-            ? storedOrigin
-            : '/dashboard';
-        const completedOnboarding = Boolean(
-          result.user?.onboardingComplete || result.user?.onboarding_complete
-        );
-        const target = completedOnboarding ? (origin === '/' ? '/dashboard' : origin) : '/onboarding';
-        navigate(target, { replace: true });
-      })
-      .catch((err) => {
-        console.error('[Auth] Dynamic identity sync error:', err);
-      })
-      .finally(() => {
-        sessionStorage.removeItem('auth_origin');
-        dynamicLoginInFlightRef.current = false;
-      });
-  }, [isLoggedIn, authUser, authLoading, syncWithDynamic, navigate, authToken, sdkHasLoaded]);
+    // User just became authenticated — navigate to the right place
+    const storedOrigin = sessionStorage.getItem('auth_origin');
+    sessionStorage.removeItem('auth_origin');
+    const origin =
+      storedOrigin && storedOrigin.startsWith('/') && !storedOrigin.startsWith('//')
+        ? storedOrigin
+        : '/dashboard';
+    const completedOnboarding = Boolean(
+      authUser?.onboardingComplete || authUser?.onboarding_complete
+    );
+    const target = completedOnboarding ? (origin === '/' ? '/dashboard' : origin) : '/onboarding';
+    navigate(target, { replace: true });
+  }, [authUser, authLoading, navigate]);
 
   const handleGetStarted = () => {
     if (role === 'guest') {
