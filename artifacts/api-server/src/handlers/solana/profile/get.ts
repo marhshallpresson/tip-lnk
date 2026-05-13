@@ -76,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    wallet = normalizeIdentifier(wallet)
+    wallet = normalizeIdentifier(wallet as string)
     let resolvedId = wallet;
     let isInternalId = false;
 

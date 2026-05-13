@@ -135,12 +135,12 @@ export async function createCheckoutSession(amount: number, creatorId: string, m
       walletReference,
     }, idempotencyKey);
   } catch (error: any) {
-    logger.error('Fossa Pay: Error creating checkout session', { 
+    logger.error({ 
         error: error.message, 
         base: FOSSA_BASE_URL, 
         keyPrefix: FOSSA_API_KEY?.slice(0, 4) + '****',
         response: error.response?.data
-    });
+    }, 'Fossa Pay: Error creating checkout session');
     throw error;
   }
 }
@@ -180,7 +180,7 @@ export async function verifyWebhookSignature(payload: string, signature: string)
     const response = await client.post('/webhooks/verify', { payload, signature });
     return response.data.valid === true;
   } catch (error) {
-    logger.error('Fossa Pay: Error verifying webhook signature', { error });
+    logger.error({ error }, 'Fossa Pay: Error verifying webhook signature');
     return false;
   }
 }

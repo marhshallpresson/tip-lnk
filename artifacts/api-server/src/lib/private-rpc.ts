@@ -178,7 +178,7 @@ export async function checkRpcHealth(rpcUrl: string): Promise<{
       }
     }
 
-    const data = await response.json()
+    const data: any = await response.json()
     if (data.result === 'ok') {
       return { healthy: true, latency }
     }

@@ -1,0 +1,81 @@
+09:30:24.339 artifacts/api-server typecheck: src/handlers/admin/creators.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.343 artifacts/api-server typecheck: src/handlers/admin/index.ts(5,31): error TS7030: Not all code paths return a value.
+09:30:24.345 artifacts/api-server typecheck: src/handlers/admin/ledger.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.346 artifacts/api-server typecheck: src/handlers/admin/reconcile.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.349 artifacts/api-server typecheck: src/handlers/admin/stats.ts(17,31): error TS7030: Not all code paths return a value.
+09:30:24.351 artifacts/api-server typecheck: src/handlers/auth/admin-login.ts(10,31): error TS7030: Not all code paths return a value.
+09:30:24.352 artifacts/api-server typecheck: src/handlers/auth/discord/callback.ts(10,31): error TS7030: Not all code paths return a value.
+09:30:24.353 artifacts/api-server typecheck: src/handlers/auth/exchange.ts(12,31): error TS7030: Not all code paths return a value.
+09:30:24.355 artifacts/api-server typecheck: src/handlers/auth/index.ts(2,31): error TS7030: Not all code paths return a value.
+09:30:24.358 artifacts/api-server typecheck: src/handlers/auth/link-email/start.ts(12,31): error TS7030: Not all code paths return a value.
+09:30:24.363 artifacts/api-server typecheck: src/handlers/auth/link-email/verify.ts(10,31): error TS7030: Not all code paths return a value.
+09:30:24.367 artifacts/api-server typecheck: src/handlers/auth/logout.ts(5,31): error TS7030: Not all code paths return a value.
+09:30:24.368 artifacts/api-server typecheck: src/handlers/auth/me.ts(4,31): error TS7030: Not all code paths return a value.
+09:30:24.370 artifacts/api-server typecheck: src/handlers/auth/twitter/callback.ts(10,31): error TS7030: Not all code paths return a value.
+09:30:24.370 artifacts/api-server typecheck: src/handlers/auth/update-name.ts(6,31): error TS7030: Not all code paths return a value.
+09:30:24.371 artifacts/api-server typecheck: src/handlers/creators/analytics.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.372 artifacts/api-server typecheck: src/handlers/deep-link/index.ts(2,31): error TS7030: Not all code paths return a value.
+09:30:24.377 artifacts/api-server typecheck: src/handlers/deep-link/link-social.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.378 artifacts/api-server typecheck: src/handlers/deep-link/resolve.ts(7,31): error TS7030: Not all code paths return a value.
+09:30:24.379 artifacts/api-server typecheck: src/handlers/payments/fiat/webhook.ts(159,31): error TS7030: Not all code paths return a value.
+09:30:24.382 artifacts/api-server typecheck: src/handlers/payouts/history.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.383 artifacts/api-server typecheck: src/handlers/payouts/index.ts(2,31): error TS7030: Not all code paths return a value.
+09:30:24.384 artifacts/api-server typecheck: src/handlers/payouts/webhook.ts(33,31): error TS7030: Not all code paths return a value.
+09:30:24.385 artifacts/api-server typecheck: src/handlers/payouts/withdraw.ts(59,31): error TS7030: Not all code paths return a value.
+09:30:24.385 artifacts/api-server typecheck: src/handlers/payouts/withdraw.ts(215,32): error TS18048: 'result.bank' is possibly 'undefined'.
+09:30:24.385 artifacts/api-server typecheck: src/handlers/payouts/withdraw.ts(216,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+09:30:24.386 artifacts/api-server typecheck: src/handlers/payouts/withdraw.ts(217,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+09:30:24.386 artifacts/api-server typecheck: src/handlers/payouts/withdraw.ts(218,32): error TS18048: 'result.bank' is possibly 'undefined'.
+09:30:24.387 artifacts/api-server typecheck: src/handlers/social/index.ts(2,31): error TS7030: Not all code paths return a value.
+09:30:24.391 artifacts/api-server typecheck: src/handlers/social/x-posts.ts(6,31): error TS7030: Not all code paths return a value.
+09:30:24.391 artifacts/api-server typecheck: src/handlers/solana/assets.ts(7,31): error TS7030: Not all code paths return a value.
+09:30:24.394 artifacts/api-server typecheck: src/handlers/solana/backfill.ts(8,31): error TS7030: Not all code paths return a value.
+09:30:24.394 artifacts/api-server typecheck: src/handlers/solana/birdeye/portfolio.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.394 artifacts/api-server typecheck: src/handlers/solana/diagnostic-check.ts(8,31): error TS7030: Not all code paths return a value.
+09:30:24.395 artifacts/api-server typecheck: src/handlers/solana/index.ts(36,35): error TS2345: Argument of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, qs.ParsedQs, Record<...>> & Request'.
+09:30:24.395 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(23,31): error TS7030: Not all code paths return a value.
+09:30:24.396 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(69,9): error TS18046: 'quoteResponse' is of type 'unknown'.
+09:30:24.396 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(70,44): error TS18046: 'quoteResponse' is of type 'unknown'.
+09:30:24.396 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(74,26): error TS18046: 'quoteResponse' is of type 'unknown'.
+09:30:24.397 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(110,9): error TS18046: 'swapResponse' is of type 'unknown'.
+09:30:24.397 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(111,44): error TS18046: 'swapResponse' is of type 'unknown'.
+09:30:24.397 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(114,25): error TS18046: 'swapResponse' is of type 'unknown'.
+09:30:24.397 artifacts/api-server typecheck: src/handlers/solana/jupiter/swap.ts(117,43): error TS18046: 'swapResponse' is of type 'unknown'.
+09:30:24.398 artifacts/api-server typecheck: src/handlers/solana/price.ts(8,31): error TS7030: Not all code paths return a value.
+09:30:24.398 artifacts/api-server typecheck: src/handlers/solana/priority-fee.ts(11,39): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+09:30:24.399 artifacts/api-server typecheck: src/handlers/solana/profile/get.ts(79,34): error TS2345: Argument of type 'string | ParsedQs' is not assignable to parameter of type 'string'.
+09:30:24.402 artifacts/api-server typecheck: src/handlers/solana/profile/update.ts(10,31): error TS7030: Not all code paths return a value.
+09:30:24.403 artifacts/api-server typecheck: src/handlers/solana/rpc.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.403 artifacts/api-server typecheck: src/handlers/solana/send-smart.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.404 artifacts/api-server typecheck: src/handlers/solana/send.ts(14,31): error TS7030: Not all code paths return a value.
+09:30:24.404 artifacts/api-server typecheck: src/handlers/solana/sns-check.ts(15,31): error TS7030: Not all code paths return a value.
+09:30:24.405 artifacts/api-server typecheck: src/handlers/solana/tips/create.ts(11,31): error TS7030: Not all code paths return a value.
+09:30:24.419 artifacts/api-server typecheck: src/handlers/solana/tips/get.ts(8,31): error TS7030: Not all code paths return a value.
+09:30:24.420 artifacts/api-server typecheck: src/handlers/solana/tips/message.ts(9,31): error TS7030: Not all code paths return a value.
+09:30:24.422 artifacts/api-server typecheck: src/handlers/solana/webhooks/helius.ts(18,31): error TS7030: Not all code paths return a value.
+09:30:24.423 artifacts/api-server typecheck: src/lib/crypto.ts(26,38): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'BinaryLike | KeyObject'.
+09:30:24.424 artifacts/api-server typecheck: src/lib/crypto.ts(32,33): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'BinaryLike'.
+09:30:24.424 artifacts/api-server typecheck: src/lib/crypto.ts(45,33): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'BinaryLike'.
+09:30:24.425 artifacts/api-server typecheck: src/lib/db.ts(97,43): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+09:30:24.425 artifacts/api-server typecheck: src/lib/db.ts(97,48): error TS7006: Parameter 'tip' implicitly has an 'any' type.
+09:30:24.425 artifacts/api-server typecheck: src/lib/db.ts(109,54): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+09:30:24.425 artifacts/api-server typecheck: src/lib/db.ts(109,59): error TS7006: Parameter 'payout' implicitly has an 'any' type.
+09:30:24.426 artifacts/api-server typecheck: src/lib/db.ts(559,89): error TS18046: 'e' is of type 'unknown'.
+09:30:24.426 artifacts/api-server typecheck: src/lib/dflow-security.ts(2,16): error TS7016: Could not find a declaration file for module 'bn.js'. '/vercel/path0/node_modules/.pnpm/bn.js@5.2.3/node_modules/bn.js/lib/bn.js' implicitly has an 'any' type.
+09:30:24.426 artifacts/api-server typecheck: src/lib/fossa.ts(138,64): error TS2769: No overload matches this call.
+09:30:24.427 artifacts/api-server typecheck:   Overload 1 of 3, '(obj: "Fossa Pay: Error creating checkout session", msg?: undefined): void', gave the following error.
+09:30:24.427 artifacts/api-server typecheck:     Argument of type '{ error: any; base: string; keyPrefix: string; response: any; }' is not assignable to parameter of type 'undefined'.
+09:30:24.427 artifacts/api-server typecheck:   Overload 2 of 3, '(obj: "Fossa Pay: Error creating checkout session", msg?: undefined, ...args: unknown[]): void', gave the following error.
+09:30:24.427 artifacts/api-server typecheck:     Argument of type '{ error: any; base: string; keyPrefix: string; response: any; }' is not assignable to parameter of type 'undefined'.
+09:30:24.428 artifacts/api-server typecheck: src/lib/fossa.ts(183,66): error TS2769: No overload matches this call.
+09:30:24.428 artifacts/api-server typecheck:   Overload 1 of 3, '(obj: "Fossa Pay: Error verifying webhook signature", msg?: undefined): void', gave the following error.
+09:30:24.428 artifacts/api-server typecheck:     Argument of type '{ error: unknown; }' is not assignable to parameter of type 'undefined'.
+09:30:24.428 artifacts/api-server typecheck:   Overload 2 of 3, '(obj: "Fossa Pay: Error verifying webhook signature", msg?: undefined, ...args: unknown[]): void', gave the following error.
+09:30:24.428 artifacts/api-server typecheck:     Argument of type '{ error: unknown; }' is not assignable to parameter of type 'undefined'.
+09:30:24.429 artifacts/api-server typecheck: src/lib/kamino.ts(22,86): error TS2307: Cannot find module '@kamino-finance/klend-sdk' or its corresponding type declarations.
+09:30:24.429 artifacts/api-server typecheck: src/lib/private-rpc.ts(182,9): error TS18046: 'data' is of type 'unknown'.
+09:30:24.429 artifacts/api-server typecheck: src/lib/private-rpc.ts(189,40): error TS18046: 'data' is of type 'unknown'.
+09:30:24.465  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 typecheck: `tsc -p tsconfig.json --noEmit`
+09:30:24.514  ELIFECYCLE  Command failed with exit code 2.
+09:30:24.551  ELIFECYCLE  Command failed with exit code 2.
+09:30:24.570 Error: Command "pnpm run build" exited with 2

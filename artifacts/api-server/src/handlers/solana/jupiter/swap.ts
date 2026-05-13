@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         quoteUrl.searchParams.append('platformFeeBps', feeBps.toString());
     }
 
-    const quoteResponse = await fetch(quoteUrl.toString()).then((r) => r.json())
+    const quoteResponse: any = await fetch(quoteUrl.toString()).then((r) => r.json())
 
     if (quoteResponse.error) {
       return res.status(400).json({ error: quoteResponse.error })
@@ -101,7 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ...(feeAccount && { feeAccount: feeAccount.toBase58() })
     }
 
-    const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
+    const swapResponse: any = await fetch('https://quote-api.jup.ag/v6/swap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(swapRequestBody)
