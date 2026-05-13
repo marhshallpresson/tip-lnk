@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { initSchema } from "./lib/db";
 
 const app: Express = express();
 
@@ -13,6 +14,31 @@ if (!COOKIE_SECRET) {
 }
 
 app.use(cookieParser(COOKIE_SECRET));
+
+// Reflect origin back (required for credentials) — allow all in dev, prod locked via firewall/deploy rules
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl) and all browser origins
+      callback(null, origin || true);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-CSRF-Token",
+      "x-csrf-token",
+      "Content-Encoding",
+      "Accept-Encoding",
+      "X-Accept-Blockchain-IDs",
+      "X-Accept-Action-Version",
+    ],
+    exposedHeaders: ["Set-Cookie"],
+    maxAge: 86400,
+  }),
+);
+
 app.use(
   pinoHttp({
     logger,
@@ -32,7 +58,6 @@ app.use(
     },
   }),
 );
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -41,6 +66,11 @@ app.use("/api", router);
 // Root health probe — Replit workflow system checks GET / for HTTP 200
 app.get("/", (_req, res) => {
   res.json({ status: "ok", service: "tipstack-api" });
+});
+
+// Run DB schema migrations on startup (idempotent — safe to run every boot)
+initSchema().catch((err) => {
+  logger.error({ err }, "initSchema failed on startup");
 });
 
 export default app;

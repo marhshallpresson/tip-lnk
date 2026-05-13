@@ -151,28 +151,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const walletAddressHash = primaryWallet ? hashAddress(primaryWallet) : ""
     const encryptedWalletAddress = primaryWallet ? encrypt(primaryWallet) : ""
 
-    if (!dynamicUserId || !email) {
-      return res.status(400).json({ success: false, error: "Verified email required from Dynamic." })
+    if (!dynamicUserId) {
+      return res.status(400).json({ success: false, error: "Invalid Dynamic token: missing user ID." })
     }
+
+    // For wallet-only users Dynamic may not provide an email. Synthesize a placeholder
+    // so the DB constraint is satisfied; AuthCompletion will prompt them to add a real one.
+    const resolvedEmail = email || `${dynamicUserId}@dynamic.local`
 
     const now = new Date()
     const user = await db.transaction(async (trx) => {
+      // Also try to find by dynamic_user_id stored in profileData for wallet-only users
       let targetUser = await trx("user")
         .whereNull("deletedAt")
-        .whereRaw("LOWER(email) = ?", [email])
+        .whereRaw("LOWER(email) = ?", [resolvedEmail])
         .first()
+
+      // For wallet-only (placeholder email), also search by wallet or dynamic user id
+      if (!targetUser && !email) {
+        targetUser = await trx("user")
+          .whereNull("deletedAt")
+          .whereRaw("profile_data::text LIKE ?", [`%"dynamic_user_id":"${dynamicUserId}"%`])
+          .first()
+          .catch(() => null) // ignore if JSON search fails
+      }
 
       const walletUser = primaryWallet ? await findWalletUser(trx, primaryWallet, walletAddressHash) : null
 
       if (walletUser && targetUser && walletUser.id !== targetUser.id) {
         const walletUserEmail = normalizeEmail(walletUser.email)
-        if (walletUserEmail && walletUserEmail !== email) {
+        if (walletUserEmail && walletUserEmail !== resolvedEmail) {
           throw Object.assign(new Error("wallet_conflict"), { statusCode: 409 })
         }
         await mergeUserHistory(trx, walletUser, targetUser)
       } else if (!targetUser && walletUser) {
         const walletUserEmail = normalizeEmail(walletUser.email)
-        if (walletUserEmail && walletUserEmail !== email) {
+        if (walletUserEmail && walletUserEmail !== resolvedEmail) {
           throw Object.assign(new Error("wallet_conflict"), { statusCode: 409 })
         }
         targetUser = walletUser
@@ -181,7 +195,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const dynamicProfile = {
         dynamic_user_id: dynamicUserId,
         dynamic_session_id: stringValue((payload as Record<string, unknown>).sid) || null,
-        dynamic_email: email,
+        dynamic_email: email || null,
         dynamic_last_login_at: now.toISOString(),
         dynamic_last_verified_credential_id: stringValue((payload as Record<string, unknown>).lastVerifiedCredentialId) || null,
       }
@@ -190,14 +204,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const twitterHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.oauthProvider) === 'twitter')?.oauthUsername as string;
       const discordHandle = credentials.find(c => stringValue(c.oauthUsername) && stringValue(c.oauthProvider) === 'discord')?.oauthUsername as string;
 
+      const isPlaceholderEmail = resolvedEmail.endsWith('@dynamic.local')
+
       if (!targetUser) {
-        console.log(`👤 Dynamic Auth: Creating new user record for ${email}`);
+        console.log(`👤 Dynamic Auth: Creating new user record for ${resolvedEmail}`);
         const userId = randomUUID()
         await trx("user").insert({
           id: userId,
-          email,
+          email: resolvedEmail,
           name,
-          emailVerifiedAt: now,
+          // Only mark emailVerifiedAt if it's a real email (not a placeholder)
+          emailVerifiedAt: isPlaceholderEmail ? null : now,
           walletAddressHash: walletAddressHash || null,
           encryptedWalletAddress: encryptedWalletAddress || null,
           twitterHandle: twitterHandle || null,
@@ -206,14 +223,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           lastLoginAt: now,
           created_at: now,
           updated_at: now,
-          onboardingComplete: false // New users must onboard
+          onboardingComplete: false
         })
         await ensureUserRole(trx, userId)
         return trx("user").where({ id: userId }).first()
       }
 
-      console.log(`👤 Dynamic Auth: Identified existing user ${targetUser.id} for ${email}`);
-      console.log(`🔍 Existing Profile Data for ${targetUser.id}:`, targetUser.profileData);
+      console.log(`👤 Dynamic Auth: Identified existing user ${targetUser.id} for ${resolvedEmail}`);
 
       const existingProfile = parseProfileData(targetUser.profileData)
       const sourceProfile = walletUser && walletUser.id !== targetUser.id ? parseProfileData(walletUser.profileData) : {}
@@ -223,10 +239,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...dynamicProfile,
       }
 
+      // Only update email if the new one is a real address (don't overwrite real email with placeholder)
+      const emailToStore = isPlaceholderEmail
+        ? (targetUser.email || resolvedEmail)
+        : resolvedEmail
+
       const updates: Record<string, unknown> = {
-        email,
+        email: emailToStore,
         name: targetUser.name || name,
-        emailVerifiedAt: targetUser.emailVerifiedAt || now,
+        emailVerifiedAt: targetUser.emailVerifiedAt || (isPlaceholderEmail ? null : now),
         twitterHandle: targetUser.twitterHandle || twitterHandle || null,
         discordHandle: targetUser.discordHandle || discordHandle || null,
         profileData: JSON.stringify(profileData),

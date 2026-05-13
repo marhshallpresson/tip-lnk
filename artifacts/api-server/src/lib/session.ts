@@ -39,17 +39,21 @@ export type SessionCreateResult = {
 }
 
 export const getCookieOptions = (req: Request) => {
-  const isLocalhost = Boolean(req.hostname === 'localhost' || req.hostname === '127.0.0.1')
+  const host = req.hostname || ''
+  const isLocalhost = host === 'localhost' || host === '127.0.0.1'
+  // Never pin domain on non-production hosts (Replit dev, staging, etc.)
+  // so cookies are scoped to whatever host the browser is on.
+  const isProdHost = host === 'tipstack.fun' || host === 'www.tipstack.fun' || host.endsWith('.tipstack.fun') || host.endsWith('.tipstack.com')
   const options: any = {
     httpOnly: true,
     secure: !isLocalhost,
-    sameSite: 'lax' as any,
+    sameSite: isLocalhost ? 'lax' : 'none' as any,
     path: '/',
     signed: true,
     maxAge: SESSION_DURATION_MS,
   }
-  if (!isLocalhost) {
-    options.domain = '.tipstack.com'
+  if (isProdHost) {
+    options.domain = '.tipstack.fun'
   }
   return options
 }
