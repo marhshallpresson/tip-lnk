@@ -1,8 +1,65 @@
 {
+  "version": 2,
+  "framework": "vite",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
+    {
+      "source": "/actions.json",
+      "destination": "/api/solana/actions/config"
+    },
+    {
+      "source": "/api/actions.json",
+      "destination": "/api/solana/actions/config"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; font-src * data: blob:; img-src * data: blob:; connect-src * data: blob: wss: ws: https://*.dynamic.xyz https://*.dynamic-js.com https://*.dynamic-js.io https://dynamic-static-assets.com https://*.dynamic-static-assets.com https://*.dynamicauth.com https://*.dynamic-labs.com https://logs.dynamicauth.com ; frame-src * data: blob: https://app.dynamicauth.com https://*.dynamicauth.com https://*.dynamic.xyz ;"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "api/_handlers/**, api/_lib/**"
+    }
+  }
 }
