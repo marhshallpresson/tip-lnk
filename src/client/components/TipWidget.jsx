@@ -339,11 +339,12 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
   }
 
   return (
-    <div className="bg-[#0f0f11] border border-white/5 rounded-[32px] p-6 w-full max-w-[380px] mx-auto shadow-2xl relative overflow-hidden font-sans">
+    <div className="bg-[#0a0a0a] border border-white/5 rounded-[32px] p-5 md:p-8 w-full max-w-[400px] mx-auto shadow-2xl relative overflow-hidden font-sans">
+
       
       {/* Header Info */}
-      <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20 overflow-hidden">
+      <div className="flex items-center gap-4 mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20 overflow-hidden shrink-0">
              {fixedRecipient?.avatarUrl ? (
                  <img src={fixedRecipient.avatarUrl} alt="" className="w-full h-full object-cover" />
              ) : (
@@ -352,12 +353,12 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
                  </div>
              )}
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5">
-                  <h3 className="font-bold text-white text-base tracking-tight">@{recipientInput || 'creator'}</h3>
-                  <ShieldCheck size={14} className="text-brand-500" fill="currentColor" stroke="none" />
+                  <h3 className="font-bold text-white text-lg tracking-tight">@{recipientInput || 'creator'}</h3>
+                  <ShieldCheck size={16} className="text-brand-500" fill="currentColor" stroke="none" />
               </div>
-              <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Verified Creator</p>
+              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Verified Creator</p>
           </div>
       </div>
 
@@ -367,9 +368,9 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
               <button
                 key={val}
                 onClick={() => setAmount(val.toString())}
-                className={`h-11 rounded-xl font-bold text-xs transition-all border ${
+                className={`h-12 rounded-xl font-bold text-sm transition-all border ${
                     isPresetActive(val) 
-                    ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-[1.02]' 
+                    ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.15)] scale-[1.02]' 
                     : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white'
                 }`}
               >
@@ -379,81 +380,66 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
       </div>
 
       {/* Custom Amount Section */}
-      <div className="space-y-4 mb-8">
+      <div className="space-y-3 mb-8">
           <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 font-bold text-lg">$</span>
+              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40 font-black text-2xl">$</span>
               <input 
                 type="number" 
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl pl-10 pr-24 text-white font-bold text-xl focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
+                className="w-full h-20 bg-[#161618] border border-white/5 rounded-2xl pl-12 pr-6 text-white font-black text-3xl focus:border-brand-500/50 outline-none transition-all group-hover:bg-[#1a1a1c]"
                 placeholder="0.00"
               />
               {paymentMethod === 'card' && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
-                      <div className="text-[10px] font-black text-brand-500 bg-brand-500/10 px-2.5 py-1.5 rounded-lg border border-brand-500/20 shadow-sm animate-fade-in whitespace-nowrap">
-                         {quoteLoading ? <Loader2 size={10} className="animate-spin" /> : (fiatQuote ? `~₦${Number(fiatQuote.amountNgn || 0).toLocaleString()}` : 'Rate unavailable')}
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <div className="text-[10px] font-black text-brand-500 bg-brand-500/10 px-3 py-2 rounded-xl border border-brand-500/20 shadow-sm whitespace-nowrap">
+                         {quoteLoading ? <Loader2 size={12} className="animate-spin" /> : (fiatQuote ? `~₦${Number(fiatQuote.amountNgn || 0).toLocaleString()}` : 'Rate NA')}
                       </div>
                   </div>
               )}
-          </div>
-
-          <div className="relative group">
-              <input 
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Add a private note..."
-                className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl px-4 text-sm text-white/70 placeholder:text-white/20 focus:border-brand-500/50 outline-none transition-all group-hover:bg-white/[0.07]"
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-500/20 shadow-sm">
-                  <Lock size={10} fill="currentColor" /> ENCRYPTED
-              </div>
           </div>
       </div>
 
       {/* Payment Selection & Token Picker */}
       <div className="space-y-4 mb-8">
-          <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
+          <div className="flex bg-[#161618] rounded-xl p-1.5 border border-white/5">
               <button 
                 onClick={() => setPaymentMethod('card')}
-                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+                className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-[#222224] text-white shadow-sm' : 'text-white/30 hover:text-white/60'}`}
               >
-                  <CreditCard size={12} /> Card (NGN)
+                  <CreditCard size={14} /> Card
               </button>
               <button 
                 onClick={() => setPaymentMethod('crypto')}
-                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'crypto' ? 'bg-white/10 text-white shadow-sm' : 'text-white/20 hover:text-white/40'}`}
+                className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${paymentMethod === 'crypto' ? 'bg-[#222224] text-white shadow-sm' : 'text-white/30 hover:text-white/60'}`}
               >
-                  <Wallet size={12} /> Crypto (SOL)
+                  <Wallet size={14} /> Crypto
               </button>
           </div>
 
           {paymentMethod === 'crypto' && (
-              <div className="space-y-3">
-                  <div className="relative">
-                    <button
-                        onClick={() => setShowTokenMenu(!showTokenMenu)}
-                        className="w-full h-11 rounded-xl border border-white/5 bg-white/5 px-4 flex items-center justify-between text-xs font-bold text-white/60 hover:bg-white/[0.07] transition-all"
-                    >
-                        <span className="flex items-center gap-2">
-                            {selectedToken?.symbol || 'Select Asset'}
-                            {selectedToken?.balance !== undefined && <span className="text-[10px] text-white/20 font-normal">Bal: {selectedToken.balance.toFixed(2)}</span>}
-                        </span>
-                        <ChevronDown size={14} className={`transition-transform ${showTokenMenu ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showTokenMenu && (
-                        <div className="absolute top-full left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-48 overflow-y-auto">
-                            <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="w-full bg-white/5 border-none rounded-lg px-3 py-2 text-xs text-white mb-2 outline-none" />
-                            {tokensLoading ? <Loader2 size={16} className="animate-spin mx-auto my-4 text-white/20" /> : filteredTokens.slice(0, 50).map(t => (
-                                <button key={t.mint} onClick={() => { setSelectedToken(t); setShowTokenMenu(false); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between group">
-                                    <span className="text-xs font-bold text-white/70 group-hover:text-white">{t.symbol}</span>
-                                    <span className="text-[10px] text-white/20">{t.balance?.toFixed(2)}</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                  </div>
+              <div className="relative">
+                <button
+                    onClick={() => setShowTokenMenu(!showTokenMenu)}
+                    className="w-full h-12 rounded-xl border border-white/5 bg-[#161618] px-4 flex items-center justify-between text-sm font-bold text-white/60 hover:bg-[#1a1a1c] transition-all"
+                >
+                    <span className="flex items-center gap-2">
+                        {selectedToken?.symbol || 'Select Asset'}
+                        {selectedToken?.balance !== undefined && <span className="text-xs text-white/30 font-normal">({selectedToken.balance.toFixed(2)})</span>}
+                    </span>
+                    <ChevronDown size={16} className={`transition-transform ${showTokenMenu ? 'rotate-180' : ''}`} />
+                </button>
+                {showTokenMenu && (
+                    <div className="absolute top-full left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-60 overflow-y-auto">
+                        <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="w-full bg-white/5 border-none rounded-lg px-4 py-3 text-sm text-white mb-2 outline-none" />
+                        {tokensLoading ? <Loader2 size={20} className="animate-spin mx-auto my-6 text-white/20" /> : filteredTokens.slice(0, 50).map(t => (
+                            <button key={t.mint} onClick={() => { setSelectedToken(t); setShowTokenMenu(false); }} className="w-full text-left px-4 py-3 rounded-lg hover:bg-white/5 flex items-center justify-between group">
+                                <span className="text-sm font-bold text-white/70 group-hover:text-white">{t.symbol}</span>
+                                <span className="text-xs text-white/30">{t.balance?.toFixed(2)}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
               </div>
           )}
       </div>
@@ -461,7 +447,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
       <button 
         onClick={handlePay}
         disabled={processing || quoteLoading || !amount || Number(amount) <= 0 || !resolvedAddress || (paymentMethod === 'card' && !fiatQuote)}
-        className="w-full h-16 rounded-[22px] bg-gradient-to-r from-[#FFB800] to-[#FF9500] text-black font-black text-lg shadow-[0_8px_30px_rgba(255,184,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none"
+        className="w-full h-16 rounded-[22px] bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-black font-black text-lg shadow-[0_8px_30px_rgba(245,158,11,0.2)] hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none"
       >
           {processing || quoteLoading ? (
               <Loader2 size={24} className="animate-spin" />
@@ -482,12 +468,6 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
             setTxResult({ status: 'confirmed', signature: data.signature, outAmount: Number(amount) });
         }}
       />
-
-      {(widgetError || tippingError) && (
-          <div className="text-center text-red-500 text-[10px] mt-4 font-bold bg-red-500/5 p-2 rounded-lg border border-red-500/10">
-            {widgetError || tippingError}
-          </div>
-      )}
     </div>
   );
 }
