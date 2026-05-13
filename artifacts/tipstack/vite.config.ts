@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { spawn, type ChildProcess } from "child_process";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import wasm from "vite-plugin-wasm";
@@ -28,9 +29,34 @@ if (!basePath) {
   );
 }
 
+const apiServerDistPath = path.resolve(import.meta.dirname, "../api-server/dist/index.mjs");
+
+function startApiServerPlugin() {
+  let apiProcess: ChildProcess | null = null;
+  return {
+    name: "start-api-server",
+    configureServer(server: { httpServer: { on: (event: string, cb: () => void) => void } | null }) {
+      apiProcess = spawn("node", ["--enable-source-maps", apiServerDistPath], {
+        env: { ...process.env, PORT: "5000", NODE_ENV: "development" },
+        stdio: "inherit",
+      });
+      apiProcess.on("error", (err: Error) => {
+        console.error("[api-server] Failed to start:", err.message);
+      });
+      server.httpServer?.on("close", () => {
+        if (apiProcess) {
+          apiProcess.kill("SIGTERM");
+          apiProcess = null;
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
+    startApiServerPlugin(),
     react(),
     wasm(),
     topLevelAwait(),
