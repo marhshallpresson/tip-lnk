@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Logout request failed:', err);
     } finally {
-      // ─── ELITE IDENTITY SYNC: UNIFIED LOGOUT ───
+      // ——— ELITE IDENTITY SYNC: UNIFIED LOGOUT ———
       // Terminate both local and Dynamic identity sessions simultaneously.
       if (typeof dynamicLogout === 'function') {
         dynamicLogout();
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      // ΓööΓöÇΓöÇ ELITE SECURITY: CLEAR STALE SESSIONS ΓööΓöÇΓöÇ
+      // ——— ELITE SECURITY: CLEAR STALE SESSIONS ———
       // Before syncing a new Dynamic identity, we MUST clear any old local session
       // to avoid 401 errors from the API instance trying to use an expired token.
       api.setAccessToken(null);
@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }) => {
       setError(errorMsg);
       return { success: false, error: errorMsg };
     } catch (err) {
-      console.error('≡ƒ¢í∩╕Å Auth Sync Error:', err);
+      console.error(' Auth Sync Error:', err);
       setError('A network error occurred during authentication.');
       return { success: false, error: 'Network error' };
     } finally {
@@ -142,11 +142,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const { authToken, isAuthenticated, sdkHasLoaded } = dynamicContext || {};
     
-    // ΓööΓöÇΓöÇ ELITE SESSION HEALING: AUTO-LOGOUT ΓööΓöÇΓöÇ
+    // ——— ELITE SESSION HEALING: AUTO-LOGOUT ———
     // If Dynamic SDK confirms the user is NOT authenticated, but we still think we are,
     // we must terminate the local session to prevent 401 noise and stale UI.
     if (sdkHasLoaded && !isAuthenticated && user && !loading) {
-      console.warn('≡ƒ¢í∩╕Å Dynamic identity lost. Cleaning up TipStack session...');
+      console.warn(' Dynamic identity lost. Cleaning up TipStack session...');
       // Use local cleanup to avoid infinite redirection loops
       api.setAccessToken(null);
       localStorage.removeItem('tipstack_auth_token');
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }) => {
 
     api.setUnauthorizedHandler(async () => {
       if (isAuthenticated && authToken) {
-        console.warn('≡ƒ¢í∩╕Å API 401 detected: Attempting silent session re-sync...');
+        console.warn(' API 401 detected: Attempting silent session re-sync...');
         const result = await syncWithDynamic(authToken);
         return result.success;
       }
