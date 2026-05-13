@@ -66,6 +66,14 @@ const dynamicSettings = {
   walletConnectors: [SolanaWalletConnectors],
   suppressEndUserConsoleWarning: true,
   logLevel: dynamicLogLevel,
+  // Add explicit WaaS configuration
+  embeddedWallets: {
+    automaticEmbeddedWalletCreation: true,
+  },
+  // Explicitly enable WaaS infrastructure
+  waas: {
+    enabled: true,
+  },
   overrides: {
     evmNetworks: [],
   },
@@ -107,7 +115,7 @@ const dynamicSettings = {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <DynamicContextProvider settings={dynamicSettings} emitErrors={false}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <App />
       </BrowserRouter>
     </DynamicContextProvider>
