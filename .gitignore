@@ -1,40 +1,49 @@
-node_modules
-scripts
-.env
-.env*.local
-dev.db
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
 dist
-docs
-plans/
-skills/
-.qwen
-.gemini
-.vercel
-.claude
-backend/final-mail-test.ts
-build_output.txt
-tipstack_pitch.html
-dynamic-labs-security-recovered.ts
-dynamic-verify-recovered.ts
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
 
-# Ignore all markdown files except README and DX-REPORT
-*.md
-!README.md
-!DX-REPORT.md
+# dependencies
+node_modules
 
-# Ignore all HTML files except index.html
-*.html
-!index.html
-.env.example
-tests-e2e
-test-results/
-playwright-report/
-playwright.config.js
-*.json
-debug.log
-tipstack-video
-*.test.ts
-*.test.jsx
-install_solana.bat
-.gitignore
-rustup-init.exe
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Replit
+.cache/
+.local/
