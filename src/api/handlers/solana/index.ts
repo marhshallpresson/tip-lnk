@@ -1,0 +1,44 @@
+import type { Request as VercelRequest, Response as VercelResponse } from 'express'
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const path = req.url?.split('?')[0] || ''
+  const parts = path.split('/').filter(Boolean)
+  
+  const action = parts[2]
+  const subAction = parts[3]
+
+  try {
+    let module;
+
+    if (action === 'jupiter' && subAction === 'swap') {
+        module = await import('./jupiter/swap.js')
+    } else if (action === 'profile') {
+        if (subAction === 'get') module = await import('./profile/get.js')
+        else if (subAction === 'update') module = await import('./profile/update.js')
+        else module = await import('./profile/get.js')
+    } else if (action === 'tips') {
+        if (subAction === 'get') module = await import('./tips/get.js')
+        else if (subAction === 'stream') module = await import('./tips/stream.js')
+        else if (subAction === 'message') module = await import('./tips/message.js')
+        else module = await import('./tips/get.js')
+    } else if (action === 'webhooks' && subAction === 'helius') {
+        module = await import('./webhooks/helius.js')
+    } else {
+        if (action === 'sns-check') module = await import('./sns-check.js')
+        if (action === 'send') module = await import('./send.js')
+        if (action === 'send-smart') module = await import('./send-smart.js')
+        if (action === 'backfill') module = await import('./backfill.js')
+        if (action === 'priority-fee') module = await import('./priority-fee.js')
+        if (action === 'assets') module = await import('./assets.js')
+        if (action === 'diagnostic-check') module = await import('./diagnostic-check.js')
+    }
+
+    if (module?.default) {
+      return await module.default(req as any, res as any)
+    }
+
+    res.status(404).json({ error: `Solana action '${action}' not found` })
+  } catch (err: any) {
+    console.error(`🛡️ Solana Dispatch Error [${action}]:`, err.message)
+    res.status(500).json({ error: 'Internal Dispatch Error', details: err.message })
+  }
+}
