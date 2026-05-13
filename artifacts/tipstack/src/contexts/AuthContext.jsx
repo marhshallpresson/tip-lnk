@@ -117,18 +117,18 @@ export const AuthProvider = ({ children }) => {
 
   // ─── PRIMARY TRIGGER: onAuthSuccess event from Dynamic ───────────────────────
   // Dynamic fires onAuthSuccess once the user has fully authenticated.
-  // We wait up to 300 ms for authToken to propagate into React context,
+  // We wait up to 1.5 seconds for authToken to propagate into React context,
   // then call syncWithDynamic. This handles all Dynamic auth flows:
   // wallet-only, email-only, Google OAuth, and combined flows.
   useEffect(() => {
     const off = authEvents.on('authSuccess', async ({ dynamicUser }) => {
       console.log('[Auth] authSuccess event received — dynamic userId:', dynamicUser?.id);
 
-      // authToken may take 1-2 render cycles to appear in useDynamicContext()
-      // after onAuthSuccess fires. Poll briefly before giving up.
+      // Increase polling duration for authToken to appear in context
+      // v4 WaaS initialization can take longer due to iframe handshake
       let token = authTokenRef.current;
       if (!token) {
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 15; i++) { // Increase to 1.5s max wait
           await new Promise((r) => setTimeout(r, 100));
           token = authTokenRef.current;
           if (token) break;
@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         await syncWithDynamic(token);
       } else {
-        console.warn('[Auth] onAuthSuccess fired but no authToken available after 600 ms wait.');
+        console.warn('[Auth] onAuthSuccess fired but no authToken available after 1500 ms wait.');
       }
     });
     return off;
