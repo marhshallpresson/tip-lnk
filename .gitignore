@@ -47,3 +47,45 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+
+node_modules
+scripts
+.env
+.env*.local
+dev.db
+dist
+docs
+plans/
+skills/
+.qwen
+.gemini
+.vercel
+.claude
+backend/final-mail-test.ts
+build_output.txt
+tipstack_pitch.html
+dynamic-labs-security-recovered.ts
+dynamic-verify-recovered.ts
+
+# Ignore all markdown files except README and DX-REPORT
+*.md
+!README.md
+!DX-REPORT.md
+
+# Ignore all HTML files except index.html
+*.html
+!index.html
+.env.example
+tests-e2e
+test-results/
+playwright-report/
+playwright.config.js
+*.json
+debug.log
+tipstack-video
+*.test.ts
+*.test.jsx
+install_solana.bat
+.gitignore
+rustup-init.exe
