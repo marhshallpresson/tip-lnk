@@ -1,8 +1,8 @@
 import { SignJWT, jwtVerify } from 'jose'
 
-const JWT_SECRET = process.env.SESSION_TOKEN_SECRET || process.env.SESSION_COOKIE_SECRET || process.env.JWT_SECRET
+const JWT_SECRET = process.env.SESSION_TOKEN_SECRET || process.env.SESSION_SECRET || process.env.SESSION_COOKIE_SECRET || process.env.JWT_SECRET
 if (!JWT_SECRET) {
-  throw new Error('SESSION_TOKEN_SECRET, SESSION_COOKIE_SECRET, or JWT_SECRET must be configured.')
+  throw new Error('SESSION_TOKEN_SECRET, SESSION_SECRET, SESSION_COOKIE_SECRET, or JWT_SECRET must be configured.')
 }
 
 const secret = new TextEncoder().encode(JWT_SECRET)

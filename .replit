@@ -25,5 +25,4 @@ externalPort = 80
 [userenv]
 
 [userenv.shared]
-SESSION_TOKEN_SECRET = "604efe8433a11ace0f4347964cb2ff2ca56349560effa2be6877a2a8bc6e7277"
 VITE_API_BASE_URL = ""

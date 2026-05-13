@@ -7,9 +7,9 @@ import crypto from 'crypto'
  * Ensures identity verification and data protection within serverless functions.
  */
 
-const ENCRYPTION_KEY = process.env.SESSION_TOKEN_SECRET || process.env.JWT_SECRET
+const ENCRYPTION_KEY = process.env.SESSION_TOKEN_SECRET || process.env.SESSION_SECRET || process.env.JWT_SECRET
 if (!ENCRYPTION_KEY) {
-  console.error('🛡️ CRITICAL: SESSION_TOKEN_SECRET or JWT_SECRET is required for cryptographic operations.')
+  console.error('🛡️ CRITICAL: SESSION_TOKEN_SECRET, SESSION_SECRET, or JWT_SECRET is required for cryptographic operations.')
 }
 
 /**
