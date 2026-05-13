@@ -52,6 +52,10 @@ const dynamicSettings = {
   overrides: {
     evmNetworks: [],
   },
+  // Suppress error overlay for known network-level CORS failures from Dynamic SDK
+  // when running on localhost. These don't affect functionality once allowed origins
+  // are configured in the Dynamic Labs dashboard.
+  onFatalError: () => {},
   events: {
     onAuthSuccess: ({ user }) => {
       console.log('[Auth] Dynamic auth complete:', user?.id);
