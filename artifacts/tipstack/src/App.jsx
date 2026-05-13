@@ -21,7 +21,7 @@ import ResetPassword from './components/ResetPassword';
 import api from './lib/api';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { useDynamicContext, useIsLoggedIn } from '@dynamic-labs/sdk-react-core';
 
 const TermsOfService = lazy(() => import('./components/legal/TermsOfService.jsx'));
 const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy.jsx'));
@@ -38,15 +38,15 @@ function ScrollToTop() {
 function AppContent() {
   const { role, onboardingStep, update, updateProfile } = useApp();
   const { user: authUser, loading: authLoading, syncWithDynamic } = useAuth();
-  const { user: dynamicUser, setShowAuthFlow, sdkHasLoaded, authToken } = useDynamicContext();
+  const { setShowAuthFlow, sdkHasLoaded, authToken } = useDynamicContext();
+  const isLoggedIn = useIsLoggedIn();
   const navigate = useNavigate();
   const location = useLocation();
   const dynamicLoginInFlightRef = useRef(false);
   const processedDynamicTokenRef = useRef(null);
 
   useEffect(() => {
-    if (!sdkHasLoaded || !dynamicUser || authUser || authLoading || dynamicLoginInFlightRef.current) return;
-
+    if (!sdkHasLoaded || !isLoggedIn || authUser || authLoading || dynamicLoginInFlightRef.current) return;
     if (!authToken || processedDynamicTokenRef.current === authToken) return;
 
     processedDynamicTokenRef.current = authToken;
@@ -55,27 +55,29 @@ function AppContent() {
     syncWithDynamic(authToken)
       .then((result) => {
         if (!result.success) {
-          console.error('Dynamic identity sync failed:', result.error);
+          console.error('[Auth] Dynamic identity sync failed:', result.error);
           return;
         }
 
         const storedOrigin = sessionStorage.getItem('auth_origin');
-        const origin = storedOrigin && storedOrigin.startsWith('/') && !storedOrigin.startsWith('//')
-          ? storedOrigin
-          : '/dashboard';
-        const completedOnboarding = Boolean(result.user?.onboardingComplete || result.user?.onboarding_complete);
+        const origin =
+          storedOrigin && storedOrigin.startsWith('/') && !storedOrigin.startsWith('//')
+            ? storedOrigin
+            : '/dashboard';
+        const completedOnboarding = Boolean(
+          result.user?.onboardingComplete || result.user?.onboarding_complete
+        );
         const target = completedOnboarding ? (origin === '/' ? '/dashboard' : origin) : '/onboarding';
-
         navigate(target, { replace: true });
       })
       .catch((err) => {
-        console.error('Dynamic identity sync error:', err);
+        console.error('[Auth] Dynamic identity sync error:', err);
       })
       .finally(() => {
         sessionStorage.removeItem('auth_origin');
         dynamicLoginInFlightRef.current = false;
       });
-  }, [dynamicUser, authUser, authLoading, syncWithDynamic, navigate, authToken]);
+  }, [isLoggedIn, authUser, authLoading, syncWithDynamic, navigate, authToken, sdkHasLoaded]);
 
   const handleGetStarted = () => {
     if (role === 'guest') {
@@ -105,16 +107,19 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-surface-950 text-white flex flex-col relative overflow-hidden">
       <ScrollToTop />
-      
+
       {/* --- Global Background Branding --- */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-[0.03]">
-          <img src="/logo.svg" className="absolute -top-20 -left-20 w-[600px] h-[600px] blur-[100px] rotate-12" alt="" />
-          <img src="/logo.svg" className="absolute top-1/2 -right-40 w-[800px] h-[800px] blur-[120px] -rotate-12" alt="" />
-          <img src="/logo.svg" className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] blur-[80px]" alt="" />
+        <img src="/logo.svg" className="absolute -top-20 -left-20 w-[600px] h-[600px] blur-[100px] rotate-12" alt="" />
+        <img src="/logo.svg" className="absolute top-1/2 -right-40 w-[800px] h-[800px] blur-[120px] -rotate-12" alt="" />
+        <img src="/logo.svg" className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] blur-[80px]" alt="" />
       </div>
 
       {/* Standard App Navbar */}
-      {!location.pathname.match(/^\/[^/]+$/) || ['/terms', '/privacy', '/onboarding', '/dashboard'].some(p => location.pathname.startsWith(p)) ? (
+      {!location.pathname.match(/^\/[^/]+$/) ||
+        ['/terms', '/privacy', '/onboarding', '/dashboard'].some((p) =>
+          location.pathname.startsWith(p)
+        ) ? (
         <AppNavbar
           onGetStarted={handleGetStarted}
           onboardingComplete={role === 'creator'}
@@ -126,49 +131,60 @@ function AppContent() {
       ) : null}
 
       <main className="flex-1">
-        <Suspense fallback={
-          <div className="min-h-screen flex items-center justify-center bg-surface-950">
-            <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        }>
+        <Suspense
+          fallback={
+            <div className="min-h-screen flex items-center justify-center bg-surface-950">
+              <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          }
+        >
           <Routes>
             <Route path="/" element={<LandingPage onGetStarted={handleGetStarted} />} />
 
-            <Route path="/onboarding" element={
-              <RequireAuth requiredRole="user">
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-surface-950/80 backdrop-blur-sm animate-fade-in">
-                  <div className="w-full max-w-2xl bg-surface-900 border border-white/10 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] animate-slide-up">
-                    <div className="px-6 py-4 md:px-10 md:py-6 border-b border-white/5 bg-surface-800/50">
-                      <StepIndicator current={onboardingStep} />
-                    </div>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
-                      <div className="mx-auto w-full">
-                        {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
-                        {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
-                        {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
-                        {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
-                        {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
-                        {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} onBack={prevStep} />}
+            <Route
+              path="/onboarding"
+              element={
+                <RequireAuth requiredRole="user">
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-surface-950/80 backdrop-blur-sm animate-fade-in">
+                    <div className="w-full max-w-2xl bg-surface-900 border border-white/10 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] animate-slide-up">
+                      <div className="px-6 py-4 md:px-10 md:py-6 border-b border-white/5 bg-surface-800/50">
+                        <StepIndicator current={onboardingStep} />
+                      </div>
+                      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
+                        <div className="mx-auto w-full">
+                          {onboardingStep === 0 && <RoleSelection onComplete={nextStep} />}
+                          {onboardingStep === 1 && <CategorySelection onComplete={nextStep} onBack={prevStep} />}
+                          {onboardingStep === 2 && <DomainRegistration onComplete={nextStep} onBack={prevStep} />}
+                          {onboardingStep === 3 && <SocialLinking onComplete={nextStep} onBack={prevStep} />}
+                          {onboardingStep === 4 && <ProfileEditor onComplete={nextStep} onBack={prevStep} />}
+                          {onboardingStep === 5 && <OnboardingComplete onFinish={finishOnboarding} onBack={prevStep} />}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </RequireAuth>
-            } />
+                </RequireAuth>
+              }
+            />
 
-            <Route path="/dashboard/*" element={
-              <RequireAuth requiredRole="creator">
-                <div className="mt-20">
-                  <Dashboard />
-                </div>
-              </RequireAuth>
-            } />
+            <Route
+              path="/dashboard/*"
+              element={
+                <RequireAuth requiredRole="creator">
+                  <div className="mt-20">
+                    <Dashboard />
+                  </div>
+                </RequireAuth>
+              }
+            />
 
-            <Route path="/admin" element={
-              <div className="mt-20 min-h-screen">
-                <AdminDashboard />
-              </div>
-            } />
+            <Route
+              path="/admin"
+              element={
+                <div className="mt-20 min-h-screen">
+                  <AdminDashboard />
+                </div>
+              }
+            />
 
             <Route path="/auth/callback" element={<AuthCallbackHandler />} />
             <Route path="/auth/callback/:platform" element={<AuthCallbackHandler />} />
@@ -210,14 +226,11 @@ function RequireAuth({ children, requiredRole }) {
   }
 
   if (requiredRole === 'creator') {
-    // Allow both creators AND authenticated users who are onboarding to access the dashboard container.
-    // They will be limited via UI blurring inside the Dashboard component itself.
     if (role === 'creator' || role === 'user') {
       return children;
     }
     return <Navigate to="/" replace />;
   }
-
 
   return children;
 }
@@ -235,33 +248,32 @@ function AuthCallbackHandler() {
     const errorParam = params.get('error');
 
     if (!platform && code) {
-       const finalize = async () => {
-          try {
-            const res = await api.post('/auth/exchange', { code });
-            if (res.ok && res.data.success) {
-               if (window.opener) {
-                 window.opener.postMessage({ 
-                   type: 'AUTH_SUCCESS', 
-                   accessToken: res.data.auth.accessToken,
-                   user: res.data.user
-                 }, window.location.origin);
-                 setTimeout(() => window.close(), 500);
-               } else {
-                 window.location.href = '/dashboard';
-               }
-            } else {
-               throw new Error(res.data.error || 'Exchange failed');
-            }
-          } catch (err) {
-            setError(err.message);
-            setStatus('error');
+      const finalize = async () => {
+        try {
+          const res = await api.post('/auth/exchange', { code });
+          if (res.ok && res.data.success) {
             if (window.opener) {
-               window.opener.postMessage({ type: 'AUTH_ERROR', error: err.message }, window.location.origin);
+              window.opener.postMessage(
+                { type: 'AUTH_SUCCESS', accessToken: res.data.auth.accessToken, user: res.data.user },
+                window.location.origin
+              );
+              setTimeout(() => window.close(), 500);
+            } else {
+              window.location.href = '/dashboard';
             }
+          } else {
+            throw new Error(res.data.error || 'Exchange failed');
           }
-       };
-       finalize();
-       return;
+        } catch (err) {
+          setError(err.message);
+          setStatus('error');
+          if (window.opener) {
+            window.opener.postMessage({ type: 'AUTH_ERROR', error: err.message }, window.location.origin);
+          }
+        }
+      };
+      finalize();
+      return;
     }
 
     if (errorParam) {
@@ -280,21 +292,20 @@ function AuthCallbackHandler() {
     if (code && platform) {
       const exchangeCode = async () => {
         try {
-          // ─── ELITE SECURITY: CSRF PROTECTION ───
           const returnedState = params.get('state');
           const storedState = sessionStorage.getItem(`oauth_state_${platform}`);
-          
+
           if (!returnedState || returnedState !== storedState) {
-            console.error('🛡️ OAuth Security Alert: State mismatch detected. Potential CSRF attack.');
+            console.error('[Auth] OAuth state mismatch — possible CSRF attempt.');
             throw new Error('Security verification failed. Please try again.');
           }
 
           const codeVerifier = sessionStorage.getItem(`pkce_verifier_${platform}`);
           const res = await api.post(`/auth/${platform}/callback`, {
             code,
-            state: returnedState, // Pass state for backend verification
+            state: returnedState,
             redirectUri: `${window.location.origin}/auth/callback/${platform}`,
-            codeVerifier
+            codeVerifier,
           });
 
           if (res.ok) {
@@ -302,8 +313,8 @@ function AuthCallbackHandler() {
             const updates = {
               socials: {
                 [platform === 'twitter' ? 'twitter' : 'discord']: data.username,
-                [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true
-              }
+                [`is${platform.charAt(0).toUpperCase() + platform.slice(1)}Verified`]: true,
+              },
             };
 
             if (platform === 'twitter' && data.details) {
@@ -317,12 +328,10 @@ function AuthCallbackHandler() {
             setStatus('success');
 
             if (window.opener) {
-              window.opener.postMessage({ 
-                type: 'OAUTH_SUCCESS', 
-                platform, 
-                username: data.username,
-                details: data.details
-              }, window.location.origin);
+              window.opener.postMessage(
+                { type: 'OAUTH_SUCCESS', platform, username: data.username, details: data.details },
+                window.location.origin
+              );
               setTimeout(() => window.close(), 500);
             } else {
               navigate(`/onboarding?step=3&oauth_success=${platform}`);
@@ -334,7 +343,10 @@ function AuthCallbackHandler() {
           setError(err.message);
           setStatus('error');
           if (window.opener) {
-            window.opener.postMessage({ type: 'OAUTH_ERROR', platform, error: err.message }, window.location.origin);
+            window.opener.postMessage(
+              { type: 'OAUTH_ERROR', platform, error: err.message },
+              window.location.origin
+            );
             setTimeout(() => window.close(), 2000);
           } else {
             setTimeout(() => navigate('/onboarding'), 3000);

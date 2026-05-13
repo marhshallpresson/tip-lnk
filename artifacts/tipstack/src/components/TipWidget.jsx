@@ -3,6 +3,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useTipping } from '../hooks/useTipping';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { getPhantomDeepLink, getSolanaPayUri, hasSolanaProvider, isMobile } from '../utils/deepLinks';
 import ErrorBoundary from './ErrorBoundary';
 import QRCheckoutModal from './QRCheckoutModal';
@@ -24,7 +25,7 @@ const PRESET_AMOUNTS = [1, 5, 10, 25, 50];
 function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () => {}, theme = 'dark', accent = '#00D265' }) {
   const { publicKey } = useWallet();
   const { profile: viewerProfile, addTip } = useApp();
-  const { setShowWalletModal } = useAuth();
+  const { setShowAuthFlow } = useDynamicContext();
 
   const [showQRModal, setShowQRModal] = useState(false);
   const [activeIntentId, setActiveIntentId] = useState(null);

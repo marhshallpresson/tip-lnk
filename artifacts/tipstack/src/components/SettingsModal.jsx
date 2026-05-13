@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { X, Users, Gift, Info, Download, Trash2, Globe, MapPin, Link as LinkIcon, Bell, Shield, Settings, ChevronRight, Check, Youtube, Instagram, Github, MessageSquare, Twitter } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 export default function SettingsModal({ isOpen, onClose }) {
   const { profile, updateProfile, publicKey, connected } = useApp();
-  const { user: authUser, logout: authLogout, setShowWalletModal } = useAuth();
+  const { user: authUser, logout: authLogout } = useAuth();
+  const { setShowAuthFlow } = useDynamicContext();
   const [formData, setFormData] = useState({
     displayName: '',
     bio: '',
@@ -52,7 +54,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   };
   
   const handleConnectWallet = () => {
-    setShowWalletModal(true);
+    setShowAuthFlow(true);
     onClose();
   };
 

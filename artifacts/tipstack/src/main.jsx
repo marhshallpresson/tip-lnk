@@ -13,39 +13,31 @@ import './index.css';
 import '@solana/wallet-adapter-react-ui/styles.css';
 
 const dynamicLogLevel = import.meta.env.PROD ? 'MUTE' : 'ERROR';
+
 const suppressDynamicConsoleNoise = () => {
   if (!import.meta.env.PROD) return;
 
+  const IGNORE_PATTERNS = [
+    '[DynamicSDK] [INFO]: Warning!',
+    'Session expired during initialization',
+    'Authorization header or cookie is required',
+  ];
+
   const shouldIgnore = (args) => {
     const text = args
-      .map((value) => {
-        if (typeof value === 'string') return value;
-        if (value instanceof Error) return `${value.name}: ${value.message}`;
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return String(value);
-        }
+      .map((v) => {
+        if (typeof v === 'string') return v;
+        if (v instanceof Error) return `${v.name}: ${v.message}`;
+        try { return JSON.stringify(v); } catch { return String(v); }
       })
       .join(' ');
-
-    return (
-      text.includes('[DynamicSDK] [INFO]: Warning!') ||
-      text.includes('Session expired during initialization') ||
-      text.includes('Authorization header or cookie is required')
-    );
+    return IGNORE_PATTERNS.some((p) => text.includes(p));
   };
 
-  const wrap = (methodName) => {
-    const original = console[methodName].bind(console);
-    console[methodName] = (...args) => {
-      if (shouldIgnore(args)) return;
-      original(...args);
-    };
-  };
-
-  wrap('error');
-  wrap('warn');
+  ['error', 'warn'].forEach((method) => {
+    const orig = console[method].bind(console);
+    console[method] = (...args) => { if (!shouldIgnore(args)) orig(...args); };
+  });
 };
 
 suppressDynamicConsoleNoise();
@@ -56,50 +48,26 @@ const dynamicSettings = {
   appName: 'Tip Stack',
   walletConnectors: [SolanaWalletConnectors],
   suppressEndUserConsoleWarning: true,
-  persistWalletSession: true,
   logLevel: dynamicLogLevel,
   overrides: {
     evmNetworks: [],
   },
-  walletBook: {
-    wallets: {
-      phantom: { showInList: true },
-      solflare: { showInList: true }
-    }
-  },
-  waas: {
-    enabled: false,
-    upgradeEnabled: false
-  },
-  session: {
-    storageType: 'localStorage'
-  },
-  security: {
-    emailVerification: { required: false, sendConfirmation: true },
-    socialRecovery: { enabled: true, providers: ['google', 'twitter'] },
-    session: { timeout: 3600000, refreshInterval: 300000, storageType: 'localStorage' }
-  },
   events: {
     onAuthSuccess: ({ user }) => {
-      console.log('[Auth] Full auth complete:', user?.id);
+      console.log('[Auth] Dynamic auth complete:', user?.id);
     },
     onAuthFlowClose: () => {
-      console.log('[Auth] Flow closed before completion');
+      console.log('[Auth] Auth flow closed');
     },
     onLogout: () => {
       localStorage.removeItem('tipstack_auth_token');
-    }
-  }
+    },
+  },
 };
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <DynamicContextProvider 
-      settings={dynamicSettings} 
-      emitErrors={false}
-      loadingTimeout={30000} 
-      recoveryTimeout={60000}
-    >
+    <DynamicContextProvider settings={dynamicSettings} emitErrors={false}>
       <BrowserRouter>
         <App />
       </BrowserRouter>
