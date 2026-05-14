@@ -79,6 +79,7 @@ dynamic-verify-recovered.ts
 .env.example
 tests-e2e
 test-results/
+.agents
 playwright-report/
 playwright.config.js
 *.json
@@ -89,3 +90,5 @@ tipstack-video
 install_solana.bat
 .gitignore
 rustup-init.exe
+brainstorming.skill
+agent-tools.skill
