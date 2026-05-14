@@ -92,3 +92,6 @@ install_solana.bat
 rustup-init.exe
 brainstorming.skill
 agent-tools.skill
+preview.err.log
+.gitignore
+preview.pid

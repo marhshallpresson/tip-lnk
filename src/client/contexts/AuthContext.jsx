@@ -1,32 +1,16 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../lib/api';
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { getAuthToken, useDynamicContext, useIsLoggedIn } from '@dynamic-labs/sdk-react-core';
+import { authEvents } from '../lib/auth-events';
 
 const AuthContext = createContext();
 
-export const purgeStaleDynamicSession = () => {
-  const sessionKey = Object.keys(localStorage).find(
-    k => k.includes('dynamic') && k.includes('session') && 
-         k.includes('3fbb3eed')
-  );
-  if (!sessionKey) return;
-
+const readDynamicAuthToken = (candidateToken) => {
+  if (candidateToken) return candidateToken;
   try {
-    const raw = localStorage.getItem(sessionKey);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    const expiration = parsed?.value?.sessionExpiration;
-    
-    // CONSERVATIVE PURGE: Only delete if the expiration is definitively in the past.
-    // We allow token: null if the expiration is in the future to avoid breaking OAuth redirects.
-    const isExpired = expiration && expiration < Date.now();
-
-    if (isExpired) {
-      localStorage.removeItem(sessionKey);
-      console.log(`[Auth] Purged stale session (expired): ${sessionKey}`);
-    }
-  } catch (e) {
-    console.warn('[Auth] Failed to parse session key during purge check:', e);
+    return getAuthToken() || null;
+  } catch {
+    return null;
   }
 };
 
@@ -35,11 +19,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
-
-  // Early-mount stale session purge (circuit breaker)
-  useEffect(() => {
-    purgeStaleDynamicSession();
-  }, []);
+  const dynamicContext = useDynamicContext();
+  const isDynamicLoggedIn = useIsLoggedIn();
+  const syncingTokenRef = useRef(null);
+  const lastSuccessfulTokenRef = useRef(null);
+  const lastFailedTokenRef = useRef(null);
 
   // Initialize from localStorage on mount
   useEffect(() => {
@@ -82,8 +66,7 @@ export const AuthProvider = ({ children }) => {
     fetchMe();
   }, []);
 
-  const dynamicContext = useDynamicContext();
-  const dynamicLogout = dynamicContext?.handleLogout;
+  const dynamicLogout = dynamicContext?.handleLogOut || dynamicContext?.handleLogout;
 
   const logout = async () => {
     try {
@@ -105,9 +88,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const syncWithDynamic = useCallback(async (dynamicJwt) => {
-    if (!dynamicJwt) return { success: false };
+    const token = readDynamicAuthToken(dynamicJwt);
+    if (!token) {
+      setLoading(false);
+      return { success: false, error: 'Missing Dynamic auth token.' };
+    }
+
+    if (syncingTokenRef.current === token) {
+      return { success: false, error: 'Dynamic sync already in progress.' };
+    }
     
     try {
+      syncingTokenRef.current = token;
       setLoading(true);
       setError(null);
 
@@ -117,54 +109,93 @@ export const AuthProvider = ({ children }) => {
       api.setAccessToken(null);
       localStorage.removeItem('tipstack_auth_token');
 
-      const { data, ok } = await api.post('/auth/dynamic-verify', { dynamicJwt });
+      const { data, ok } = await api.post('/auth/dynamic-verify', { dynamicJwt: token });
       
       if (ok && data.success) {
         api.setAccessToken(data.auth.accessToken);
         localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
         setUser(data.user);
+        lastSuccessfulTokenRef.current = token;
+        lastFailedTokenRef.current = null;
         return { success: true, user: data.user };
       }
       
       const errorMsg = data.error || 'Identity synchronization failed.';
       setError(errorMsg);
+      lastFailedTokenRef.current = token;
       return { success: false, error: errorMsg };
     } catch (err) {
       console.error(' Auth Sync Error:', err);
       setError('A network error occurred during authentication.');
+      lastFailedTokenRef.current = token;
       return { success: false, error: 'Network error' };
     } finally {
+      syncingTokenRef.current = null;
       setLoading(false);
     }
   }, []);
 
-  // Bridge API unauthorized handler to Dynamic session sync
+  const dynamicAuthToken = dynamicContext?.authToken;
+  const sdkHasLoaded = Boolean(dynamicContext?.sdkHasLoaded);
+
+  // Dynamic event bridge: onAuthSuccess/onAuthFlowClose happen outside this React context.
   useEffect(() => {
-    const { authToken, isAuthenticated, sdkHasLoaded } = dynamicContext || {};
-    
-    // ——— ELITE SESSION HEALING: AUTO-LOGOUT ———
-    // If Dynamic SDK confirms the user is NOT authenticated, but we still think we are,
-    // we must terminate the local session to prevent 401 noise and stale UI.
-    if (sdkHasLoaded && !isAuthenticated && user && !loading) {
-      console.warn(' Dynamic identity lost. Cleaning up TipStack session...');
+    let cancelled = false;
+
+    const syncFromDynamicEvent = async (event = {}) => {
+      for (let attempt = 0; attempt < 8 && !cancelled; attempt += 1) {
+        const token = readDynamicAuthToken(event.authToken || dynamicAuthToken);
+        if (token) {
+          await syncWithDynamic(token);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      if (!cancelled) {
+        setError('Dynamic login completed, but no auth token was returned. Please retry sign in.');
+        setLoading(false);
+      }
+    };
+
+    const offAuthSuccess = authEvents.on('authSuccess', syncFromDynamicEvent);
+    const offAuthFlowClose = authEvents.on('authFlowClose', syncFromDynamicEvent);
+
+    return () => {
+      cancelled = true;
+      offAuthSuccess();
+      offAuthFlowClose();
+    };
+  }, [dynamicAuthToken, syncWithDynamic]);
+
+  // Bridge API unauthorized handler and restored Dynamic sessions to TipStack sessions.
+  useEffect(() => {
+    if (sdkHasLoaded && isDynamicLoggedIn) {
+      const token = readDynamicAuthToken(dynamicAuthToken);
+      if (token && lastFailedTokenRef.current !== token && (!user || lastSuccessfulTokenRef.current !== token)) {
+        syncWithDynamic(token);
+      }
+    }
+
+    if (sdkHasLoaded && !isDynamicLoggedIn && user && !loading) {
+      console.warn('Dynamic identity lost. Cleaning up TipStack session...');
       // Use local cleanup to avoid infinite redirection loops
       api.setAccessToken(null);
       localStorage.removeItem('tipstack_auth_token');
       setUser(null);
-      return;
     }
 
     api.setUnauthorizedHandler(async () => {
-      if (isAuthenticated && authToken) {
+      const token = readDynamicAuthToken(dynamicAuthToken);
+      if (isDynamicLoggedIn && token) {
         console.warn(' API 401 detected: Attempting silent session re-sync...');
-        const result = await syncWithDynamic(authToken);
+        const result = await syncWithDynamic(token);
         return result.success;
       }
       return false;
     });
 
     return () => api.setUnauthorizedHandler(null);
-  }, [dynamicContext, syncWithDynamic, user, loading]);
+  }, [dynamicAuthToken, isDynamicLoggedIn, sdkHasLoaded, syncWithDynamic, user, loading]);
 
   const value = {
     user,

@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useMemo, useEffect, useState, useCallback } from 'react';
-import { ConnectionProvider, WalletProvider, useWallet as useSolanaWallet } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-
-import { SolanaMobileWalletAdapter, createDefaultAddressSelector, createDefaultAuthorizationResultCache, createDefaultWalletNotFoundHandler } from '@solana-mobile/wallet-adapter-mobile';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Connection, PublicKey, LAMPORTS_PER_SOL, VersionedTransaction } from '@solana/web3.js';
 import { phantomSdk } from '../lib/phantom';
 import bs58 from 'bs58';
@@ -18,11 +15,58 @@ const WalletContext = createContext();
 const ConnectionContext = createContext();
 
 function WalletProviderInner({ children }) {
-  const { publicKey, connected, signTransaction, signMessage, sendTransaction, disconnect, wallet, connect, select, wallets } = useSolanaWallet();
+  const { primaryWallet, setShowAuthFlow, handleLogOut } = useDynamicContext();
   const [connection] = useState(() => new Connection(QUICKNODE_SOLANA_RPC));
   const [solBalance, setSolBalance] = useState(0);
   const [usdcBalance, setUsdcBalance] = useState(0);
   const [isLinking, setIsLinking] = useState(false);
+
+  const publicKey = useMemo(() => {
+    if (!primaryWallet?.address) return null;
+    try {
+      return new PublicKey(primaryWallet.address);
+    } catch {
+      return null;
+    }
+  }, [primaryWallet?.address]);
+
+  const connected = Boolean(publicKey);
+  const wallet = primaryWallet || null;
+  const wallets = useMemo(() => (primaryWallet ? [primaryWallet] : []), [primaryWallet]);
+
+  const connect = useCallback(async () => {
+    setShowAuthFlow(true);
+  }, [setShowAuthFlow]);
+
+  const disconnect = useCallback(async () => {
+    if (typeof handleLogOut === 'function') {
+      await handleLogOut();
+    }
+  }, [handleLogOut]);
+
+  const select = useCallback(() => {}, []);
+
+  const signTransaction = useCallback(async (transaction) => {
+    const signer = primaryWallet?.signTransaction || primaryWallet?.connector?.signTransaction;
+    if (!signer) throw new Error('Connected wallet does not support transaction signing');
+    return signer.call(primaryWallet?.signTransaction ? primaryWallet : primaryWallet.connector, transaction);
+  }, [primaryWallet]);
+
+  const signMessage = useCallback(async (message) => {
+    const signer = primaryWallet?.signMessage || primaryWallet?.connector?.signMessage;
+    if (!signer) throw new Error('Connected wallet does not support message signing');
+    return signer.call(primaryWallet?.signMessage ? primaryWallet : primaryWallet.connector, message);
+  }, [primaryWallet]);
+
+  const sendTransaction = useCallback(async (transaction, sendConnection = connection, options = {}) => {
+    const sender = primaryWallet?.sendTransaction || primaryWallet?.connector?.sendTransaction;
+    if (sender) {
+      return sender.call(primaryWallet?.sendTransaction ? primaryWallet : primaryWallet.connector, transaction, sendConnection, options);
+    }
+
+    const signedTx = await signTransaction(transaction);
+    return sendConnection.sendRawTransaction(signedTx.serialize(), options);
+  }, [connection, primaryWallet, signTransaction]);
 
   const getBalance = useCallback(async () => {
     if (!publicKey) return { sol: 0, usdc: 0 };
@@ -191,32 +235,10 @@ function WalletProviderInner({ children }) {
 }
 
 export function SolanaWalletProvider({ children }) {
-  const endpoint = QUICKNODE_SOLANA_RPC;
-
-  const wallets = useMemo(() => [
-    new SolanaMobileWalletAdapter({
-        addressSelector: createDefaultAddressSelector(),
-        appIdentity: {
-            name: 'Tip Stack',
-            uri: window.location.origin,
-            icon: '/favicon.svg',
-        },
-        authorizationResultCache: createDefaultAuthorizationResultCache(),
-        cluster: 'mainnet-beta',
-        onWalletNotFound: createDefaultWalletNotFoundHandler(),
-    }),
-  ], []);
-
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect={false}>
-        <WalletModalProvider>
-          <WalletProviderInner>
-            {children}
-          </WalletProviderInner>
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <WalletProviderInner>
+      {children}
+    </WalletProviderInner>
   );
 }
 

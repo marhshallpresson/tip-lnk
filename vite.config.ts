@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 const rawPort = process.env.PORT || "24013";
 const port = Number(rawPort);
-const basePath = process.env.BASE_PATH || "/";
+const basePath = "/";
 
 const apiServerSourcePath = path.resolve(__dirname, "api/local-server.ts");
 
@@ -52,7 +52,7 @@ export default defineConfig({
     wasm(),
     topLevelAwait(),
     nodePolyfills({
-      include: ["buffer", "crypto", "stream", "util", "string_decoder", "process", "events"],
+      include: ["buffer", "process", "util", "stream", "crypto", "events", "string_decoder"],
       globals: {
         Buffer: true,
         global: true,
@@ -69,10 +69,14 @@ export default defineConfig({
     },
   },
   define: {
+    "process.env": "{}",
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "development"),
+    global: "globalThis",
   },
   resolve: {
     alias: {
+      "react": path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
       "@": path.resolve(__dirname, "src/client"),
       "@assets": path.resolve(__dirname, "attached_assets"),
       // Shim for transitive dep that klend-sdk tries to resolve
@@ -98,8 +102,10 @@ export default defineConfig({
       "buffer",
       "tweetnacl",
       "@dynamic-labs/sdk-react-core",
+      "@dynamic-labs/sdk-api-core",
       "@dynamic-labs/solana",
       "@dynamic-labs/ethereum",
+      "@solana/web3.js",
     ],
     exclude: [
       "@orca-so/whirlpools",
@@ -117,10 +123,12 @@ export default defineConfig({
     chunkSizeWarningLimit: 8000,
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
+    sourcemap: false,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
     rollupOptions: {
+      external: [],
       onwarn(warning, warn) {
         if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
         if (warning.message.includes("contains an annotation that Rollup cannot interpret")) return;

@@ -5,13 +5,12 @@ window.global = window;
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
+import { DynamicContextProvider, getAuthToken } from '@dynamic-labs/sdk-react-core';
 import { SolanaWalletConnectors } from '@dynamic-labs/solana';
 import { Logger } from '@dynamic-labs/logger';
 import App from './App';
 import { authEvents } from './lib/auth-events';
 import './index.css';
-import '@solana/wallet-adapter-react-ui/styles.css';
 
 const dynamicLogLevel = import.meta.env.PROD ? 'MUTE' : 'WARN';
 
@@ -46,6 +45,14 @@ const shouldSuppress = (args) => {
 });
 
 Logger.setLogLevel(dynamicLogLevel);
+
+const readDynamicAuthToken = () => {
+  try {
+    return getAuthToken() || null;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Dynamic SDK settings following v4 React SDK patterns.
@@ -87,7 +94,7 @@ const dynamicSettings = {
      */
     onAuthSuccess: ({ user }) => {
       console.log('[Dynamic] onAuthSuccess — userId:', user?.id);
-      authEvents.emit('authSuccess', { dynamicUser: user });
+      authEvents.emit('authSuccess', { dynamicUser: user, authToken: readDynamicAuthToken() });
     },
 
     /**
@@ -97,7 +104,7 @@ const dynamicSettings = {
      */
     onAuthFlowClose: () => {
       console.log('[Dynamic] Auth flow closed');
-      authEvents.emit('authFlowClose', {});
+      authEvents.emit('authFlowClose', { authToken: readDynamicAuthToken() });
     },
 
     /**
