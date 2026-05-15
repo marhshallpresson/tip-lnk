@@ -54,7 +54,7 @@ const readDynamicAuthToken = () => {
   }
 };
 
-const dynamicEnvId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID || '3fbb3eed-6109-4669-8081-ed7e44415f8c';
+const dynamicEnvId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID || ;
 
 if (!dynamicEnvId) {
   console.error('[Dynamic] CRITICAL: Environment ID is missing. Check VITE_DYNAMIC_ENVIRONMENT_ID.');
