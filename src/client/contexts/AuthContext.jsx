@@ -99,19 +99,19 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
+      console.log('[Auth] Starting sync with Dynamic token...');
       syncingTokenRef.current = token;
       setLoading(true);
       setError(null);
 
       // ——— ELITE SECURITY: CLEAR STALE SESSIONS ———
-      // Before syncing a new Dynamic identity, we MUST clear any old local session
-      // to avoid 401 errors from the API instance trying to use an expired token.
       api.setAccessToken(null);
       localStorage.removeItem('tipstack_auth_token');
 
       const { data, ok } = await api.post('/auth/dynamic-verify', { dynamicJwt: token });
       
       if (ok && data.success) {
+        console.log('[Auth] Sync successful. Token exchanged.');
         api.setAccessToken(data.auth.accessToken);
         localStorage.setItem('tipstack_auth_token', data.auth.accessToken);
         setUser(data.user);
@@ -120,6 +120,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: data.user };
       }
       
+      console.error('[Auth] Sync failed:', data?.error);
       const errorMsg = data.error || 'Identity synchronization failed.';
       setError(errorMsg);
       lastFailedTokenRef.current = token;

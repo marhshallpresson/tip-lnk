@@ -54,28 +54,27 @@ const readDynamicAuthToken = () => {
   }
 };
 
+const dynamicEnvId = import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID || '3fbb3eed-6109-4669-8081-ed7e44415f8c';
+
+if (!dynamicEnvId) {
+  console.error('[Dynamic] CRITICAL: Environment ID is missing. Check VITE_DYNAMIC_ENVIRONMENT_ID.');
+}
+
 /**
  * Dynamic SDK settings following v4 React SDK patterns.
- *
- * Auth flow:
- *  1. User opens the Dynamic modal (setShowAuthFlow(true))
- *  2. User completes authentication (wallet, email OTP, Google OAuth, etc.)
- *  3. onAuthSuccess fires → we emit 'authSuccess' on the bridge
- *  4. AuthContext picks it up, grabs the fresh JWT via authToken, calls /auth/dynamic-verify
- *  5. Backend verifies JWT with JWKS, upserts user record, returns our session token
- *
- * Fallback path (page reload with existing Dynamic session):
- *  - sdkHasLoaded + isLoggedIn + authToken watcher in AuthContext handles restore
  */
 const dynamicSettings = {
-  environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
+  environmentId: dynamicEnvId,
   appName: 'Tip Stack',
   walletConnectors: [SolanaWalletConnectors],
   suppressEndUserConsoleWarning: true,
   logLevel: dynamicLogLevel,
+  // HARDENING: Help with OAuth redirect loops
+  initialAuthenticationMode: 'connect-only',
   // Add explicit WaaS configuration
   embeddedWallets: {
     automaticEmbeddedWalletCreation: true,
+    forceEmbeddedWallet: false,
   },
   // Explicitly enable WaaS infrastructure
   waas: {
@@ -84,9 +83,12 @@ const dynamicSettings = {
   overrides: {
     evmNetworks: [],
   },
-  // Silently absorb fatal SDK errors (e.g. network failures on CORS-restricted origins)
-  // so they don't bubble up as unhandled rejections.
-  onFatalError: () => {},
+  // Ensure we use the right origin
+  apiBaseUrl: 'https://app.dynamicauth.com/api/v0',
+  // Silently absorb fatal SDK errors
+  onFatalError: (error) => {
+    console.warn('[Dynamic] Fatal Error intercepted:', error?.message);
+  },
   events: {
     /**
      * Primary auth trigger. Fires once Dynamic has fully verified the user.
