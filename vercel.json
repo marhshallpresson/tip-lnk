@@ -59,7 +59,7 @@
   ],
   "functions": {
     "api/index.ts": {
-      "includeFiles": "api/handlers/**, api/lib/**"
+      "includeFiles": "server/**"
     }
   }
 }

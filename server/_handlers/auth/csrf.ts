@@ -1,0 +1,25 @@
+import type { Request as VercelRequest, Response as VercelResponse } from 'express'
+import { ensureCsrfToken } from "../../_lib/csrf.js"
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+
+  if (!(res as any).cookie) {
+    (res as any).cookie = (name: string, value: string, options: any) => {
+      let cookieStr = `${name}=${value}; Path=${options.path || '/'}`
+      if (options.httpOnly) cookieStr += '; HttpOnly'
+      if (options.secure) cookieStr += '; Secure'
+      if (options.sameSite) cookieStr += `; SameSite=${options.sameSite}`
+      if (options.maxAge) cookieStr += `; Max-Age=${Math.floor(options.maxAge / 1000)}`
+      res.setHeader('Set-Cookie', cookieStr)
+    }
+  }
+
+  try {
+    const token = ensureCsrfToken(req as any, res as any)
+    res.setHeader('Cache-Control', 'no-store')
+    return res.status(200).json({ success: true, csrfToken: token })
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+}

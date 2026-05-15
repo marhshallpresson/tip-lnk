@@ -14,7 +14,7 @@ const rawPort = process.env.PORT || "24013";
 const port = Number(rawPort);
 const basePath = "/";
 
-const apiServerSourcePath = path.resolve(__dirname, "api/local-server.ts");
+const apiServerSourcePath = path.resolve(__dirname, "server/_local-server.ts");
 
 function startApiServerPlugin() {
   // Only active in development — in production the api-server runs as its own service.
@@ -69,8 +69,6 @@ export default defineConfig({
     },
   },
   define: {
-    "process.env": "{}",
-    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "development"),
     global: "globalThis",
   },
   resolve: {

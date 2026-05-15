@@ -95,3 +95,4 @@ agent-tools.skill
 preview.err.log
 .gitignore
 preview.pid
+brutal_test*
