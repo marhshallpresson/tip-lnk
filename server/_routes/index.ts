@@ -13,10 +13,16 @@ import authTwitterCallback from "../_handlers/auth/twitter/callback.js";
 import authDiscordCallback from "../_handlers/auth/discord/callback.js";
 import authDynamicVerify from "../_handlers/auth/dynamic-verify.js";
 import authDynamicSync from "../_handlers/auth/dynamic-sync.js";
+import authUpdateName from "../_handlers/auth/update-name.js";
+
+// Deep Link handlers
+import deepLinkResolve from "../_handlers/deep-link/resolve.js";
+import deepLinkLinkSocial from "../_handlers/deep-link/link-social.js";
 
 // Solana handlers
 import solanaProfileGet from "../_handlers/solana/profile/get.js";
 import solanaProfileUpdate from "../_handlers/solana/profile/update.js";
+import solanaDiagnosticCheck from "../_handlers/solana/diagnostic-check.js";
 import solanaAssets from "../_handlers/solana/assets.js";
 import solanaSend from "../_handlers/solana/send.js";
 import solanaSendSmart from "../_handlers/solana/send-smart.js";
@@ -27,6 +33,7 @@ import solanaTipsCreate from "../_handlers/solana/tips/create.js";
 import solanaTipsMessage from "../_handlers/solana/tips/message.js";
 import solanaTipsStream from "../_handlers/solana/tips/stream.js";
 import solanaWebhookHelius from "../_handlers/solana/webhooks/helius.js";
+import solanaWebhookQuicknode from "../_handlers/solana/webhooks/quicknode.js";
 import solanaJupiterSwap from "../_handlers/solana/jupiter/swap.js";
 import solanaBirdeyePortfolio from "../_handlers/solana/birdeye/portfolio.js";
 import solanaPrice from "../_handlers/solana/price.js";
@@ -34,6 +41,7 @@ import solanaRpc from "../_handlers/solana/rpc.js";
 import solanaActionsConfig from "../_handlers/solana/actions/config.js";
 import solanaActionsTip from "../_handlers/solana/actions/tip.js";
 import solanaNormiesClaim from "../_handlers/solana/normies/claim.js";
+import solanaBackfill from "../_handlers/solana/backfill.js";
 
 // Social handlers
 import socialXPosts from "../_handlers/social/x-posts.js";
@@ -59,6 +67,7 @@ import creatorAnalytics from "../_handlers/creators/analytics.js";
 import paymentsIntent from "../_handlers/payments/intent.js";
 import paymentsExecute from "../_handlers/payments/execute.js";
 import paymentsStatus from "../_handlers/payments/status.js";
+import paymentsRecurring from "../_handlers/payments/recurring.js";
 import paymentsFiatIntent from "../_handlers/payments/fiat/intent.js";
 import paymentsFiatWebhook from "../_handlers/payments/fiat/webhook.js";
 import paymentsFiatRate from "../_handlers/payments/fiat/rate.js";
@@ -88,6 +97,11 @@ router.get("/auth/twitter/callback", h(authTwitterCallback));
 router.get("/auth/discord/callback", h(authDiscordCallback));
 router.post("/auth/dynamic-verify", h(authDynamicVerify));
 router.post("/auth/dynamic-sync", h(authDynamicSync));
+router.post("/auth/update-name", h(authUpdateName));
+
+// ── Deep Links ────────────────────────────────────────────────────────────────
+router.get("/deep-link/resolve", h(deepLinkResolve));
+router.get("/deep-link/link-social", h(deepLinkLinkSocial));
 
 // ── Solana Profile ────────────────────────────────────────────────────────────
 router.get("/solana/profile", h(solanaProfileGet));
@@ -96,12 +110,14 @@ router.get("/solana/profile/get", h(solanaProfileGet));
 router.post("/solana/profile/update", h(solanaProfileUpdate));
 
 // ── Solana Assets & Transactions ──────────────────────────────────────────────
+router.get("/solana/diagnostic-check", h(solanaDiagnosticCheck));
 router.get("/solana/assets", h(solanaAssets));
 router.post("/solana/send", h(solanaSend));
 router.post("/solana/send-smart", h(solanaSendSmart));
 router.get("/solana/priority-fee", h(solanaPriorityFee));
 router.post("/solana/priority-fee", h(solanaPriorityFee));
 router.post("/solana/sns-check", h(solanaSnsCheck));
+router.post("/solana/backfill", h(solanaBackfill));
 
 // ── Solana Normies ────────────────────────────────────────────────────────────
 router.post("/solana/normies/claim", h(solanaNormiesClaim));
@@ -116,6 +132,7 @@ router.get("/solana/tips/stream", h(solanaTipsStream));
 
 // ── Solana Webhooks ───────────────────────────────────────────────────────────
 router.post("/solana/webhooks/helius", h(solanaWebhookHelius));
+router.post("/solana/webhooks/quicknode", h(solanaWebhookQuicknode));
 
 // ── Solana Jupiter ────────────────────────────────────────────────────────────
 router.post("/solana/jupiter/swap", h(solanaJupiterSwap));
@@ -156,6 +173,7 @@ router.get("/creators/analytics", h(creatorAnalytics));
 router.post("/payments/intent", h(paymentsIntent));
 router.post("/payments/execute", h(paymentsExecute));
 router.get("/payments/status", h(paymentsStatus));
+router.post("/payments/recurring", h(paymentsRecurring));
 router.post("/payments/fiat/intent", h(paymentsFiatIntent));
 router.post("/payments/fiat/webhook", h(paymentsFiatWebhook));
 router.get("/payments/fiat/rate", h(paymentsFiatRate));
