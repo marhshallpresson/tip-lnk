@@ -215,6 +215,8 @@ export function useTipping(creatorAddress) {
           throw new Error('Creator address not resolved');
         }
 
+        const walletAddress = publicKey?.toBase58() || wallet?.address;
+
         if (!walletAddress) {
           console.warn('⚠️ Payment Intent Fault: No wallet address available for routing.');
           return;
