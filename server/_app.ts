@@ -2,9 +2,9 @@ import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
-import router from "./_routes";
-import { logger } from "./_lib/logger";
-import { initSchema } from "./_lib/db";
+import router from "./_routes/index.js";
+import { logger } from "./_lib/logger.js";
+import { initSchema } from "./_lib/db.js";
 
 const app: Express = express();
 
@@ -66,6 +66,17 @@ app.use("/api", router);
 // Root health probe
 app.get("/", (_req, res) => {
   res.json({ status: "ok", service: "tipstack-api" });
+});
+
+// Global Error Handler
+app.use((err: any, req: any, res: any, next: any) => {
+  logger.error({ err, url: req.url }, "Unhandled Express Error");
+  res.status(500).json({ 
+    success: false, 
+    error: "Internal Server Error", 
+    details: err.message,
+    path: req.url
+  });
 });
 
 // Run DB schema migrations on startup (idempotent — safe to run every boot)

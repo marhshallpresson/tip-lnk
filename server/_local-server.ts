@@ -1,5 +1,5 @@
-import app from "./_app";
-import { logger } from "./_lib/logger";
+import app from "./_app.js";
+import { logger } from "./_lib/logger.js";
 
 const port = process.env.PORT || 5000;
 
