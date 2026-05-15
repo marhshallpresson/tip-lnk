@@ -24,11 +24,8 @@ export default function useTransactionHistory() {
     setHistory((h) => ({ ...h, loading: true, error: null }));
 
     try {
-      const isProd = import.meta.env.MODE === 'production';
-      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-      const response = await fetch(`${API_BASE_URL}/api/solana/tips/${publicKey.toBase58()}`);
-
-      if (!response.ok) throw new Error('Failed to fetch from indexer');
+      const response = await fetch(`/api/solana/tips/get?address=${publicKey.toBase58()}`);
+      if (!response.ok) throw new Error('Failed to fetch transaction history');
 
       const { tips } = await response.json();
 
@@ -48,7 +45,7 @@ export default function useTransactionHistory() {
 
       setHistory({ transactions, loading: false, error: null });
 
-      fetch(`${API_BASE_URL}/api/solana/backfill`, {
+      fetch(`/api/solana/backfill`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: publicKey.toBase58() }),

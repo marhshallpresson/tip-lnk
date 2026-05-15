@@ -27,13 +27,10 @@ export default function useWalletPortfolio() {
     setPortfolio((p) => ({ ...p, loading: true, error: null }));
 
     try {
-      const isProd = import.meta.env.MODE === 'production';
-      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-
       const [balance, priceRes, assetRes] = await Promise.all([
         connection.getBalance(publicKey).catch(() => 0),
-        fetch(`${API_BASE_URL}/api/solana/price?ids=So11111111111111111111111111111111111111112,EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y`).then(r => r.json()).catch(() => ({ data: {} })),
-        fetch(`${API_BASE_URL}/api/solana/assets/${publicKey.toBase58()}`).then(r => r.json()).catch(() => ({ assets: { items: [] } }))
+        fetch(`/api/solana/price?ids=So11111111111111111111111111111111111111112,EPjFW36Wy29zXETBGqadLvnu1X9vkcR2Lz1Ab7HE692y`).then(r => r.json()).catch(() => ({ data: {} })),
+        fetch(`/api/solana/assets/${publicKey.toBase58()}`).then(r => r.json()).catch(() => ({ assets: { items: [] } }))
       ]);
 
       const solBalance = balance / LAMPORTS_PER_SOL;

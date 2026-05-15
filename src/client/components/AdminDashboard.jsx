@@ -43,21 +43,10 @@ export default function AdminDashboard() {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const isProd = import.meta.env.MODE === 'production';
-      const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || '');
-      
-      // ─── ELITE SECURITY: NO HARDCODED SECRETS ───
-      // We rely on the server-side session (cookie) and pass the temporary key.
-      const adminSecret = sessionStorage.getItem('tipstack_transient_admin_secret'); 
-      const headers = { 
-        'Content-Type': 'application/json',
-        'x-admin-secret': adminSecret || '' 
-      };
-      
       const [statsRes, creatorsRes, ledgerRes] = await Promise.all([
-        fetch(`${API_BASE}/api/admin/stats`, { headers }),
-        fetch(`${API_BASE}/api/admin/creators`, { headers }),
-        fetch(`${API_BASE}/api/admin/ledger`, { headers }).catch(() => ({ ok: false }))
+        fetch('/api/admin/stats', { headers }),
+        fetch('/api/admin/creators', { headers }),
+        fetch('/api/admin/ledger', { headers }).catch(() => ({ ok: false }))
       ]);
 
       if (!statsRes.ok) throw new Error('Unauthorized administrative access.');
@@ -84,10 +73,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-        const isProd = import.meta.env.MODE === 'production';
-        const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL || '');
-        
-        const response = await fetch(`${API_BASE}/api/auth/admin/login`, {
+        const response = await fetch('/api/auth/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })

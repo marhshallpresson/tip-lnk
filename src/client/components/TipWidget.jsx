@@ -73,10 +73,8 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
       if (!recipientInput) { setResolvedAddress(null); return; }
       setIsResolving(true);
       try {
-        const isProd = import.meta.env.MODE === 'production';
-        const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
         const handle = recipientInput.startsWith('@') ? recipientInput : `@${recipientInput}`;
-        const res = await fetch(`${base}/api/deep-link/resolve?handle=${encodeURIComponent(handle)}`);
+        const res = await fetch(`/api/deep-link/resolve?handle=${encodeURIComponent(handle)}`);
         if (res.ok) {
           const data = await res.json();
           setResolvedAddress(data?.id || null);
@@ -110,9 +108,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
       }
       setQuoteLoading(true);
       try {
-        const isProd = import.meta.env.MODE === 'production';
-        const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
-        const res = await fetch(`${base}/api/payments/fiat/rate?amount=${parsed}`);
+        const res = await fetch(`/api/payments/fiat/rate?amount=${parsed}`);
         const data = await res.json();
         if (res.ok && data?.success) setFiatQuote(data);
         else setFiatQuote(null);
@@ -185,9 +181,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
         // Enhanced Fiat Flow: Intent creation + monitoring
         try {
             setFiatPaymentInstructions(null);
-            const isProd = import.meta.env.MODE === 'production';
-            const base = isProd ? window.location.origin : import.meta.env.VITE_API_BASE_URL;
-            const response = await fetch(`${base}/api/payments/fiat/intent`, {
+            const response = await fetch(`/api/payments/fiat/intent`, {
                 method: 'POST',
                 headers: { 
                   'Content-Type': 'application/json',
@@ -227,7 +221,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
                     clearInterval(pollStatus);
                 }
                 try {
-                    const sRes = await fetch(`${base}/api/payments/fiat/status?intentId=${data.intentId}`);
+                    const sRes = await fetch(`/api/payments/fiat/status?intentId=${data.intentId}`);
                     const sData = await sRes.json();
                     if (sData?.success && sData.status === 'completed') {
                         clearInterval(pollStatus);

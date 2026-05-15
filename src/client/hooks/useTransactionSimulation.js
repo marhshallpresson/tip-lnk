@@ -14,12 +14,9 @@ export function useTransactionSimulation() {
     setSimulating(true);
     setError(null);
     try {
-      const isProd = import.meta.env.MODE === 'production';
-      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-
       let response;
       try {
-        response = await fetch(`${API_BASE_URL}/api/quicknode/rpc/solana`, {
+        response = await fetch(`/api/quicknode/rpc/solana`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -31,7 +28,7 @@ export function useTransactionSimulation() {
         });
       } catch (e) {
         console.warn('🛡️ Secondary RPC attempting failover...', e);
-        response = await fetch(`${API_BASE_URL}/api/solana/rpc`, {
+        response = await fetch(`/api/solana/rpc`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

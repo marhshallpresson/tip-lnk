@@ -16,10 +16,7 @@ export default function DomainRegistration({ onComplete, onBack }) {
     setAvailable(null);
 
     try {
-      const isProd = import.meta.env.MODE === 'production';
-      const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-      
-      const res = await fetch(`${API_BASE_URL}/api/solana/sns-check?domain=${domain.trim().toLowerCase()}&verify=true`);
+      const res = await fetch(`/api/solana/sns-check?domain=${domain.trim().toLowerCase()}&verify=true`);
       if (res.ok) {
         const data = await res.json();
         setAvailable(data.available === true);

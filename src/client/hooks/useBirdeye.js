@@ -15,10 +15,7 @@ export function useBirdeye() {
     setLoading(true);
 
     try {
-      const isProd = import.meta.env.MODE === 'production';
-      const API_BASE = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-      
-      const response = await fetch(`${API_BASE}/api/solana/birdeye/portfolio?address=${publicKey.toBase58()}`);
+      const response = await fetch(`/api/solana/birdeye/portfolio?address=${publicKey.toBase58()}`);
       const data = await response.json();
 
       if (data.success) {
