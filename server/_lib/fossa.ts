@@ -2,7 +2,8 @@ import axios from 'axios';
 import { logger } from './logger.js';
 
 const FOSSA_API_KEY = process.env.FOSSA_API_KEY || process.env.FOSSAPAY_SECRET_KEY;
-const FOSSA_BASE_URL = process.env.FOSSA_BASE_URL || 'https://api-production.fossapay.com/api/v1';
+// Enforce production API base URL as staging returns 404s/401s for newer endpoints
+const FOSSA_BASE_URL = 'https://api-production.fossapay.com/api/v1';
 const FOSSA_CHECKOUT_PATH = process.env.FOSSA_CHECKOUT_PATH;
 const FOSSA_CUSTOMER_ID = process.env.FOSSA_CUSTOMER_ID;
 const FOSSA_ACCOUNT_RESOLVE_PATH = process.env.FOSSA_ACCOUNT_RESOLVE_PATH;
