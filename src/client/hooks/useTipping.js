@@ -190,7 +190,7 @@ export function useTipping(creatorAddress) {
   );
 
   const calculateRoute = useCallback(
-    async (tokenSymbol, tokenAmount, note = '') => {
+    async (tokenSymbol, tokenAmount, note = '', yieldEnabled = false) => {
       if (!tokenAmount || isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) {
         setRoute(null);
         setTipAmountUSDC('0');
@@ -200,7 +200,7 @@ export function useTipping(creatorAddress) {
         return;
       }
 
-      console.log('📊 Starting route calculation...', { tokenSymbol, tokenAmount, creatorAddress });
+      console.log('📊 Starting route calculation...', { tokenSymbol, tokenAmount, creatorAddress, yieldEnabled });
       setError(null);
 
       try {
@@ -228,7 +228,8 @@ export function useTipping(creatorAddress) {
           amount: toLamports(parseFloat(tokenAmount), token.decimals).toString(),
           paymentMethod: 'external_wallet',
           sourceWalletAddress: walletAddress,
-          memo: note
+          memo: note,
+          yieldEnabled
         };
 
         console.log('📤 Sending payment intent payload:', payload);

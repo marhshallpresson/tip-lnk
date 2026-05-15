@@ -98,7 +98,8 @@ if (loading) {
               <div id="tip-widget" className="animate-slide-up">
                 <TipWidget fixedRecipient={{
                   username: profile.solDomain || profile.displayName || profile.id.slice(0, 8),
-                  address: profile.id
+                  address: profile.id,
+                  fiatEnabled: profile.fiatEnabled
                 }} />
               </div>
 

@@ -32,10 +32,11 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
 
   const [recipientInput, setRecipientInput] = useState(fixedRecipient?.username || '');
   const [resolvedAddress, setResolvedAddress] = useState(fixedRecipient?.address || null);
+  const [fiatEnabled, setFiatEnabled] = useState(fixedRecipient ? fixedRecipient.fiatEnabled !== false : true);
   const [isResolving, setIsResolving] = useState(false);
   const [amount, setAmount] = useState('5');
   const [note, setNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'crypto'
+  const [paymentMethod, setPaymentMethod] = useState(fixedRecipient && fixedRecipient.fiatEnabled === false ? 'crypto' : 'card'); // 'card' or 'crypto'
   const [isRecurring, setIsRecurring] = useState(false);
   const [showTokenMenu, setShowTokenMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,6 +68,8 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
     if (fixedRecipient) {
       setResolvedAddress(fixedRecipient.address);
       setRecipientInput(fixedRecipient.username || '');
+      setFiatEnabled(fixedRecipient.fiatEnabled !== false);
+      if (fixedRecipient.fiatEnabled === false) setPaymentMethod('crypto');
       return;
     }
     const resolveHandle = async () => {
@@ -78,6 +81,8 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
         if (res.ok) {
           const data = await res.json();
           setResolvedAddress(data?.id || null);
+          setFiatEnabled(data?.fiatEnabled !== false);
+          if (data?.fiatEnabled === false) setPaymentMethod('crypto');
         }
       } catch { setResolvedAddress(null); } finally { setIsResolving(false); }
     };
@@ -94,9 +99,9 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
     if (isRecurring) {
         calculateRecurringRoute(selectedToken.symbol, parsed);
     } else {
-        calculateRoute(selectedToken.symbol, parsed, note);
+        calculateRoute(selectedToken.symbol, parsed, note, autoYield);
     }
-  }, [paymentMethod, isRecurring, amount, selectedToken, resolvedAddress, note, calculateRoute, calculateRecurringRoute]);
+  }, [paymentMethod, isRecurring, amount, selectedToken, resolvedAddress, note, autoYield, calculateRoute, calculateRecurringRoute]);
 
   // Sync fiat quote for card
   useEffect(() => {
@@ -412,7 +417,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
           </div>
 
           {paymentMethod === 'crypto' && (
-              <div className="relative">
+              <div className="relative flex flex-col gap-3">
                 <button
                     onClick={() => setShowTokenMenu(!showTokenMenu)}
                     className="w-full h-12 rounded-xl border border-white/5 bg-[#161618] px-4 flex items-center justify-between text-sm font-bold text-white/60 hover:bg-[#1a1a1c] transition-all"
@@ -424,7 +429,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
                     <ChevronDown size={16} className={`transition-transform ${showTokenMenu ? 'rotate-180' : ''}`} />
                 </button>
                 {showTokenMenu && (
-                    <div className="absolute top-full left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-60 overflow-y-auto">
+                    <div className="absolute top-12 left-0 w-full mt-2 rounded-xl border border-white/10 bg-[#161618] p-2 z-50 shadow-2xl max-h-60 overflow-y-auto">
                         <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="w-full bg-white/5 border-none rounded-lg px-4 py-3 text-sm text-white mb-2 outline-none" />
                         {tokensLoading ? <Loader2 size={20} className="animate-spin mx-auto my-6 text-white/20" /> : filteredTokens.slice(0, 50).map(t => (
                             <button key={t.mint} onClick={() => { setSelectedToken(t); setShowTokenMenu(false); }} className="w-full text-left px-4 py-3 rounded-lg hover:bg-white/5 flex items-center justify-between group">
@@ -434,6 +439,15 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
                         ))}
                     </div>
                 )}
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-bold text-white/40 uppercase tracking-wider flex items-center gap-1.5"><Zap size={12} className="text-brand-500" /> Auto-Yielding (Kamino)</span>
+                  <button 
+                    onClick={() => setAutoYield(!autoYield)} 
+                    className={`w-10 h-5 rounded-full relative transition-colors ${autoYield ? 'bg-brand-500' : 'bg-white/10'}`}
+                  >
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-black rounded-full transition-transform ${autoYield ? 'translate-x-5' : ''}`} />
+                  </button>
+                </div>
               </div>
           )}
       </div>

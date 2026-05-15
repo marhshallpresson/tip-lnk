@@ -24,12 +24,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ success: false, error: 'Handle not linked to a wallet.' })
     }
 
+    const profileData = JSON.parse(user.profileData || '{}');
+    const hasPhone = Boolean(profileData.phone || profileData.mobileNumber);
+    const hasDob = Boolean(profileData.dob);
+    const hasAddress = Boolean(profileData.address);
+    const hasCity = Boolean(profileData.city);
+    const hasCountry = Boolean(profileData.country);
+    
+    const fiatEnabled = hasPhone && hasDob && hasAddress && hasCity && hasCountry;
+
     res.json({
       success: true,
       handle: `@${handle}`,
       id: user.id,
       username: handle,
-      profile: JSON.parse(user.profileData || '{}')
+      fiatEnabled,
+      profile: profileData
     })
   } catch (err) {
     console.error('Resolution Error:', err)

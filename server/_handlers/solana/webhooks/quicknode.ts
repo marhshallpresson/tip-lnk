@@ -4,6 +4,7 @@ import { rpcManager } from "../../../_lib/rpc.js"
 import { PublicKey } from "@solana/web3.js"
 import crypto from 'crypto'
 import { getSolPrice } from "../../../_lib/price.js"
+import { addTipToFeed } from "../../../_lib/kv.js"
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenErt'
@@ -102,12 +103,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             if (isUSDC || isUSDT) {
                 // Find owner of the destination ATA
-                // In a production environment, we'd lookup the creator by their ATA 
-                // or assume the accountKeys[1] logic if we enforced it in the Anchor program.
-                // For this fix, we iterate keys to find a matching registered creator wallet.
-                const recipientOwner = tx.transaction?.message?.accountKeys?.find(async (key: string) => {
-                    return await db('user').where({ walletAddress: key }).first();
-                });
+                let recipientOwner: string | null = null;
+                const accountKeys = tx.transaction?.message?.accountKeys || [];
+                
+                for (const key of accountKeys) {
+                    const user = await db('user').where({ walletAddress: key }).first();
+                    if (user) {
+                        recipientOwner = key;
+                        break;
+                    }
+                }
 
                 if (recipientOwner) {
                     const amountToken = Number(amount) / 1e6;
@@ -126,6 +131,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                     await db('user').where({ walletAddress: recipientOwner }).increment('totalTipsUSDC', amountToken);
                     console.log(`💰 Verified ${isUSDC ? 'USDC' : 'USDT'} Tip: ${amountToken} to ${recipientOwner}`);
+                    
+                    await addTipToFeed({
+                        signature,
+                        amount: amountToken,
+                        tokenSymbol: isUSDC ? 'USDC' : 'USDT',
+                        sender: 'TOKEN_SENDER',
+                        recipient: recipientOwner,
+                        valueUsd: amountToken
+                    });
                     break;
                 }
             }

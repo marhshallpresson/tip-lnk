@@ -175,6 +175,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     profile.auto_convert_usdc = resolveBooleanSetting(user.auto_convert_usdc, rawData.auto_convert_usdc, true)
     profile.yield_enabled = resolveBooleanSetting(user.yield_enabled, rawData.yield_enabled, false)
     profile.gasless_enabled = resolveBooleanSetting(user.gasless_enabled, rawData.gasless_enabled, false)
+    
+    // Evaluate if Fiat Payments are enabled based on completeness of payout profile
+    const hasPhone = Boolean(rawData.phone || rawData.mobileNumber)
+    const hasDob = Boolean(rawData.dob)
+    const hasAddress = Boolean(rawData.address)
+    const hasCity = Boolean(rawData.city)
+    const hasCountry = Boolean(rawData.country)
+    
+    profile.fiatEnabled = hasPhone && hasDob && hasAddress && hasCity && hasCountry;
 
     const displayName = profile.displayName || user.name || 'Solana Creator'
     const identifier = user.solDomain || user.twitterHandle || user.id

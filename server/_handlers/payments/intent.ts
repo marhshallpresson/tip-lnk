@@ -243,7 +243,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { 'Content-Type': 'application/json' }
       })
 
-      const { swapTransaction } = swapResponse.data
+      let finalV6Transaction = swapResponse.data.swapTransaction
+
+      // ─── ELITE DEFI: ATOMIC KAMINO YIELD (V6 FALLBACK) ───
+      if (creatorYieldEnabled && outputMint === USDC_MINT) {
+         try {
+            const { attachKaminoYield } = await import("../../_lib/kamino.js");
+            const { rpcManager } = await import("../../_lib/rpc.js");
+            const connection = await rpcManager.getConnection();
+            
+            finalV6Transaction = await attachKaminoYield(
+              connection,
+              finalV6Transaction,
+              new PublicKey(payoutAddress),
+              quote.outAmount,
+              "USDC"
+            );
+            console.log('✅ Kamino instructions attached to V6 transaction');
+         } catch (e: any) {
+            console.warn('⚠️ Kamino attachment failed:', e.message);
+         }
+      }
 
       return res.json({
         success: true,
@@ -253,7 +273,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           outAmount: quote.outAmount,
           priceImpactPct: quote.priceImpactPct
         },
-        transaction: swapTransaction,
+        transaction: finalV6Transaction,
         executionMode: 'sync',
         provider: 'jupiter-v6',
         settings: {

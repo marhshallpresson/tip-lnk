@@ -117,7 +117,8 @@ export default function CheckoutPage() {
            <TipWidget 
              fixedRecipient={{
                username: profile.displayName || profile.id.slice(0, 8),
-               address: profile.id
+               address: profile.id,
+               fiatEnabled: profile.fiatEnabled
              }} 
              theme={theme}
              accent={accent}
