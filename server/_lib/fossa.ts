@@ -55,7 +55,7 @@ export async function createCustomer(input: {
     dateOfBirth: input.dob || '1990-01-01',
     address: input.address || 'User Address',
     city: input.city || 'Lagos',
-    country: input.country || 'NG',
+    country: input.country || 'Nigeria',
     type: 'individual',
   };
 
