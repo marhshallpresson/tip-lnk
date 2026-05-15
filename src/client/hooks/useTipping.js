@@ -45,7 +45,7 @@ export function useTipping(creatorAddress) {
     const fetchSupportedTokens = async () => {
       setTokensLoading(true);
       try {
-        const response = await fetch('https://tokens.jup.ag/tokens_with_markets.json');
+        const response = await fetch('https://token.jup.ag/strict');
         const rawTokens = await response.json();
         const normalized = Array.isArray(rawTokens) ? rawTokens.map(normalizeToken) : [];
 

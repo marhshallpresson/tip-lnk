@@ -458,6 +458,13 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
           )}
       </div>
 
+      {paymentMethod === 'crypto' && route?.priceImpactPct > 1 && (
+        <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-2 text-red-500">
+           <Zap size={14} className="fill-current" />
+           <span className="text-[10px] font-bold uppercase tracking-wider">High Price Impact: {Number(route.priceImpactPct).toFixed(2)}%</span>
+        </div>
+      )}
+
       <button 
         onClick={handlePay}
         disabled={processing || quoteLoading || !amount || Number(amount) <= 0 || !resolvedAddress || (paymentMethod === 'card' && !fiatQuote)}

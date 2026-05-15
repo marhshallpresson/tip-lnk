@@ -129,6 +129,7 @@ router.get("/solana/tips/get", h(solanaTipsGet));
 router.post("/solana/tips/create", h(solanaTipsCreate));
 router.post("/solana/tips/message", h(solanaTipsMessage));
 router.get("/solana/tips/stream", h(solanaTipsStream));
+router.get("/solana/tips/live", h(solanaTipsLive));
 
 // ── Solana Webhooks ───────────────────────────────────────────────────────────
 router.post("/solana/webhooks/helius", h(solanaWebhookHelius));
@@ -185,3 +186,4 @@ router.post("/sdk/tip", h(sdkTip));
 router.get("/sdk/events", h(sdkEvents));
 
 export default router;
+t router;
