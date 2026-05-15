@@ -256,6 +256,7 @@ export function useTipping(creatorAddress) {
 
         const order = {
           outAmount: intentData.quote.outAmount,
+          priceImpactPct: intentData.quote.priceImpactPct,
           transaction: intentData.transaction,
           executionMode: intentData.executionMode || 'sync',
           intentId: intentData.intentId,

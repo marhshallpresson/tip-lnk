@@ -401,10 +401,16 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
 
       {/* Payment Selection & Token Picker */}
       <div className="space-y-4 mb-8">
-          <div className="flex bg-[#161618] rounded-xl p-1.5 border border-white/5">
+          <div className="flex bg-[#161618] rounded-xl p-1.5 border border-white/5 relative">
+              {!fiatEnabled && (
+                 <div className="absolute -top-3 left-4 bg-brand-500/10 border border-brand-500/20 text-brand-500 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full z-10">
+                    Fiat Not Setup
+                 </div>
+              )}
               <button 
+                disabled={!fiatEnabled}
                 onClick={() => setPaymentMethod('card')}
-                className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-[#222224] text-white shadow-sm' : 'text-white/30 hover:text-white/60'}`}
+                className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${paymentMethod === 'card' ? 'bg-[#222224] text-white shadow-sm' : 'text-white/30 hover:text-white/60'} disabled:opacity-30 disabled:cursor-not-allowed`}
               >
                   <CreditCard size={14} /> Card
               </button>
