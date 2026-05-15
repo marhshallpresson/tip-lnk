@@ -71,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       signature: txSignature,
       message: message || null,
       timestamp: new Date().toISOString(),
-      status: 'confirmed',
+      status: 'pending',
     }
 
     await db('tips').insert(tipRecord)

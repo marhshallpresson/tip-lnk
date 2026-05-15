@@ -155,7 +155,7 @@ function WalletProviderInner({ children }) {
       const isProd = import.meta.env.MODE === 'production';
       const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
 
-      const response = await fetch(`${API_BASE_URL}/api/solana/jupiter/swap`, {
+      const response = await fetch(`/api/solana/jupiter/swap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

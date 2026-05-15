@@ -45,7 +45,7 @@ export function useTipping(creatorAddress) {
     const fetchSupportedTokens = async () => {
       setTokensLoading(true);
       try {
-        const response = await fetch('https://tokens.jup.ag/tokens?tags=strict');
+        const response = await fetch('https://token.jup.ag/strict');
         const rawTokens = await response.json();
         const normalized = Array.isArray(rawTokens) ? rawTokens.map(normalizeToken) : [];
 
@@ -157,9 +157,6 @@ export function useTipping(creatorAddress) {
           throw new Error(`Token ${tokenSymbol} has unsupported decimals`);
         }
 
-        const isProd = import.meta.env.MODE === 'production';
-        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-        
         // frequency mapped to seconds
         const frequencyMap = { 'weekly': 604800, 'monthly': 2592000, 'daily': 86400 };
         const frequencySeconds = frequencyMap[frequency] || 2592000;
@@ -173,7 +170,7 @@ export function useTipping(creatorAddress) {
           cycles
         };
 
-        const response = await fetch(`${API_BASE_URL}/api/payments/recurring`, {
+        const response = await fetch(`/api/payments/recurring`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -218,15 +215,6 @@ export function useTipping(creatorAddress) {
           throw new Error('Creator address not resolved');
         }
 
-        const isProd = import.meta.env.MODE === 'production';
-        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-        
-        console.log('🔗 API Base URL:', API_BASE_URL);
-        
-        // ─── ELITE IDENTITY SYNC: WALLET ADDRESS RESOLUTION ───
-        // Fall back to Dynamic primaryWallet if standard wallet-adapter is disconnected
-        const walletAddress = publicKey?.toBase58() || primaryWallet?.address;
-
         if (!walletAddress) {
           console.warn('⚠️ Payment Intent Fault: No wallet address available for routing.');
           return;
@@ -243,7 +231,7 @@ export function useTipping(creatorAddress) {
 
         console.log('📤 Sending payment intent payload:', payload);
 
-        const response = await fetch(`${API_BASE_URL}/api/payments/intent`, {
+        const response = await fetch(`/api/payments/intent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -315,8 +303,6 @@ export function useTipping(creatorAddress) {
       setError(null);
 
       try {
-        const isProd = import.meta.env.MODE === 'production';
-        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
         const DFLOW_API = 'https://quote-api.dflow.net';
         const DFLOW_API_KEY = import.meta.env.VITE_DFLOW_API_KEY;
 
@@ -354,7 +340,7 @@ export function useTipping(creatorAddress) {
           const signedTransaction = Buffer.from(signedTx.serialize()).toString('base64');
 
           if (route.provider === 'jupiter-ultra' && route.requestId) {
-            const executeRes = await fetch(`${API_BASE_URL}/api/payments/execute`, {
+            const executeRes = await fetch(`/api/payments/execute`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -447,13 +433,10 @@ export function useTipping(creatorAddress) {
       setError(null);
 
       try {
-        const isProd = import.meta.env.MODE === 'production';
-        const API_BASE_URL = isProd ? window.location.origin : (import.meta.env.VITE_API_BASE_URL);
-        
         const tx = VersionedTransaction.deserialize(Buffer.from(recurringRoute.transaction, 'base64'));
         const signedTx = await signTransaction(tx);
         
-        const submitRes = await fetch(`${API_BASE_URL}/api/solana/send`, {
+        const submitRes = await fetch(`/api/solana/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

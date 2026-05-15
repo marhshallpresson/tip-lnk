@@ -4,6 +4,7 @@ import { sha256Hex } from "../../_lib/password.js"
 import { getUserRoles } from "../../_lib/session.js"
 import { signSessionToken } from "../../_lib/jwt.js"
 import { patchResponse } from "./_utils.js"
+import { rateLimit } from "../../_lib/ratelimit.js"
 
 /**
  * Task 2.2: Standalone Vercel Function for Session Exchange
@@ -12,6 +13,9 @@ import { patchResponse } from "./_utils.js"
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   patchResponse(res)
+
+  // SECURITY PATCH: Enforce rate limiting for auth exchange
+  if (!(await rateLimit(req, res))) return;
 
   try {
     const code = typeof req.body?.code === 'string' ? req.body.code.trim() : ''

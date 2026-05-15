@@ -3,10 +3,7 @@
  * Handles CSRF tokens, Bearer tokens, and base URL
  */
 
-const isProd = import.meta.env.MODE === 'production';
-const API_BASE_URL = (isProd
-  ? window.location.origin
-  : (import.meta.env.VITE_API_BASE_URL)) + '/api';
+const API_BASE_URL = '/api';
 const AUTH_TOKEN_KEY = 'tipstack_auth_token';
 const LEGACY_TOKEN_KEY = 'tipstack_access_token';
 

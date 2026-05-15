@@ -140,17 +140,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (!user && !isInternalId) {
         const isAddress = wallet.length >= 32 && wallet.length <= 44 && !wallet.includes('.') && !wallet.startsWith('auth_')
-        // ZERO-KNOWLEDGE: Auto-provisioning by raw address is discouraged but allowed if it's a valid pubkey
+        // SECURITY: Prevent Database Exhaustion by avoiding auto-provisioning for raw addresses.
         if (isAddress) {
-            const userId = randomUUID()
-            await db('user').insert({
-                id: userId,
-                email: null,
-                walletAddress: wallet,
-                profileData: JSON.stringify({ displayName: 'New Creator' }),
-                created_at: new Date()
-            })
-            user = await db('user').where({ id: userId }).first()
+            const maskedAddress = `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+            const responseData = buildExternalProfileResponse(wallet, maskedAddress);
+            if (redis) await withTimeout(redis.set(cacheKey, JSON.stringify(responseData), { ex: 300 })).catch(() => null);
+            return res.json(responseData)
         } else {
             return res.status(404).json({ success: false, error: 'User profile not found.' })
         }

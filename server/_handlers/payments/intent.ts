@@ -227,12 +227,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.warn('Priority fee estimation failed, falling back to auto.')
       }
 
+      const treasuryWallet = process.env.TREASURY_WALLET || process.env.VITE_TREASURY_WALLET;
+      
       const swapPayload = {
         quoteResponse: quote,
         userPublicKey: sourceWalletAddress,
         destinationWallet: payoutAddress,
         wrapAndUnwrapSol: true,
-        feeAccount: process.env.VITE_TREASURY_WALLET,
+        feeAccount: treasuryWallet,
         dynamicComputeUnitLimit: true,
         prioritizationFeeLamports
       }

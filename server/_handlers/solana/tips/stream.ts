@@ -26,6 +26,7 @@ export default async function handler(req: Request) {
     async start(controller) {
       controller.enqueue(encoder.encode('retry: 10000\n\n'));
       
+      let interval: any;
       try {
         const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
         const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -34,16 +35,30 @@ export default async function handler(req: Request) {
              throw new Error('Redis configuration missing');
         }
 
-        
+        const redis = new Redis({
+            url: redisUrl,
+            token: redisToken,
+        });
+
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: 'connected', wallet: walletAddress })}\n\n`));
         
-        const interval = setInterval(() => {
+        interval = setInterval(async () => {
           try {
-             controller.enqueue(encoder.encode(':\n\n'));
+             // Polling for live events since REST doesn't support Pub/Sub
+             const event = await redis.rpop(`live_tips:${walletAddress}`);
+             if (event) {
+                 controller.enqueue(encoder.encode(`data: ${typeof event === 'string' ? event : JSON.stringify(event)}\n\n`));
+             } else {
+                 controller.enqueue(encoder.encode(':\n\n')); // Keep-alive
+             }
           } catch (e) {
              clearInterval(interval);
+             (stream as any)._interval = null;
           }
-        }, 15000);
+        }, 5000);
+        
+        // Attach interval to stream for cancellation
+        (stream as any)._interval = interval;
 
       } catch (err: any) {
         console.error('SSE Stream Error:', err);
@@ -52,6 +67,9 @@ export default async function handler(req: Request) {
     },
     cancel() {
       console.log('Stream canceled by client');
+      if ((stream as any)._interval) {
+        clearInterval((stream as any)._interval);
+      }
     }
   });
 

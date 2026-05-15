@@ -184,6 +184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         walletReference: collectionAccount.walletReference,
       }
 
+      console.log(`[FiatIntent] Creating/Updating record for ${intentId}`);
       await db('fiat_payment_intents')
         .insert({
           ...baseIntentRecord,
@@ -208,7 +209,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .onConflict('intent_id')
         .merge()
 
-      // â”€â”€â”€ ELITE GROWTH: TORQUE EVENT â”€â”€â”€
+      // ─── ELITE GROWTH: TORQUE EVENT ───
       await emitTorqueEvent({
         event_type: 'tip_initiated',
         metadata: {
@@ -241,12 +242,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
 
     } catch (apiErr: any) {
-      console.error('Fossa Pay Service Error:', apiErr.message)
+      console.error('[FiatIntent] Service or DB Fault:', apiErr.message, apiErr.stack)
 
       return res.status(502).json({
         success: false,
         error: 'Fiat payment provider unavailable',
-        message: 'The FossaPay integration is currently unresponsive. Please try again later or use crypto.'
+        message: apiErr.message,
+        hint: 'Check FOSSA_API_KEY and database connectivity.'
       })
     }
 

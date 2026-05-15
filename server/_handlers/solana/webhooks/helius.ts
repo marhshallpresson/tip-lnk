@@ -72,14 +72,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const sender = tx.feePayer
         const timestamp = new Date(tx.timestamp * 1000)
         
-        const transfer = tx.nativeTransfers?.[0] || tx.tokenTransfers?.[0]
+        const treasuryWallet = process.env.VITE_TREASURY_WALLET;
+        const allTransfers = [...(tx.nativeTransfers || []), ...(tx.tokenTransfers || [])];
+        
+        // Find the correct transfer: prioritize transfers NOT going to the treasury
+        let transfer = allTransfers.find(t => t.toUserAccount !== treasuryWallet);
+        if (!transfer) transfer = allTransfers[0]; // Fallback
+
         if (!transfer) {
              await db('transactions_raw').where({ signature }).update({ status: 'skipped' });
              return;
         }
 
         const recipient = transfer.toUserAccount
-        const isNative = tx.nativeTransfers?.length > 0
+        const isNative = tx.nativeTransfers?.some((t: any) => t === transfer);
         const amount = isNative ? (transfer.amount / 1e9) : transfer.tokenAmount
 
         // Zero-Knowledge Lookups
@@ -121,30 +127,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            }
         }
 
-        const insertResult = await db('tips').insert({
-          signature,
-          slot: tx.slot,
-          timestamp,
-          sender,
-          sender_id: senderUser?.id || null,
-          sender_hash: hashAddress(sender),
-          recipient,
-          recipient_id: recipientUser?.id || null,
-          recipient_hash: hashAddress(recipient),
-          amount,
-          message,
-          tokenSymbol,
-          status: 'confirmed',
-          type: 'webhook_indexed',
-          // New column for trust scores (will be added to schema if not exists)
-          metadata: JSON.stringify({ isSuspicious })
-        }).onConflict('signature').ignore()
+        const existingTip = await db('tips').where({ signature }).first();
+        let isNewTip = false;
+
+        if (existingTip) {
+          await db('tips').where({ signature }).update({
+            status: 'confirmed',
+            slot: tx.slot,
+            type: 'webhook_indexed',
+            metadata: JSON.stringify({ isSuspicious })
+          });
+        } else {
+          await db('tips').insert({
+            signature,
+            slot: tx.slot,
+            timestamp,
+            sender,
+            sender_id: senderUser?.id || null,
+            sender_hash: hashAddress(sender),
+            recipient,
+            recipient_id: recipientUser?.id || null,
+            recipient_hash: hashAddress(recipient),
+            amount,
+            message,
+            tokenSymbol,
+            status: 'confirmed',
+            type: 'webhook_indexed',
+            metadata: JSON.stringify({ isSuspicious })
+          });
+          isNewTip = true;
+        }
         
         await db('transactions_raw').where({ signature }).update({ status: 'processed' });
-        
-        // SECURITY: Deterministic check for new insertion to prevent duplicate analytics
-        // insertResult.rowCount (PG) or insertResult[0] (SQLite/PG)
-        const isNewTip = insertResult && ((insertResult as any).rowCount > 0 || (Array.isArray(insertResult) && insertResult.length > 0));
 
         if (isNewTip) {
             console.log(`🛡️ Webhook: Fortified ledger entry for ${signature}`)
@@ -176,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         
         if (redis) {
-             await redis.publish('live-tips', JSON.stringify({
+             await redis.lpush(`live_tips:${recipient}`, JSON.stringify({
                  signature,
                  recipientId: recipientUser?.id || null,
                  amount,

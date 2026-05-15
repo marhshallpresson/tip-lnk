@@ -15,10 +15,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? `${sessionUser.walletAddress.slice(0, 4)}...${sessionUser.walletAddress.slice(-4)}`
         : null;
 
+    const { encryptedWalletAddress, walletAddressHash, ...safeUser } = sessionUser;
+
     res.status(200).json({ 
         success: true, 
         user: {
-            ...sessionUser,
+            ...safeUser,
             walletAddress: maskedAddress
         } 
     })
