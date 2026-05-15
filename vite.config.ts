@@ -103,9 +103,12 @@ export default defineConfig({
       "tweetnacl",
       "@dynamic-labs/sdk-react-core",
       "@dynamic-labs/sdk-api-core",
+      "@dynamic-labs/wagmi-connector",
       "@dynamic-labs/solana",
       "@dynamic-labs/ethereum",
       "@solana/web3.js",
+      "@solana/wallet-adapter-react",
+      "@solana/wallet-adapter-base",
     ],
     exclude: [
       "@orca-so/whirlpools",
