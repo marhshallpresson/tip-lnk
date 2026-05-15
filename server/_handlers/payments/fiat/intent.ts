@@ -59,15 +59,32 @@ async function ensureCreatorCollectionAccount(creator: any) {
 
   const customer = storedCustomerId
     ? { customerId: storedCustomerId, raw: null }
-    : await createCustomer({
+    : null;
+
+  if (!customer) {
+    if (!profileData.phone && !profileData.mobileNumber) {
+      throw new Error('Creator has not completed their fiat payout profile (missing phone number).');
+    }
+    
+    const newCustomer = await createCustomer({
         name: creatorDisplayName(creator),
         email: creator.email,
-        phone: profileData.phone || profileData.mobileNumber || null,
+        phone: profileData.phone || profileData.mobileNumber,
+        dob: profileData.dob,
+        address: profileData.address,
+        city: profileData.city,
+        country: profileData.country,
         intentId: creator.id,
-      }, `fossa-customer-${creator.id}`)
+    }, `fossa-customer-${creator.id}`);
+    
+    Object.assign(customer || {}, newCustomer);
+  }
+
+  // At this point customer is guaranteed to be set or thrown
+  const validCustomer = customer || { customerId: '', raw: null };
 
   const wallet = await createFiatWallet({
-    customerId: customer.customerId,
+    customerId: validCustomer.customerId,
     walletName: `TipStack Creator ${String(creator.id).slice(0, 8)}`,
     walletReference,
   }, `fossa-wallet-${walletReference}`)
