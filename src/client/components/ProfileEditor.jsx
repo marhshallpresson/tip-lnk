@@ -10,6 +10,11 @@ export default function ProfileEditor({ onComplete, onBack }) {
   const [displayName, setDisplayName] = useState(profile.displayName || '');
   const [bio, setBio] = useState(profile.bio || '');
   const [roleTitle, setRoleTitle] = useState(profile.roleTitle || '');
+  const [phone, setPhone] = useState(profile.phone || '');
+  const [dob, setDob] = useState(profile.dob || '');
+  const [address, setAddress] = useState(profile.address || '');
+  const [city, setCity] = useState(profile.city || '');
+  const [country, setCountry] = useState(profile.country || '');
   const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
@@ -177,6 +182,34 @@ export default function ProfileEditor({ onComplete, onBack }) {
             <div className="flex justify-end mt-2">
               <p className="text-white/20 text-[10px] font-bold">{bio.length}/280</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-6 mt-6 border-t border-white/5 text-left mb-10">
+        <h3 className="text-white font-bold mb-4">Payout Details (Required for Fiat Withdrawal)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2 ml-1">Phone Number</label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+234..." className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2 ml-1">Date of Birth</label>
+            <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all" />
+          </div>
+        </div>
+        <div className="mb-4">
+          <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2 ml-1">Address</label>
+          <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Street Name" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2 ml-1">City</label>
+            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Lagos" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2 ml-1">Country (ISO)</label>
+            <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="NG" maxLength={2} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-brand-500/50 focus:bg-white/[0.07] transition-all" />
           </div>
         </div>
       </div>

@@ -27,6 +27,10 @@ async function ensureCreatorFossaCustomer(user: any) {
     name: user.name || user.full_name || 'Tip Stack Creator',
     email: user.email,
     phone: profileData.phone || profileData.mobileNumber || null,
+    dob: profileData.dob || null,
+    address: profileData.address || null,
+    city: profileData.city || null,
+    country: profileData.country || null,
     intentId: user.id,
   }, `fossa-customer-${user.id}`)
 

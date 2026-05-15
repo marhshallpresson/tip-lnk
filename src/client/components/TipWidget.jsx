@@ -461,6 +461,7 @@ function TipWidgetContent({ fixedRecipient = null, onSuccess, handleClose = () =
             setShowQRModal(false);
             setTxResult({ status: 'confirmed', signature: data.signature, outAmount: Number(amount) });
         }}
+        onConnect={() => setShowAuthFlow(true)}
       />
     </div>
   );

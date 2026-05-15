@@ -34,6 +34,10 @@ export async function createCustomer(input: {
   name?: string | null
   email?: string | null
   phone?: string | null
+  dob?: string | null
+  address?: string | null
+  city?: string | null
+  country?: string | null
   intentId?: string | null
 }, idempotencyKey?: string) {
   if (!FOSSA_API_KEY) {
@@ -42,17 +46,20 @@ export async function createCustomer(input: {
 
   const { firstName, lastName } = splitName(input.name);
   const emailAddress = input.email || `payments+${input.intentId || Date.now()}@tipstack.fun`;
-  const response = await client.post('/customers', {
+  
+  const payload: any = {
     firstName,
     lastName,
     emailAddress,
-    mobileNumber: input.phone || process.env.FOSSA_DEFAULT_CUSTOMER_PHONE || '+2348000000000',
-    dob: process.env.FOSSA_DEFAULT_CUSTOMER_DOB || '1990-01-01',
-    address: process.env.FOSSA_DEFAULT_CUSTOMER_ADDRESS || 'Tip Stack Checkout',
-    city: process.env.FOSSA_DEFAULT_CUSTOMER_CITY || 'Lagos',
-    country: process.env.FOSSA_DEFAULT_CUSTOMER_COUNTRY || 'Nigeria',
+    mobileNumber: input.phone,
+    dateOfBirth: input.dob || '1990-01-01',
+    address: input.address || 'User Address',
+    city: input.city || 'Lagos',
+    country: input.country || 'NG',
     type: 'individual',
-  }, requestConfig(idempotencyKey));
+  };
+
+  const response = await client.post('/customers', payload, requestConfig(idempotencyKey));
 
   const data = responseData(response);
   const customerId = data.customerId || data.id || data._id;
